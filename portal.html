@@ -472,7 +472,7 @@ function showToast(msg,type='success'){
 function toggleSB(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sbOv').classList.toggle('open');}
 function sb(s){const m={Paid:'bg2',Pending:'bam2',Refunded:'br2',Active:'bg2',Inactive:'br2',Resolved:'bg2',Open:'bam2'};return`<span class="badge ${m[s]||'bc2'}">${s}</span>`;}
 function cb(c){const m={Zumba:'bc2',Dance:'bp2','Kids Dance':'bp2',Chess:'bb2',Guitar:'bam2'};return`<span class="badge ${m[c]||'bc2'}">${c}</span>`;}
-function ft(inp,id){const v=inp.value.toLowerCase();document.querySelectorAll('#'+id+' tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(v)?'':'none';});}
+function ft(inp,id){const v=inp.value.toLowerCase();const tb=document.getElementById(id);if(tb)tb.querySelectorAll('tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(v)?'':'none';});}
 function setErr(id,msg){const el=document.getElementById(id);if(el){el.textContent=msg;el.style.display=msg?'block':'none';}}
 function setBtnLoading(id,loading,label=''){const btn=document.getElementById(id);if(btn){btn.disabled=loading;if(label||loading)btn.textContent=loading?'Please wait...':label;}}
 function nowStr(){return new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});}
@@ -493,14 +493,27 @@ auth.onAuthStateChanged(async (user) => {
         await loadPortalData();
         enterPortal();
       } else {
-        // New Google user — needs to complete signup
-        showLoading(false);
-        showScreen('signupScreen');
-        // Pre-fill email
-        const emEl=document.getElementById('su_em');if(emEl)emEl.value=user.email||'';
-        // Store temp google uid
-        window._pendingGoogleUser = user;
-        showToast('Please complete your registration','success');
+        // No Firestore doc — check if this is the admin email
+        const ADMIN_EMAIL = 'admin@fitbeat26.com';
+        if (user.email === ADMIN_EMAIL) {
+          // Bootstrap admin document
+          const adminProfile = {
+            uid: user.uid, email: user.email, name: 'Admin',
+            firstName: 'Admin', lastName: '', role: 'admin',
+            createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+          };
+          await db.collection('users').doc(user.uid).set(adminProfile);
+          CU = {uid: user.uid, email: user.email, photoURL: user.photoURL, ...adminProfile};
+          await loadPortalData();
+          enterPortal();
+        } else {
+          // New user — needs to complete signup
+          showLoading(false);
+          showScreen('signupScreen');
+          const emEl=document.getElementById('su_em');if(emEl)emEl.value=user.email||'';
+          window._pendingGoogleUser = user;
+          showToast('Please complete your registration','success');
+        }
       }
     } catch(e) {
       showLoading(false);
@@ -521,22 +534,24 @@ async function loadPortalData() {
     if (CU.role === 'admin') {
       const [stuSnap, paySnap, msgSnap] = await Promise.all([
         db.collection('students').orderBy('createdAt','desc').get(),
-        db.collection('payments').orderBy('date','desc').limit(100).get(),
-        db.collection('messages').orderBy('createdAt','desc').get(),
+        db.collection('payments').orderBy('createdAt','desc').limit(100).get(),
+        db.collection('messages').get(),
       ]);
       allStudents = stuSnap.docs.map(d=>({id:d.id,...d.data()}));
       allPayments = paySnap.docs.map(d=>({id:d.id,...d.data()}));
       allMessages = msgSnap.docs.map(d=>({id:d.id,...d.data()}));
     } else if (CU.role === 'tutor') {
-      const stuSnap = await db.collection('students').where('class','in',CU.teaches).get();
+      const stuSnap = CU.teaches && CU.teaches.length > 0
+        ? await db.collection('students').where('class','in',CU.teaches).get()
+        : {docs: []};
       allStudents = stuSnap.docs.map(d=>({id:d.id,...d.data()}));
-      const msgSnap = await db.collection('messages').where('fromUid','==',CU.uid).orderBy('createdAt','desc').get();
+      const msgSnap = await db.collection('messages').where('fromUid','==',CU.uid).get();
       allMessages = msgSnap.docs.map(d=>({id:d.id,...d.data()}));
     } else {
       // Student — load their own payments and messages
       const [paySnap, msgSnap] = await Promise.all([
         db.collection('payments').where('studentUid','==',CU.uid).orderBy('date','desc').get(),
-        db.collection('messages').where('fromUid','==',CU.uid).orderBy('createdAt','desc').get(),
+        db.collection('messages').where('fromUid','==',CU.uid).get(),
       ]);
       allPayments = paySnap.docs.map(d=>({id:d.id,...d.data()}));
       allMessages = msgSnap.docs.map(d=>({id:d.id,...d.data()}));
@@ -685,7 +700,7 @@ function enterPortal(){
   badge.className='role-badge '+(isA?'ra':isT?'rt':'rs');
   // Avatar
   const avEl=document.getElementById('sbAv');
-  if(CU.photoURL){avEl.innerHTML=`<img src="${CU.photoURL}" alt=""/>"`;}
+  if(CU.photoURL){avEl.innerHTML=`<img src="${CU.photoURL}" alt=""/>`;}
   else{avEl.textContent=(CU.firstName||CU.name||'?')[0].toUpperCase();}
   document.getElementById('sbName').textContent=CU.name||CU.email;
   document.getElementById('sbEmail').textContent=CU.email;
