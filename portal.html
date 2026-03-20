@@ -550,7 +550,7 @@ async function loadPortalData() {
     } else {
       // Student — load their own payments and messages
       const [paySnap, msgSnap] = await Promise.all([
-        db.collection('payments').where('studentUid','==',CU.uid).orderBy('date','desc').get(),
+        db.collection('payments').where('studentUid','==',CU.uid).get(),
         db.collection('messages').where('fromUid','==',CU.uid).get(),
       ]);
       allPayments = paySnap.docs.map(d=>({id:d.id,...d.data()}));
@@ -558,6 +558,13 @@ async function loadPortalData() {
     }
   } catch(e) {
     console.error('Error loading data:', e);
+    if(e.code==='permission-denied'||e.message.includes('permission')){
+      showToast('⚠️ Database permission error. Please check Firestore rules in Firebase Console → Firestore → Rules','error');
+    } else if(e.code==='failed-precondition'){
+      showToast('⚠️ Database index needed. Check Firebase Console → Firestore → Indexes','error');
+    } else {
+      showToast('Error loading data: '+e.message,'error');
+    }
   }
 }
 
@@ -581,14 +588,26 @@ async function doLogin(){
   setBtnLoading('loginBtn',true);
   try {
     await auth.signInWithEmailAndPassword(email,pass);
-    // onAuthStateChanged handles the rest
   } catch(e){
+    // If admin account doesn't exist yet, create it automatically
+    if((e.code==='auth/user-not-found'||e.code==='auth/invalid-credential')&&email==='admin@fitbeat26.com'){
+      try {
+        await auth.createUserWithEmailAndPassword(email,pass);
+        // onAuthStateChanged bootstrap will create Firestore doc
+        return;
+      } catch(e2){
+        setBtnLoading('loginBtn',false,'Sign In →');
+        setErr('loginErr',e2.message);
+        return;
+      }
+    }
     setBtnLoading('loginBtn',false,'Sign In →');
     const msgs={
       'auth/user-not-found':'No account found with this email.',
+      'auth/invalid-credential':'Incorrect email or password.',
       'auth/wrong-password':'Incorrect password. Please try again.',
       'auth/invalid-email':'Please enter a valid email address.',
-      'auth/too-many-requests':'Too many attempts. Please try again later.',
+      'auth/too-many-requests':'Too many attempts. Please wait and try again.',
     };
     setErr('loginErr',msgs[e.code]||e.message);
   }
@@ -1080,7 +1099,11 @@ function buildMsgUI(){
     </div>`).join(''):`<div style="padding:20px;text-align:center;color:var(--muted2);font-size:13px">No messages yet</div>`}
   </div>
   <div class="msg-detail" id="msgDetail">
-    ${activeMsgId?renderMsgThread(activeMsgId):`<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted2);font-size:13px">${isAdmin?'Select a conversation':'Click "+ New Message" to contact Admin'}</div>`}
+    ${(()=>{
+      const firstMsg=myMsgs[0];
+      if(firstMsg&&!activeMsgId){activeMsgId=firstMsg.id;}
+      return activeMsgId?renderMsgThread(activeMsgId):`<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted2);font-size:13px;padding:20px;text-align:center">${isAdmin?'Select a conversation from the left':'Click &quot;+ New Message&quot; to contact Admin'}</div>`;
+    })()}
   </div>
 </div>`;
 }
@@ -1411,12 +1434,14 @@ async function doAddStudent(){
   if(!fn||!ln||!em||!cl||!bt){setErr('asErr','First name, last name, email, class and batch required.');return;}
   setBtnLoading('addStBtn',true);
   try {
-    // Create Firebase Auth account
+    // Create auth account using secondary app (avoids signing out admin)
+    const secondaryApp = firebase.initializeApp(firebaseConfig, 'secondary_'+Date.now());
+    const secondaryAuth = secondaryApp.auth();
     const tempPass='Welcome@'+Math.random().toString(36).slice(-6);
-    const cred=await auth.createUserWithEmailAndPassword(em,tempPass);
-    const uid=cred.user.uid;
-    // Send password reset so student can set their own
-    await auth.sendPasswordResetEmail(em);
+    const cred = await secondaryAuth.createUserWithEmailAndPassword(em, tempPass);
+    const uid = cred.user.uid;
+    await secondaryAuth.sendPasswordResetEmail(em);
+    await secondaryApp.delete();
     const profile={
       uid,firstName:fn,lastName:ln,name:fn+' '+ln,email:em,phone:ph,
       class:cl,batch:bt,fee:CLASS_FEES[cl]||1999,
@@ -1456,8 +1481,11 @@ async function doAddTutor(){
   if(pw.length<8){setErr('atErr','Password must be at least 8 characters.');return;}
   setBtnLoading('addTutorBtn',true);
   try {
-    const cred=await auth.createUserWithEmailAndPassword(em,pw);
-    const uid=cred.user.uid;
+    const secondaryApp2 = firebase.initializeApp(firebaseConfig, 'tutor_'+Date.now());
+    const secondaryAuth2 = secondaryApp2.auth();
+    const cred = await secondaryAuth2.createUserWithEmailAndPassword(em,pw);
+    const uid = cred.user.uid;
+    await secondaryApp2.delete();
     const profile={uid,firstName:fn,lastName:ln,name:fn+' '+ln,email:em,phone:ph,teaches:cl,role:'tutor',createdAt:firebase.firestore.FieldValue.serverTimestamp()};
     await db.collection('users').doc(uid).set(profile);
     closeOv('ov_addTutor');
