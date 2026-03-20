@@ -3,11 +3,14 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-<title>Fitbeat Portal v4</title>
+<title>Fitbeat Portal — Login</title>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+
+<!-- Firebase CDN -->
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -33,9 +36,12 @@ input,button,select,textarea{font-family:"DM Sans",sans-serif}
 .field input,.field select,.field textarea{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:11px 15px;color:var(--text);font-size:14px;outline:none;transition:.2s}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--purple);background:#1e1e2e}
 .field input::placeholder{color:var(--muted)}
-.field textarea{resize:vertical;min-height:66px;font-size:14px}
+.field textarea{resize:vertical;min-height:66px}
 .btn-primary{width:100%;background:var(--grad);color:#fff;border:none;border-radius:10px;padding:13px;font-size:15px;font-weight:700;cursor:pointer;transition:.2s;margin-top:4px}
 .btn-primary:hover{opacity:.9;transform:translateY(-1px)}
+.btn-primary:disabled{opacity:.5;cursor:not-allowed;transform:none}
+.btn-google{width:100%;background:var(--card2);color:var(--text);border:1px solid var(--border);border-radius:10px;padding:12px;font-size:14px;font-weight:600;cursor:pointer;transition:.2s;display:flex;align-items:center;justify-content:center;gap:10px;margin-top:8px}
+.btn-google:hover{border-color:var(--purple)}
 .auth-switch{text-align:center;margin-top:14px;font-size:13px;color:var(--muted2)}
 .auth-switch a{color:var(--cyan);font-weight:600;cursor:pointer}
 .forgot-link{text-align:right;margin-top:-8px;margin-bottom:12px}
@@ -48,6 +54,9 @@ input,button,select,textarea{font-family:"DM Sans",sans-serif}
 .err{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.25);color:#fca5a5;border-radius:8px;padding:9px 14px;font-size:13px;margin-bottom:12px;display:none}
 .ok{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:#6ee7b7;border-radius:8px;padding:9px 14px;font-size:13px;margin-bottom:12px;display:none}
 .back-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--cyan);cursor:pointer;margin-bottom:16px}
+.loading-overlay{position:fixed;inset:0;background:var(--black);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--purple);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
 /* PORTAL */
 .portal{position:relative;z-index:1;display:flex;min-height:100vh}
 .sidebar{width:248px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:.3s}
@@ -65,7 +74,8 @@ input,button,select,textarea{font-family:"DM Sans",sans-serif}
 .nb{margin-left:auto;background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:10px;min-width:18px;text-align:center}
 .sb-footer{padding:12px;border-top:1px solid var(--border)}
 .user-info{display:flex;align-items:center;gap:9px;padding:9px;border-radius:9px;background:var(--card2)}
-.av{width:32px;height:32px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-family:"Bebas Neue",sans-serif;font-size:13px;color:#fff;flex-shrink:0}
+.av{width:32px;height:32px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-family:"Bebas Neue",sans-serif;font-size:13px;color:#fff;flex-shrink:0;overflow:hidden}
+.av img{width:100%;height:100%;object-fit:cover}
 .logout-btn{width:100%;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#fca5a5;border-radius:8px;padding:8px;font-size:12px;font-weight:600;cursor:pointer;margin-top:7px;transition:.2s}
 .logout-btn:hover{background:rgba(239,68,68,.18)}
 .main-content{margin-left:248px;flex:1;padding:26px;min-height:100vh}
@@ -75,18 +85,16 @@ input,button,select,textarea{font-family:"DM Sans",sans-serif}
 .ph{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:22px;flex-wrap:wrap;gap:10px}
 .pt{font-family:"Bebas Neue",sans-serif;font-size:32px;letter-spacing:1.5px;color:#fff}
 .ps{font-size:13px;color:var(--muted2);margin-top:2px}
-/* STATS */
 .sg{display:grid;grid-template-columns:repeat(auto-fit,minmax(175px,1fr));gap:13px;margin-bottom:20px}
 .sc{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:16px;position:relative;overflow:hidden;transition:.2s}
 .sc:hover{border-color:rgba(255,255,255,.14);transform:translateY(-2px)}
 .sc::before{content:"";position:absolute;top:-30px;right:-30px;width:90px;height:90px;border-radius:50%;opacity:.12}
-.sc.p::before{background:var(--pink)}.sc.c::before{background:var(--cyan)}.sc.pu::before{background:var(--purple)}.sc.g::before{background:var(--green)}.sc.a::before{background:var(--amber)}.sc.b::before{background:var(--blue)}
+.sc.p::before{background:var(--pink)}.sc.c::before{background:var(--cyan)}.sc.pu::before{background:var(--purple)}.sc.g::before{background:var(--green)}.sc.a::before{background:var(--amber)}
 .si{font-size:20px;margin-bottom:8px}
 .sv{font-family:"Bebas Neue",sans-serif;font-size:27px;letter-spacing:1px;color:#fff;line-height:1}
 .sl{font-size:12px;color:var(--muted2);margin-top:3px}
 .sch{font-size:11px;margin-top:4px;font-weight:600}
 .up{color:var(--green)}.dn{color:var(--red)}
-/* TABLE */
 .tc{background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;margin-bottom:18px}
 .th{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:9px}
 .tt{font-size:14px;font-weight:700;color:#fff}
@@ -111,7 +119,6 @@ tr:hover td{background:rgba(255,255,255,.018)}
 .bc2{background:rgba(0,212,255,.15);color:#22d3ee;border:1px solid rgba(0,212,255,.3)}
 .bp2{background:rgba(168,85,247,.15);color:#c084fc;border:1px solid rgba(168,85,247,.3)}
 .bb2{background:rgba(59,130,246,.15);color:#93c5fd;border:1px solid rgba(59,130,246,.3)}
-/* MODAL */
 .overlay{position:fixed;inset:0;background:rgba(0,0,0,.8);z-index:500;display:none;align-items:center;justify-content:center;padding:16px;backdrop-filter:blur(6px)}
 .overlay.open{display:flex}
 .modal{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:24px;width:100%;max-width:500px;animation:pop .25s ease;max-height:92vh;overflow-y:auto}
@@ -124,33 +131,6 @@ tr:hover td{background:rgba(255,255,255,.018)}
 .dr{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13px}
 .dr:last-child{border-bottom:none}
 .dl{color:var(--muted2)}.dv{font-weight:600;color:#fff;text-align:right}
-/* PAYMENT */
-.plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
-.plan-card{background:var(--card2);border:2px solid var(--border);border-radius:12px;padding:15px;cursor:pointer;transition:.2s;position:relative}
-.plan-card:hover{border-color:rgba(168,85,247,.4)}
-.plan-card.sel{border-color:var(--purple);background:rgba(168,85,247,.06)}
-.plan-card .chk{position:absolute;top:10px;right:10px;width:18px;height:18px;border-radius:50%;background:var(--purple);display:none;align-items:center;justify-content:center;font-size:10px;color:#fff}
-.plan-card.sel .chk{display:flex}
-.plan-name{font-weight:700;font-size:14px;color:#fff;margin-bottom:2px}
-.plan-price{font-family:"Bebas Neue",sans-serif;font-size:22px;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
-.plan-desc{font-size:11px;color:var(--muted2);margin-top:4px;line-height:1.5}
-.pay-methods{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:12px 0}
-.pm{background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:10px;text-align:center;cursor:pointer;transition:.2s;font-size:12px;font-weight:600;color:var(--muted2)}
-.pm:hover,.pm.sel{border-color:var(--purple);color:#fff;background:rgba(168,85,247,.1)}
-.pm .pi{font-size:16px;display:block;margin-bottom:2px}
-.ob{background:var(--card2);border-radius:10px;padding:12px;margin:12px 0}
-.or{display:flex;justify-content:space-between;font-size:13px;color:var(--muted2);margin-bottom:5px}
-.or.tot{border-top:1px solid var(--border);padding-top:8px;margin-top:2px;font-size:14px;font-weight:700;color:#fff}
-.receipt-id{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--cyan);background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.2);border-radius:8px;padding:7px 14px;text-align:center;margin:10px 0}
-/* ATTENDANCE */
-.att-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
-.att-row:last-child{border-bottom:none}
-.att-btn{padding:5px 13px;border-radius:7px;font-size:12px;font-weight:700;cursor:pointer;border:none;transition:.2s}
-.att-p{background:rgba(16,185,129,.12);color:#34d399;border:1px solid rgba(16,185,129,.3)}
-.att-a{background:rgba(239,68,68,.12);color:#fca5a5;border:1px solid rgba(239,68,68,.3)}
-.att-p.on{background:var(--green);color:#fff;border-color:var(--green)}
-.att-a.on{background:var(--red);color:#fff;border-color:var(--red)}
-/* MESSAGING */
 .msg-wrap{display:grid;grid-template-columns:275px 1fr;background:var(--card);border:1px solid var(--border);border-radius:14px;overflow:hidden;height:540px}
 .msg-list{border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
 .msg-list-hdr{padding:12px 14px;border-bottom:1px solid var(--border);font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
@@ -171,7 +151,6 @@ tr:hover td{background:rgba(255,255,255,.018)}
 .msg-inp{flex:1;background:var(--card2);border:1px solid var(--border);border-radius:9px;padding:9px 13px;color:var(--text);font-size:13px;outline:none;resize:none;height:40px;transition:.2s}
 .msg-inp:focus{border-color:var(--purple)}
 .msg-send{background:var(--grad);border:none;border-radius:9px;padding:0 16px;color:#fff;font-weight:700;font-size:13px;cursor:pointer}
-/* SETTINGS */
 .ss{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;margin-bottom:15px}
 .stitle{font-size:14px;font-weight:700;color:#fff;margin-bottom:13px}
 .tog-row{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)}
@@ -180,59 +159,58 @@ tr:hover td{background:rgba(255,255,255,.018)}
 .toggle.on{background:var(--purple);border-color:var(--purple)}
 .toggle::after{content:"";position:absolute;width:15px;height:15px;background:#fff;border-radius:50%;top:3px;left:3px;transition:.3s}
 .toggle.on::after{left:21px}
-/* PAYOUT */
-.payout-card{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:16px}
-.payout-tutor{display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)}
-.cb-wrap{display:flex;align-items:flex-end;gap:6px;height:90px}
-.cb{flex:1;background:linear-gradient(to top,rgba(168,85,247,.55),rgba(0,212,255,.35));border-radius:4px 4px 0 0;position:relative;min-width:16px}
-.cb-val{position:absolute;top:-17px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:700;color:var(--muted2);white-space:nowrap}
-.cb-lbl{font-size:9px;color:var(--muted2);text-align:center;margin-top:3px}
-/* PROFILE */
 .pw{display:grid;grid-template-columns:240px 1fr;gap:17px}
 .pc{background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center}
-.bav{width:68px;height:68px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-family:"Bebas Neue",sans-serif;font-size:26px;color:#fff;margin:0 auto 11px}
-/* WEEKLY SCHED */
-.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:8px;margin-bottom:20px}
-.day-col{background:var(--card);border:1px solid var(--border);border-radius:12px;overflow:hidden;min-height:180px}
-.day-hdr{padding:8px;text-align:center;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase}
-.day-hdr.today{background:rgba(168,85,247,.15);color:var(--purple)}
-.day-slot{padding:7px 8px;border-bottom:1px solid rgba(255,255,255,.04);font-size:11px;cursor:default}
-.day-slot:last-child{border-bottom:none}
-.day-slot .ds-time{color:var(--muted2);font-size:10px;margin-bottom:2px}
-.day-slot .ds-class{font-weight:600;color:#fff;font-size:11px}
-.day-slot .ds-count{color:var(--muted2);font-size:10px;margin-top:1px}
-/* MOBILE */
+.bav{width:68px;height:68px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-family:"Bebas Neue",sans-serif;font-size:26px;color:#fff;margin:0 auto 11px;overflow:hidden}
+.bav img{width:100%;height:100%;object-fit:cover}
+.plan-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.plan-card{background:var(--card2);border:2px solid var(--border);border-radius:12px;padding:15px;cursor:pointer;transition:.2s;position:relative}
+.plan-card:hover{border-color:rgba(168,85,247,.4)}
+.plan-card.sel{border-color:var(--purple);background:rgba(168,85,247,.06)}
+.plan-card .chk{position:absolute;top:10px;right:10px;width:18px;height:18px;border-radius:50%;background:var(--purple);display:none;align-items:center;justify-content:center;font-size:10px;color:#fff}
+.plan-card.sel .chk{display:flex}
+.plan-name{font-weight:700;font-size:14px;color:#fff;margin-bottom:2px}
+.plan-price{font-family:"Bebas Neue",sans-serif;font-size:22px;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+.plan-desc{font-size:11px;color:var(--muted2);margin-top:4px;line-height:1.5}
+.ob{background:var(--card2);border-radius:10px;padding:12px;margin:12px 0}
+.or{display:flex;justify-content:space-between;font-size:13px;color:var(--muted2);margin-bottom:5px}
+.or.tot{border-top:1px solid var(--border);padding-top:8px;margin-top:2px;font-size:14px;font-weight:700;color:#fff}
+.receipt-id{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--cyan);background:rgba(0,212,255,.07);border:1px solid rgba(0,212,255,.2);border-radius:8px;padding:7px 14px;text-align:center;margin:10px 0}
+.empty-state{text-align:center;padding:48px 20px;color:var(--muted2)}
+.empty-state .ei{font-size:40px;margin-bottom:12px}
+.empty-state p{font-size:14px}
 .mobile-topbar{display:none;position:fixed;top:0;left:0;right:0;height:56px;background:var(--card);border-bottom:1px solid var(--border);z-index:200;align-items:center;justify-content:space-between;padding:0 14px}
 .hamburger{background:none;border:none;color:var(--text);font-size:20px;cursor:pointer}
 .sb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99;display:none}
-@media(max-width:900px){.pw{grid-template-columns:1fr}.plan-grid{grid-template-columns:1fr}.msg-wrap{grid-template-columns:1fr;height:auto}.msg-list{height:180px;border-right:none;border-bottom:1px solid var(--border)}.week-grid{grid-template-columns:repeat(3,1fr)}}
+@media(max-width:900px){.pw{grid-template-columns:1fr}.plan-grid{grid-template-columns:1fr}.msg-wrap{grid-template-columns:1fr;height:auto}.msg-list{height:180px;border-right:none;border-bottom:1px solid var(--border)}}
 @media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.sb-overlay.open{display:block}.mobile-topbar{display:flex}.main-content{margin-left:0;padding:66px 13px 20px}.sg{grid-template-columns:1fr 1fr}}
-@keyframes spin{to{transform:rotate(360deg)}}
 </style>
 </head>
 <body>
 <div class="mesh"></div>
 <div id="toast" style="position:fixed;bottom:22px;right:22px;z-index:9999;background:var(--card);border:1px solid rgba(16,185,129,.4);border-radius:12px;padding:12px 17px;font-size:13px;font-weight:600;color:#fff;box-shadow:0 8px 40px rgba(0,0,0,.5);transform:translateY(90px);opacity:0;transition:.3s;max-width:320px;pointer-events:none"></div>
-<div id="loadingScreen" style="position:fixed;inset:0;background:var(--black);z-index:9999;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px">
-  <div style="width:40px;height:40px;border:3px solid rgba(255,255,255,.1);border-top-color:#a855f7;border-radius:50%;animation:spin .8s linear infinite"></div>
-  <div style="font-size:13px;color:#888">Loading Fitbeat Portal...</div>
+
+<!-- Loading -->
+<div id="loadingScreen" class="loading-overlay">
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:var(--muted2)">Loading Fitbeat Portal...</div>
 </div>
 
-<!-- ═══ RECEIPT MODAL ═══ -->
+<!-- Receipt Modal -->
 <div id="ov_receipt" class="overlay">
   <div class="modal">
     <div style="text-align:center;font-size:46px;margin-bottom:9px">🎉</div>
     <div style="text-align:center;margin-bottom:13px">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:#fff;letter-spacing:1px">Payment Successful!</div>
-      <div style="font-size:12px;color:var(--muted2);margin-top:2px">Recorded · Receipt will be emailed</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;color:#fff;letter-spacing:1px">Payment Recorded!</div>
+      <div style="font-size:12px;color:var(--muted2);margin-top:2px">Admin has been notified</div>
     </div>
     <div class="receipt-id" id="receiptId"></div>
     <div id="receiptDet"></div>
-    <button class="btn-primary" style="margin-top:13px" onclick="closeReceipt()">Go to My Dashboard →</button>
+    <button class="btn-primary" style="margin-top:13px" onclick="closeOv('ov_receipt');navTo('sDash')">Go to Dashboard →</button>
   </div>
 </div>
 
-<!-- ═══ ADD STUDENT MODAL ═══ -->
+<!-- Add Student Modal -->
 <div id="ov_addSt" class="overlay">
   <div class="modal modal-wide">
     <div class="mh"><div class="mt2">Add New Student</div><button class="mc" onclick="closeOv('ov_addSt')">✕</button></div>
@@ -244,23 +222,23 @@ tr:hover td{background:rgba(255,255,255,.018)}
       <div class="field"><label>Phone</label><input id="as_ph" placeholder="9876543210"/></div>
       <div class="field"><label>Class</label>
         <select id="as_cl" onchange="updateBatches('as_bt','as_cl','as_fee')">
-          <option value="">Select class...</option>
+          <option value="">Select...</option>
           <option>Zumba</option><option>Dance</option><option>Kids Dance</option><option>Chess</option><option>Guitar</option>
         </select>
       </div>
       <div class="field"><label>Batch</label><select id="as_bt"><option value="">Select class first...</option></select></div>
-      <div class="field"><label>Monthly Fee (₹)</label><input id="as_fee" placeholder="Auto-filled on class select" readonly style="color:var(--cyan)"/></div>
+      <div class="field"><label>Monthly Fee (₹)</label><input id="as_fee" readonly style="color:var(--cyan)"/></div>
       <div class="field"><label>First Session Date</label><input id="as_dt" type="date"/></div>
     </div>
-    <div class="field"><label>Notes (optional)</label><textarea id="as_nt" placeholder="Any notes..."></textarea></div>
+    <div class="field"><label>Notes</label><textarea id="as_nt" placeholder="Any notes..."></textarea></div>
     <div style="display:flex;gap:10px;margin-top:4px">
       <button class="bsm bo" style="flex:1;padding:11px" onclick="closeOv('ov_addSt')">Cancel</button>
-      <button class="btn-primary" style="flex:2" onclick="doAddStudent()">Add Student →</button>
+      <button class="btn-primary" style="flex:2" id="addStBtn" onclick="doAddStudent()">Add Student →</button>
     </div>
   </div>
 </div>
 
-<!-- ═══ ADD TUTOR MODAL ═══ -->
+<!-- Add Tutor Modal -->
 <div id="ov_addTutor" class="overlay">
   <div class="modal">
     <div class="mh"><div class="mt2">Add Tutor Login</div><button class="mc" onclick="closeOv('ov_addTutor')">✕</button></div>
@@ -269,73 +247,64 @@ tr:hover td{background:rgba(255,255,255,.018)}
       <div class="field"><label>First Name</label><input id="at_fn" placeholder="Rahul"/></div>
       <div class="field"><label>Last Name</label><input id="at_ln" placeholder="Sharma"/></div>
     </div>
-    <div class="field"><label>Email (will be their login)</label><input id="at_em" type="email" placeholder="rahul@fitbeat26.com"/></div>
+    <div class="field"><label>Email (login)</label><input id="at_em" type="email" placeholder="rahul@fitbeat26.com"/></div>
     <div class="field"><label>Phone</label><input id="at_ph" placeholder="9988776655"/></div>
-    <div class="field"><label>Classes They Teach</label>
+    <div class="field"><label>Classes (hold Ctrl for multiple)</label>
       <select id="at_cl" multiple style="height:90px">
         <option>Dance</option><option>Kids Dance</option><option>Chess</option><option>Guitar</option><option>Zumba</option>
       </select>
-      <div style="font-size:11px;color:var(--muted2);margin-top:4px">Hold Ctrl/Cmd to select multiple</div>
     </div>
-    <div class="field"><label>Set Login Password</label><input id="at_pw" type="password" placeholder="Min 8 characters"/></div>
+    <div class="field"><label>Set Password</label><input id="at_pw" type="password" placeholder="Min 8 characters"/></div>
     <div style="display:flex;gap:10px;margin-top:4px">
       <button class="bsm bo" style="flex:1;padding:11px" onclick="closeOv('ov_addTutor')">Cancel</button>
-      <button class="btn-primary" style="flex:2" onclick="doAddTutor()">Create Tutor Login →</button>
+      <button class="btn-primary" style="flex:2" id="addTutorBtn" onclick="doAddTutor()">Create Tutor Login →</button>
     </div>
   </div>
 </div>
 
-<!-- ═══ CASH PAYMENT MODAL ═══ -->
+<!-- Cash Payment Modal -->
 <div id="ov_cash" class="overlay">
   <div class="modal">
     <div class="mh"><div class="mt2">Record Cash / Offline Payment</div><button class="mc" onclick="closeOv('ov_cash')">✕</button></div>
     <div id="cashErr" class="err"></div>
-    <div class="field"><label>Student</label>
-      <select id="cash_st"><option value="">Select student...</option></select>
-    </div>
+    <div class="field"><label>Student</label><select id="cash_st"><option value="">Select student...</option></select></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="field"><label>Amount (₹)</label><input id="cash_amt" type="number" placeholder="1999"/></div>
       <div class="field"><label>Payment Date</label><input id="cash_dt" type="date"/></div>
     </div>
-    <div class="field"><label>Payment Method</label>
-      <select id="cash_method">
-        <option value="Cash">Cash</option>
-        <option value="Bank Transfer">Bank Transfer</option>
-        <option value="Cheque">Cheque</option>
-        <option value="UPI (Offline)">UPI (Offline)</option>
-      </select>
+    <div class="field"><label>Method</label>
+      <select id="cash_method"><option>Cash</option><option>Bank Transfer</option><option>Cheque</option><option>UPI (Offline)</option></select>
     </div>
-    <div class="field"><label>Notes / Receipt Number (optional)</label><input id="cash_note" placeholder="e.g. Cash received, Receipt #045"/></div>
+    <div class="field"><label>Notes / Receipt No.</label><input id="cash_note" placeholder="e.g. Cash received, Receipt #045"/></div>
     <div style="display:flex;gap:10px;margin-top:4px">
       <button class="bsm bo" style="flex:1;padding:11px" onclick="closeOv('ov_cash')">Cancel</button>
-      <button class="btn-primary" style="flex:2" onclick="doRecordCash()">Record Payment →</button>
+      <button class="btn-primary" style="flex:2" id="cashBtn" onclick="doRecordCash()">Record Payment →</button>
     </div>
   </div>
 </div>
 
-<!-- ═══ VIEW STUDENT MODAL ═══ -->
+<!-- View Student Modal -->
 <div id="ov_viewSt" class="overlay">
   <div class="modal modal-wide">
     <div class="mh"><div class="mt2" id="vs_title">Student</div><button class="mc" onclick="closeOv('ov_viewSt')">✕</button></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
       <div><div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Details</div><div id="vs_info"></div></div>
-      <div><div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Payment History</div><div id="vs_pays"></div></div>
+      <div><div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Payments</div><div id="vs_pays"></div></div>
     </div>
     <div style="display:flex;gap:9px;margin-top:16px">
-      <button class="bsm bam" style="flex:1;padding:9px" onclick="closeOv('ov_viewSt');showToast('✏️ Edit — coming in live version','success')">Edit</button>
-      <button class="bsm bd" style="flex:1;padding:9px" onclick="closeOv('ov_viewSt');prepCash(currentViewId);openOv('ov_cash')">+ Add Payment</button>
-      <button class="bsm ba2" style="flex:1;padding:9px" onclick="closeOv('ov_viewSt');showToast('📲 WhatsApp reminder sent','success')">Remind</button>
+      <button class="bsm bam" style="flex:1;padding:9px" onclick="closeOv('ov_viewSt');prepCash(currentViewId)">+ Add Payment</button>
+      <button class="bsm bd" style="flex:1;padding:9px" onclick="sendReminderWA()">Send Reminder</button>
     </div>
   </div>
 </div>
 
-<!-- ═══ LOGIN ═══ -->
+<!-- ══════════ LOGIN ══════════ -->
 <div id="loginScreen" class="screen active">
   <div class="auth-wrap">
     <div class="auth-box">
       <div class="brand" style="font-size:22px;text-align:center;margin-bottom:3px">Fitbeat Dance Fitness Studio</div>
       <div style="font-size:11px;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;text-align:center;margin-bottom:20px">Member Portal</div>
-      <div class="tab-switch" id="loginTabs">
+      <div class="tab-switch">
         <button class="tab-btn active" onclick="setTab('student')">Student</button>
         <button class="tab-btn" onclick="setTab('tutor')">Tutor</button>
         <button class="tab-btn" onclick="setTab('admin')">Admin</button>
@@ -344,20 +313,25 @@ tr:hover td{background:rgba(255,255,255,.018)}
       <div class="field"><label>Email</label><input type="email" id="le" placeholder="you@email.com" onkeydown="if(event.key==='Enter')doLogin()"/></div>
       <div class="field"><label>Password</label><input type="password" id="lp" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/></div>
       <div class="forgot-link"><a onclick="showScreen('forgotScreen')">Forgot password?</a></div>
-      <button class="btn-primary" onclick="doLogin()">Sign In →</button>
+      <button class="btn-primary" id="loginBtn" onclick="doLogin()">Sign In →</button>
+      <div class="divider">or</div>
+      <button class="btn-google" id="googleBtn" onclick="doGoogleLogin()">
+        <svg width="18" height="18" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.18 1.48-4.97 2.35-8.16 2.35-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+        Continue with Google
+      </button>
       <div id="studentSignupLink" class="auth-switch">New student? <a onclick="showScreen('signupScreen')">Create account</a></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ SIGNUP (students only) ═══ -->
+<!-- SIGNUP -->
 <div id="signupScreen" class="screen">
   <div class="auth-wrap">
     <div class="auth-box" style="max-width:500px">
-      <div class="back-link" onclick="showScreen('loginScreen')">← Back to login</div>
+      <div class="back-link" onclick="showScreen('loginScreen')">← Back</div>
       <div class="brand" style="font-size:20px;text-align:center;margin-bottom:3px">Fitbeat Dance Fitness Studio</div>
       <div style="font-size:11px;letter-spacing:2px;color:var(--muted2);text-transform:uppercase;text-align:center;margin-bottom:18px">Student Registration</div>
-      <div id="suErr" class="err"></div><div id="suOk" class="ok">Account created! Taking you to your dashboard...</div>
+      <div id="suErr" class="err"></div><div id="suOk" class="ok">Account created! Signing you in...</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="field"><label>First Name</label><input id="su_fn" placeholder="Priya"/></div>
         <div class="field"><label>Last Name</label><input id="su_ln" placeholder="Sharma"/></div>
@@ -366,7 +340,7 @@ tr:hover td{background:rgba(255,255,255,.018)}
       <div class="field"><label>Phone</label><input type="tel" id="su_ph" placeholder="9876543210"/></div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
         <div class="field"><label>Area / Locality</label><input id="su_area" placeholder="Bhandup East"/></div>
-        <div class="field"><label>Building Name</label><input id="su_bldg" placeholder="Anand Dham Society"/></div>
+        <div class="field"><label>Building Name</label><input id="su_bldg" placeholder="Anand Dham"/></div>
       </div>
       <div class="field"><label>Class</label>
         <select id="su_cl" onchange="updateBatches('su_bt','su_cl',null)">
@@ -376,20 +350,21 @@ tr:hover td{background:rgba(255,255,255,.018)}
       </div>
       <div class="field"><label>Preferred Batch</label><select id="su_bt"><option value="">Select class first...</option></select></div>
       <div class="field"><label>Password</label><input type="password" id="su_pw" placeholder="Min 8 characters"/></div>
-      <button class="btn-primary" onclick="doSignup()">Create Account →</button>
+      <button class="btn-primary" id="signupBtn" onclick="doSignup()">Create Account →</button>
       <div class="auth-switch">Already registered? <a onclick="showScreen('loginScreen')">Sign in</a></div>
     </div>
   </div>
 </div>
 
-<!-- ═══ FORGOT ═══ -->
+<!-- FORGOT -->
 <div id="forgotScreen" class="screen">
   <div class="auth-wrap">
     <div class="auth-box">
-      <div class="back-link" onclick="showScreen('loginScreen')">← Back to login</div>
+      <div class="back-link" onclick="showScreen('loginScreen')">← Back</div>
       <div style="font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:1px;color:#fff;margin-bottom:5px">Reset Password</div>
-      <div style="font-size:13px;color:var(--muted2);margin-bottom:18px">Enter your email — we'll send a reset link</div>
+      <div style="font-size:13px;color:var(--muted2);margin-bottom:18px">We'll send a reset link to your email</div>
       <div id="fgOk" class="ok">✅ Reset link sent! Check your inbox.</div>
+      <div id="fgErr" class="err"></div>
       <div class="field"><label>Email</label><input type="email" id="fe" placeholder="you@email.com"/></div>
       <button class="btn-primary" onclick="doForgot()">Send Reset Link →</button>
       <div class="auth-switch">Remembered? <a onclick="showScreen('loginScreen')">Sign in</a></div>
@@ -397,7 +372,7 @@ tr:hover td{background:rgba(255,255,255,.018)}
   </div>
 </div>
 
-<!-- ═══ PORTAL ═══ -->
+<!-- PORTAL -->
 <div id="portalScreen" class="screen">
   <div class="mobile-topbar">
     <button class="hamburger" onclick="toggleSB()">☰</button>
@@ -415,8 +390,8 @@ tr:hover td{background:rgba(255,255,255,.018)}
       <div class="user-info">
         <div class="av" id="sbAv">P</div>
         <div style="overflow:hidden">
-          <div style="font-size:13px;font-weight:600;color:#fff" id="sbName">Priya</div>
-          <div style="font-size:11px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:135px" id="sbEmail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="8afaf8e3f3ebcaede7ebe3e6a4e9e5e7">[email&#160;protected]</a></div>
+          <div style="font-size:13px;font-weight:600;color:#fff" id="sbName">Loading...</div>
+          <div style="font-size:11px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:135px" id="sbEmail"></div>
         </div>
       </div>
       <button class="logout-btn" onclick="doLogout()">Sign Out</button>
@@ -425,50 +400,10 @@ tr:hover td{background:rgba(255,255,255,.018)}
   <div class="main-content" id="mc"></div>
 </div>
 
-<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
-// ═══════════════════════════════════════════════════════
-// BATCH CONFIG
-// ═══════════════════════════════════════════════════════
-const BATCH_OPTS = {
-  'Zumba': [
-    'Mon–Wed–Fri Morning 7–8 AM','Mon–Wed–Fri Morning 8–9 AM','Mon–Wed–Fri Morning 9–10 AM',
-    'Mon–Wed–Fri Evening 7–8 PM','Mon–Wed–Fri Evening 8–9 PM','Mon–Wed–Fri Evening 9–10 PM',
-    'Tue–Thu–Sat Morning 7–8 AM','Tue–Thu–Sat Morning 8–9 AM','Tue–Thu–Sat Morning 9–10 AM',
-    'Tue–Thu–Sat Evening 6–7 PM','Tue–Thu–Sat Evening 7–8 PM','Tue–Thu–Sat Evening 8–9 PM','Tue–Thu–Sat Evening 9–10 PM',
-  ],
-  'Dance': ['Tue–Thu Batch 1 (9–10 AM)','Tue–Thu Batch 2 (10–11 AM)'],
-  'Kids Dance': ['Tue–Thu 7–9 PM'],
-  'Chess': ['Sat Evening 7–8 PM','Sun Morning 10–11 AM'],
-  'Guitar': ['Wed–Fri 6–7 PM'],
-};
-
-const CLASS_FEES = {Zumba:1999, Dance:1499, 'Kids Dance':1199, Chess:1499, Guitar:1999};
-
-// Tutor share per student per cycle
-function tutorShare(cls, students) {
-  if (cls === 'Guitar') return students * 999.5;
-  if (cls === 'Dance' || cls === 'Kids Dance') return students * 500;
-  if (cls === 'Chess') return students * 749.5;
-  if (cls === 'Zumba') return 3000; // flat per batch
-  return 0;
-}
-
-function updateBatches(btId, clId, feeId) {
-  const cls = document.getElementById(clId).value;
-  const btSel = document.getElementById(btId);
-  const opts = BATCH_OPTS[cls] || [];
-  btSel.innerHTML = opts.length
-    ? opts.map(b => `<option>${b}</option>`).join('')
-    : '<option value="">Select class first...</option>';
-  if (feeId) {
-    const feeEl = document.getElementById(feeId);
-    if (feeEl) feeEl.value = CLASS_FEES[cls] ? '₹' + CLASS_FEES[cls].toLocaleString() : '';
-  }
-}
-
-// ═══════════════════════════════════════════════════════
-// FIREBASE
-// ═══════════════════════════════════════════════════════
+<script>
+// ═══════════════════════════════════════════════════
+// FIREBASE INIT
+// ═══════════════════════════════════════════════════
 const firebaseConfig = {
   apiKey: "AIzaSyAnZAvmfOmYztCWt0rYogZD0p2MwV4p7is",
   authDomain: "fitbeat26-f25c3.firebaseapp.com",
@@ -480,49 +415,54 @@ const firebaseConfig = {
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
+const googleProvider = new firebase.auth.GoogleAuthProvider();
 
-// Live data
-let STUDENTS = [];
-let PAYMENTS = [];
-let MESSAGES = [];
+// ═══════════════════════════════════════════════════
+// BATCH / FEE CONFIG
+// ═══════════════════════════════════════════════════
+const BATCH_OPTS = {
+  'Zumba':['Mon–Wed–Fri Morning 7–8 AM','Mon–Wed–Fri Morning 8–9 AM','Mon–Wed–Fri Morning 9–10 AM','Mon–Wed–Fri Evening 7–8 PM','Mon–Wed–Fri Evening 8–9 PM','Mon–Wed–Fri Evening 9–10 PM','Tue–Thu–Sat Morning 7–8 AM','Tue–Thu–Sat Morning 8–9 AM','Tue–Thu–Sat Morning 9–10 AM','Tue–Thu–Sat Evening 6–7 PM','Tue–Thu–Sat Evening 7–8 PM','Tue–Thu–Sat Evening 8–9 PM','Tue–Thu–Sat Evening 9–10 PM'],
+  'Dance':['Tue–Thu Batch 1 (9–10 AM)','Tue–Thu Batch 2 (10–11 AM)'],
+  'Kids Dance':['Tue–Thu 7–9 PM'],
+  'Chess':['Sat Evening 7–8 PM','Sun Morning 10–11 AM'],
+  'Guitar':['Wed–Fri 6–7 PM'],
+};
+const CLASS_FEES = {Zumba:1999,Dance:1499,'Kids Dance':1199,Chess:1499,Guitar:1999};
 
-async function loadPortalData(){
-  try{
-    if(CU.role==='admin'){
-      const [s,p,m]=await Promise.all([
-        db.collection('students').orderBy('createdAt','desc').get(),
-        db.collection('payments').orderBy('createdAt','desc').limit(200).get(),
-        db.collection('messages').orderBy('createdAt','desc').get(),
-      ]);
-      STUDENTS=s.docs.map(d=>{const x=d.data();return{id:d.id,fn:x.firstName||x.fn||'',ln:x.lastName||x.ln||'',email:x.email||'',class:x.class||'',batch:x.batch||'',phone:x.phone||'',area:x.area||'',building:x.building||'',firstSession:x.firstSession||x.firstSessionDate||'',status:x.status||'Active',fee:x.fee||1999,...x};});
-      PAYMENTS=p.docs.map(d=>({id:d.id,...d.data()}));
-      MESSAGES=m.docs.map(d=>({id:d.id,...d.data()}));
-    } else if(CU.role==='tutor'){
-      const teaches=CU.teaches||[];
-      const s=await db.collection('students').get();
-      STUDENTS=s.docs.map(d=>{const x=d.data();return{id:d.id,fn:x.firstName||x.fn||'',ln:x.lastName||x.ln||'',email:x.email||'',class:x.class||'',batch:x.batch||'',phone:x.phone||'',firstSession:x.firstSession||'',status:x.status||'Active',fee:x.fee||1999,...x};}).filter(x=>teaches.includes(x.class));
-      const mg=await db.collection('messages').where('fromUid','==',CU.uid).get();
-      MESSAGES=mg.docs.map(d=>({id:d.id,...d.data()}));
-    } else {
-      const p=await db.collection('payments').where('studentUid','==',CU.uid).get();
-      PAYMENTS=p.docs.map(d=>({id:d.id,...d.data()}));
-      const mg=await db.collection('messages').where('fromUid','==',CU.uid).get();
-      MESSAGES=mg.docs.map(d=>({id:d.id,...d.data()}));
-    }
-  }catch(e){console.error('loadPortalData',e);}
+function updateBatches(btId,clId,feeId){
+  const cls=document.getElementById(clId).value;
+  const bt=document.getElementById(btId);
+  const opts=BATCH_OPTS[cls]||[];
+  bt.innerHTML=opts.length?opts.map(b=>`<option>${b}</option>`):'<option>Select class first...</option>';
+  if(feeId){const f=document.getElementById(feeId);if(f)f.value=CLASS_FEES[cls]?'₹'+CLASS_FEES[cls].toLocaleString():'';}
 }
 
-// State
-let CU = null, selPlan = 1, selMethod = 'upi', builtPages = {}, activeMsgId = null, currentViewId = null;
+function tutorShare(cls,count){
+  if(cls==='Guitar')return count*999.5;
+  if(cls==='Dance'||cls==='Kids Dance')return count*500;
+  if(cls==='Chess')return count*749.5;
+  if(cls==='Zumba')return 3000;
+  return 0;
+}
 
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════════
+let CU = null; // current user profile from Firestore
+let builtPages = {};
+let currentViewId = null;
+let selPlan = 1, selMethod = 'upi', curFee1 = 1999, curFee2 = 5499;
+let activeMsgId = null;
+let allStudents = [], allPayments = [], allMessages = [];
+
+// ═══════════════════════════════════════════════════
 // UTILS
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById(id).classList.add('active');}
-function showLoading(v){document.getElementById('loadingScreen').style.display=v?'flex':'none';}
 function openOv(id){document.getElementById(id).classList.add('open');}
 function closeOv(id){document.getElementById(id).classList.remove('open');}
-function showToast(msg,type){
+function showLoading(show){document.getElementById('loadingScreen').style.display=show?'flex':'none';}
+function showToast(msg,type='success'){
   const t=document.getElementById('toast');
   t.innerHTML=msg;
   t.style.borderColor=type==='success'?'rgba(16,185,129,.4)':'rgba(239,68,68,.4)';
@@ -530,39 +470,42 @@ function showToast(msg,type){
   clearTimeout(t._t);t._t=setTimeout(()=>{t.style.transform='translateY(90px)';t.style.opacity='0';},3500);
 }
 function toggleSB(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sbOv').classList.toggle('open');}
-function sb(s){const m={Paid:'bg2',Pending:'bam2',Refunded:'br2',Active:'bg2',Inactive:'br2',Resolved:'bg2',Open:'bam2','Cash':'bc2'};return`<span class="badge ${m[s]||'bc2'}">${s}</span>`;}
+function sb(s){const m={Paid:'bg2',Pending:'bam2',Refunded:'br2',Active:'bg2',Inactive:'br2',Resolved:'bg2',Open:'bam2'};return`<span class="badge ${m[s]||'bc2'}">${s}</span>`;}
 function cb(c){const m={Zumba:'bc2',Dance:'bp2','Kids Dance':'bp2',Chess:'bb2',Guitar:'bam2'};return`<span class="badge ${m[c]||'bc2'}">${c}</span>`;}
-function ft(inp,id){const v=inp.value.toLowerCase();document.getElementById(id).querySelectorAll('tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(v)?'':'none'});}
-function fc(el){let v=el.value.replace(/\D/g,'').slice(0,16);el.value=v.replace(/(\d{4})/g,'$1 ').trim();}
+function ft(inp,id){const v=inp.value.toLowerCase();document.querySelectorAll('#'+id+' tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(v)?'':'none';});}
+function setErr(id,msg){const el=document.getElementById(id);if(el){el.textContent=msg;el.style.display=msg?'block':'none';}}
+function setBtnLoading(id,loading,label=''){const btn=document.getElementById(id);if(btn){btn.disabled=loading;if(label||loading)btn.textContent=loading?'Please wait...':label;}}
+function nowStr(){return new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});}
+function timeStr(){return new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'});}
 function rebuildPage(id){const el=document.getElementById('pg_'+id);if(el)el.remove();builtPages[id]=false;buildPage(id);showPage(id);}
-function sName(s){return(s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')}
 
-// Fallback: show login after 7s if Firebase is slow
-setTimeout(()=>{if(!CU){showLoading(false);showScreen('loginScreen');}},7000);
-
-// ═══════════════════════════════════════════════════════
-// FIREBASE AUTH
-// ═══════════════════════════════════════════════════════
-auth.onAuthStateChanged(async(user)=>{
-  if(user){
+// ═══════════════════════════════════════════════════
+// AUTH STATE OBSERVER
+// ═══════════════════════════════════════════════════
+auth.onAuthStateChanged(async (user) => {
+  if (user) {
     showLoading(true);
-    try{
-      const doc=await db.collection('users').doc(user.uid).get();
-      if(doc.exists){
-        CU={uid:user.uid,email:user.email,...doc.data()};
+    try {
+      // Get user profile from Firestore
+      const doc = await db.collection('users').doc(user.uid).get();
+      if (doc.exists) {
+        CU = {uid: user.uid, email: user.email, photoURL: user.photoURL, ...doc.data()};
         await loadPortalData();
         enterPortal();
       } else {
-        // No profile yet — send to signup
+        // New Google user — needs to complete signup
         showLoading(false);
         showScreen('signupScreen');
-        const el=document.getElementById('su_em');if(el)el.value=user.email||'';
-        window._pendingUid=user.uid;
+        // Pre-fill email
+        const emEl=document.getElementById('su_em');if(emEl)emEl.value=user.email||'';
+        // Store temp google uid
+        window._pendingGoogleUser = user;
+        showToast('Please complete your registration','success');
       }
-    }catch(e){
+    } catch(e) {
       showLoading(false);
       showScreen('loginScreen');
-      showToast('Error: '+e.message,'error');
+      showToast('Error loading profile: '+e.message,'error');
     }
   } else {
     showLoading(false);
@@ -570,35 +513,80 @@ auth.onAuthStateChanged(async(user)=>{
   }
 });
 
-// ═══════════════════════════════════════════════════════
-// AUTH FUNCTIONS
-// ═══════════════════════════════════════════════════════
-let ltv='student';
+// ═══════════════════════════════════════════════════
+// LOAD PORTAL DATA FROM FIRESTORE
+// ═══════════════════════════════════════════════════
+async function loadPortalData() {
+  try {
+    if (CU.role === 'admin') {
+      const [stuSnap, paySnap, msgSnap] = await Promise.all([
+        db.collection('students').orderBy('createdAt','desc').get(),
+        db.collection('payments').orderBy('date','desc').limit(100).get(),
+        db.collection('messages').orderBy('createdAt','desc').get(),
+      ]);
+      allStudents = stuSnap.docs.map(d=>({id:d.id,...d.data()}));
+      allPayments = paySnap.docs.map(d=>({id:d.id,...d.data()}));
+      allMessages = msgSnap.docs.map(d=>({id:d.id,...d.data()}));
+    } else if (CU.role === 'tutor') {
+      const stuSnap = await db.collection('students').where('class','in',CU.teaches).get();
+      allStudents = stuSnap.docs.map(d=>({id:d.id,...d.data()}));
+      const msgSnap = await db.collection('messages').where('fromUid','==',CU.uid).orderBy('createdAt','desc').get();
+      allMessages = msgSnap.docs.map(d=>({id:d.id,...d.data()}));
+    } else {
+      // Student — load their own payments and messages
+      const [paySnap, msgSnap] = await Promise.all([
+        db.collection('payments').where('studentUid','==',CU.uid).orderBy('date','desc').get(),
+        db.collection('messages').where('fromUid','==',CU.uid).orderBy('createdAt','desc').get(),
+      ]);
+      allPayments = paySnap.docs.map(d=>({id:d.id,...d.data()}));
+      allMessages = msgSnap.docs.map(d=>({id:d.id,...d.data()}));
+    }
+  } catch(e) {
+    console.error('Error loading data:', e);
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// AUTH ACTIONS
+// ═══════════════════════════════════════════════════
+let loginTab = 'student';
 function setTab(t){
-  ltv=t;
+  loginTab=t;
   document.querySelectorAll('.tab-btn').forEach((b,i)=>b.classList.toggle('active',['student','tutor','admin'][i]===t));
   document.getElementById('studentSignupLink').style.display=t==='student'?'block':'none';
-  document.getElementById('le').value='';
-  document.getElementById('lp').value='';
-  document.getElementById('loginErr').style.display='none';
+  document.getElementById('googleBtn').style.display=t==='student'?'flex':'none';
+  setErr('loginErr','');
 }
 
 async function doLogin(){
   const email=document.getElementById('le').value.trim().toLowerCase();
   const pass=document.getElementById('lp').value;
-  const err=document.getElementById('loginErr');
-  err.style.display='none';
-  if(!email||!pass){err.textContent='Please enter email and password.';err.style.display='block';return;}
-  const btn=document.querySelector('#loginScreen .btn-primary');
-  if(btn){btn.disabled=true;btn.textContent='Signing in...';}
-  try{
+  setErr('loginErr','');
+  if(!email||!pass){setErr('loginErr','Please enter email and password.');return;}
+  setBtnLoading('loginBtn',true);
+  try {
     await auth.signInWithEmailAndPassword(email,pass);
     // onAuthStateChanged handles the rest
-  }catch(e){
-    if(btn){btn.disabled=false;btn.textContent='Sign In →';}
-    const msgs={'auth/user-not-found':'No account found with this email.','auth/wrong-password':'Incorrect password.','auth/invalid-credential':'Incorrect email or password.','auth/too-many-requests':'Too many attempts. Try again later.'};
-    err.textContent=msgs[e.code]||e.message;
-    err.style.display='block';
+  } catch(e){
+    setBtnLoading('loginBtn',false,'Sign In →');
+    const msgs={
+      'auth/user-not-found':'No account found with this email.',
+      'auth/wrong-password':'Incorrect password. Please try again.',
+      'auth/invalid-email':'Please enter a valid email address.',
+      'auth/too-many-requests':'Too many attempts. Please try again later.',
+    };
+    setErr('loginErr',msgs[e.code]||e.message);
+  }
+}
+
+async function doGoogleLogin(){
+  setBtnLoading('googleBtn',true);
+  try {
+    await auth.signInWithPopup(googleProvider);
+    // onAuthStateChanged handles rest
+  } catch(e){
+    setBtnLoading('googleBtn',false);
+    setErr('loginErr',e.message);
   }
 }
 
@@ -612,73 +600,69 @@ async function doSignup(){
   const cl=document.getElementById('su_cl').value;
   const bt=document.getElementById('su_bt').value;
   const pw=document.getElementById('su_pw').value;
-  const err=document.getElementById('suErr'),ok=document.getElementById('suOk');
-  err.style.display='none';
-  if(!fn||!ln||!em||!ph||!cl||!bt){err.textContent='Please fill all fields including batch.';err.style.display='block';return;}
-  if(!window._pendingUid&&pw.length<8){err.textContent='Password must be at least 8 characters.';err.style.display='block';return;}
-  const btn=document.getElementById('signupBtn');if(btn){btn.disabled=true;btn.textContent='Creating...';}
-  try{
-    let uid=window._pendingUid;
-    if(!uid){const c=await auth.createUserWithEmailAndPassword(em,pw);uid=c.user.uid;}
+  setErr('suErr','');
+  if(!fn||!ln||!em||!ph||!cl||!bt){setErr('suErr','Please fill all fields including batch.');return;}
+  if(!window._pendingGoogleUser&&pw.length<8){setErr('suErr','Password must be at least 8 characters.');return;}
+  setBtnLoading('signupBtn',true);
+  try {
+    let uid;
+    if(window._pendingGoogleUser){
+      uid=window._pendingGoogleUser.uid;
+    } else {
+      const cred=await auth.createUserWithEmailAndPassword(em,pw);
+      uid=cred.user.uid;
+    }
     const today=new Date().toISOString().split('T')[0];
-    const profile={firstName:fn,lastName:ln,fn,ln,name:fn+' '+ln,email:em,phone:ph,area,building:bldg,class:cl,batch:bt,fee:CLASS_FEES[cl]||1999,role:'student',status:'Active',firstSession:today,uid,createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+    const profile={
+      firstName:fn,lastName:ln,name:fn+' '+ln,
+      email:em,phone:ph,area,building:bldg,
+      class:cl,batch:bt,fee:CLASS_FEES[cl]||1999,
+      role:'student',status:'Active',
+      firstSession:today,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+    };
+    // Save to users collection (for login) and students collection (for admin)
     await db.collection('users').doc(uid).set(profile);
-    await db.collection('students').doc(uid).set(profile);
-    ok.style.display='block';
-    window._pendingUid=null;
-  }catch(e){
-    if(btn){btn.disabled=false;btn.textContent='Create Account →';}
+    await db.collection('students').doc(uid).set({...profile,uid});
+    document.getElementById('suOk').style.display='block';
+    window._pendingGoogleUser=null;
+    // onAuthStateChanged will pick up and load portal
+  } catch(e){
+    setBtnLoading('signupBtn',false,'Create Account →');
     const msgs={'auth/email-already-in-use':'This email is already registered. Please sign in.'};
-    err.textContent=msgs[e.code]||e.message;err.style.display='block';
+    setErr('suErr',msgs[e.code]||e.message);
   }
 }
 
 async function doForgot(){
   const em=document.getElementById('fe').value.trim();
-  const err=document.getElementById('fgErr'),ok=document.getElementById('fgOk');
-  if(err)err.style.display='none';if(ok)ok.style.display='none';
-  if(!em){if(err){err.textContent='Please enter your email.';err.style.display='block';}return;}
-  try{
+  setErr('fgErr','');
+  document.getElementById('fgOk').style.display='none';
+  if(!em){setErr('fgErr','Please enter your email.');return;}
+  try {
     await auth.sendPasswordResetEmail(em);
-    if(ok)ok.style.display='block';
+    document.getElementById('fgOk').style.display='block';
     showToast('📧 Reset link sent to '+em,'success');
-  }catch(e){
-    if(err){err.textContent=e.message;err.style.display='block';}
+  } catch(e){
+    const msgs={'auth/user-not-found':'No account found with this email.'};
+    setErr('fgErr',msgs[e.code]||e.message);
   }
 }
 
-// ═══════════════════════════════════════════════════════
+async function doLogout(){
+  await auth.signOut();
+  CU=null;allStudents=[];allPayments=[];allMessages=[];
+  builtPages={};document.getElementById('mc').innerHTML='';
+  showScreen('loginScreen');
+  showToast('👋 Signed out','success');
+}
+
+// ═══════════════════════════════════════════════════
 // PORTAL SHELL
-// ═══════════════════════════════════════════════════════
-function doLogout(){auth.signOut();CU=null;STUDENTS=[];PAYMENTS=[];MESSAGES=[];builtPages={};document.getElementById('mc').innerHTML='';showScreen('loginScreen');showToast('👋 Signed out','success');}
-
-function getCycleInfo(student){
-  const fs=new Date(student.firstSession||student.firstSessionDate||new Date());
-  const today=new Date();
-  const dayOfMonth=fs.getDate();
-  const cycleStart=new Date(fs);
-  while(cycleStart<=today){const next=new Date(cycleStart);next.setMonth(next.getMonth()+1);if(next>today)break;cycleStart.setMonth(cycleStart.getMonth()+1);}
-  const cycleEnd=new Date(cycleStart);cycleEnd.setMonth(cycleEnd.getMonth()+1);cycleEnd.setDate(cycleEnd.getDate()-1);
-  return{cycleStart:cycleStart.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}),cycleEnd:cycleEnd.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}),dueDate:cycleStart.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}),payoutDay:dayOfMonth<=15?'16th of month':'1st of next month'};
-}
-
-function calcTutorPayout(teaches,cycle){
-  return (teaches||[]).map(cls=>{
-    const students=STUDENTS.filter(s=>s.class===cls&&s.status==='Active');
-    const c1=students.filter(s=>new Date(s.firstSession||'2025-01-01').getDate()<=15);
-    const c2=students.filter(s=>new Date(s.firstSession||'2025-01-01').getDate()>15);
-    const studentsInCycle=cycle==='first'?c1:c2;
-    return{cls,students:studentsInCycle,count:studentsInCycle.length,share:tutorShare(cls,studentsInCycle.length)};
-  });
-}
+// ═══════════════════════════════════════════════════
 const ANAV=[
   {sec:'Overview',items:[{id:'aDash',icon:'📊',label:'Dashboard'}]},
-  {sec:'Manage',items:[
-    {id:'aStudents',icon:'👥',label:'Students'},
-    {id:'aPayments',icon:'💰',label:'Payments'},
-    {id:'aTutors',icon:'🎓',label:'Tutors'},
-    {id:'aPayouts',icon:'💸',label:'Tutor Payouts'},
-  ]},
+  {sec:'Manage',items:[{id:'aStudents',icon:'👥',label:'Students'},{id:'aPayments',icon:'💰',label:'Payments'},{id:'aTutors',icon:'🎓',label:'Tutors'},{id:'aPayouts',icon:'💸',label:'Tutor Payouts'}]},
   {sec:'Schedule',items:[{id:'aSchedule',icon:'📅',label:'Weekly Schedule'}]},
   {sec:'Communication',items:[{id:'aMessages',icon:'💬',label:'Messages',badge:true}]},
   {sec:'System',items:[{id:'aSettings',icon:'⚙️',label:'Settings'}]},
@@ -686,28 +670,23 @@ const ANAV=[
 const TNAV=[
   {sec:'My Classes',items:[{id:'tDash',icon:'🏠',label:'Dashboard'},{id:'tStudents',icon:'👥',label:'My Students'},{id:'tAttendance',icon:'✅',label:'Attendance'},{id:'tPayouts',icon:'💸',label:'My Earnings'}]},
   {sec:'Schedule',items:[{id:'tSchedule',icon:'📅',label:'Weekly Schedule'}]},
-  {sec:'Communication',items:[{id:'tMessages',icon:'💬',label:'Messages to Admin'}]},
+  {sec:'Communication',items:[{id:'tMessages',icon:'💬',label:'Messages'}]},
   {sec:'Account',items:[{id:'tProfile',icon:'👤',label:'My Profile'}]},
 ];
 const SNAV=[
-  {sec:'My Portal',items:[
-    {id:'sDash',icon:'🏠',label:'Dashboard'},
-    {id:'sPay',icon:'💳',label:'Pay Fees'},
-    {id:'sHistory',icon:'📋',label:'Payment History'},
-    {id:'sMessages',icon:'💬',label:'Contact Admin'},
-    {id:'sProfile',icon:'👤',label:'My Profile'},
-  ]},
+  {sec:'My Portal',items:[{id:'sDash',icon:'🏠',label:'Dashboard'},{id:'sPay',icon:'💳',label:'Pay Fees'},{id:'sHistory',icon:'📋',label:'Payment History'},{id:'sMessages',icon:'💬',label:'Contact Admin'},{id:'sProfile',icon:'👤',label:'My Profile'}]},
 ];
 
 function enterPortal(){
   showLoading(false);
-  const isA=CU.role==='admin', isT=CU.role==='tutor';
+  const isA=CU.role==='admin',isT=CU.role==='tutor';
   const badge=document.getElementById('roleBadge');
   badge.textContent=isA?'Admin':isT?'Tutor':'Student';
   badge.className='role-badge '+(isA?'ra':isT?'rt':'rs');
-  const av=document.getElementById('sbAv');
-  if(CU.photoURL){av.innerHTML=`<img src="${CU.photoURL}" style="width:100%;height:100%;object-fit:cover;border-radius:50%"/>`;}
-  else{av.textContent=(CU.firstName||CU.name||'?')[0].toUpperCase();}
+  // Avatar
+  const avEl=document.getElementById('sbAv');
+  if(CU.photoURL){avEl.innerHTML=`<img src="${CU.photoURL}" alt=""/>"`;}
+  else{avEl.textContent=(CU.firstName||CU.name||'?')[0].toUpperCase();}
   document.getElementById('sbName').textContent=CU.name||CU.email;
   document.getElementById('sbEmail').textContent=CU.email;
   buildNav(isA?ANAV:isT?TNAV:SNAV);
@@ -721,7 +700,7 @@ function buildNav(cfg){
   cfg.forEach(sec=>{
     const s=document.createElement('div');s.className='nav-sec';s.textContent=sec.sec;nav.appendChild(s);
     sec.items.forEach(item=>{
-      const unread=item.badge?MESSAGES.filter(m=>m.unread).length:0;
+      const unread=item.badge?allMessages.filter(m=>m.unread&&CU.role==='admin').length:0;
       const el=document.createElement('div');el.className='nav-item';el.id='ni_'+item.id;
       el.innerHTML=`<span class="ni">${item.icon}</span>${item.label}`+(unread>0?`<span class="nb">${unread}</span>`:'');
       el.onclick=()=>{buildPage(item.id);showPage(item.id);};
@@ -738,428 +717,510 @@ function showPage(id){
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sbOv').classList.remove('open');
 }
+function navTo(id){buildPage(id);showPage(id);}
 
 function buildPage(id){
   if(builtPages[id])return;
   builtPages[id]=true;
   const mc=document.getElementById('mc');
   const div=document.createElement('div');div.className='page';div.id='pg_'+id;
-  div.innerHTML=PAGES[id]?PAGES[id]():`<div class="ph"><div><div class="pt">${id}</div></div></div><p style="color:var(--muted2)">Coming soon</p>`;
+  div.innerHTML=PAGES[id]?PAGES[id]():`<div class="ph"><div><div class="pt">Coming Soon</div></div></div>`;
   mc.appendChild(div);
   if(INITS[id])setTimeout(()=>INITS[id](),60);
 }
 
-// ═══════════════════════════════════════════════════════
-// WEEKLY SCHEDULE BUILDER
-// ═══════════════════════════════════════════════════════
-const DAYS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-const TODAY_IDX=3; // Thursday in demo
+// ═══════════════════════════════════════════════════
+// PAGE TEMPLATES
+// ═══════════════════════════════════════════════════
+const PAGES = {
 
-// Which classes run on which days
-const CLASS_DAYS={
-  'Zumba':{'Mon–Wed–Fri':['Mon','Wed','Fri'],'Tue–Thu–Sat':['Tue','Thu','Sat']},
-  'Dance':{'Tue–Thu':['Tue','Thu']},
-  'Kids Dance':{'Tue–Thu':['Tue','Thu']},
-  'Chess':{'Sat':['Sat'],'Sun':['Sun']},
-  'Guitar':{'Wed–Fri':['Wed','Fri']},
+aDash: () => {
+  const pending=allStudents.filter(s=>s.status==='Pending');
+  const totalRev=allPayments.filter(p=>p.status==='Paid').reduce((s,p)=>s+(p.amtNum||0),0);
+  return `
+<div class="ph">
+  <div><div class="pt">Dashboard</div><div class="ps">${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div></div>
+  <div style="display:flex;gap:8px">
+    <button class="bsm bam" onclick="prepCash(null)">+ Cash Payment</button>
+    <button class="bsm ba2" onclick="openOv('ov_addSt')">+ Add Student</button>
+  </div>
+</div>
+<div class="sg">
+  <div class="sc c"><div class="si">👥</div><div class="sv">${allStudents.length}</div><div class="sl">Total Students</div></div>
+  <div class="sc p"><div class="si">💰</div><div class="sv">₹${totalRev.toLocaleString()}</div><div class="sl">Total Collected</div></div>
+  <div class="sc a"><div class="si">⏳</div><div class="sv">${pending.length}</div><div class="sl">Pending Fees</div><div class="sch dn">Need follow-up</div></div>
+  <div class="sc pu"><div class="si">💬</div><div class="sv">${allMessages.filter(m=>m.unread).length}</div><div class="sl">Unread Messages</div></div>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
+  <div class="tc">
+    <div class="th"><div class="tt">Recent Payments</div><button class="bsm bo" onclick="navTo('aPayments')">All →</button></div>
+    ${allPayments.length?`<div style="overflow-x:auto"><table>
+      <thead><tr><th>Student</th><th>Class</th><th>Amount</th><th>Method</th><th>Status</th></tr></thead>
+      <tbody>${allPayments.slice(0,6).map(p=>`<tr><td><strong>${p.student}</strong></td><td>${cb(p.class)}</td><td><strong>${p.amount}</strong></td><td style="font-size:12px">${p.method}</td><td>${sb(p.status)}</td></tr>`).join('')}</tbody>
+    </table></div>`:`<div class="empty-state"><div class="ei">💳</div><p>No payments recorded yet</p></div>`}
+  </div>
+  <div class="tc">
+    <div class="th"><div class="tt">Fee Follow-up</div></div>
+    ${pending.length?pending.map(s=>`
+    <div style="display:flex;align-items:center;gap:10px;padding:9px 14px;border-bottom:1px solid var(--border)">
+      <div style="flex:1"><div style="font-weight:600;color:#fff;font-size:13px">${s.fn} ${s.ln}</div><div style="font-size:11px;color:var(--muted2)">${s.class} · ${s.batch}</div></div>
+      <span class="badge bam2">₹${(s.fee||0).toLocaleString()} due</span>
+    </div>`).join(''):`<div class="empty-state"><div class="ei">✅</div><p>All fees are paid up!</p></div>`}
+  </div>
+</div>
+<div class="tc" style="margin-top:18px">
+  <div class="th"><div class="tt">All Students</div><button class="bsm bo" onclick="navTo('aStudents')">Manage →</button></div>
+  ${allStudents.length?`<div style="overflow-x:auto"><table>
+    <thead><tr><th>First</th><th>Last</th><th>Class</th><th>Batch</th><th>Status</th><th>Fee</th></tr></thead>
+    <tbody>${allStudents.slice(0,5).map(s=>`<tr>
+      <td><strong>${s.fn||s.firstName||''}</strong></td><td>${s.ln||s.lastName||''}</td>
+      <td>${cb(s.class)}</td><td style="font-size:11px;color:var(--muted2)">${(s.batch||'').split(' ').slice(0,4).join(' ')}</td>
+      <td>${sb(s.status)}</td><td style="color:var(--cyan)">₹${(s.fee||0).toLocaleString()}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`:`<div class="empty-state"><div class="ei">👥</div><p>No students yet — <a style="color:var(--cyan);cursor:pointer" onclick="openOv('ov_addSt')">add the first one</a></p></div>`}
+</div>`;
+},
+
+aStudents: () => `
+<div class="ph">
+  <div><div class="pt">Students</div><div class="ps">${allStudents.length} total</div></div>
+  <div style="display:flex;gap:8px">
+    <button class="bsm bam" onclick="prepCash(null)">+ Cash Payment</button>
+    <button class="bsm ba2" onclick="openOv('ov_addSt')">+ Add Student</button>
+  </div>
+</div>
+<div class="sg" style="grid-template-columns:repeat(4,1fr)">
+  <div class="sc g"><div class="si">✅</div><div class="sv">${allStudents.filter(s=>s.status==='Active').length}</div><div class="sl">Active</div></div>
+  <div class="sc a"><div class="si">⏳</div><div class="sv">${allStudents.filter(s=>s.status==='Pending').length}</div><div class="sl">Pending</div></div>
+  <div class="sc p"><div class="si">💤</div><div class="sv">${allStudents.filter(s=>s.status==='Inactive').length}</div><div class="sl">Inactive</div></div>
+  <div class="sc c"><div class="si">👥</div><div class="sv">${allStudents.length}</div><div class="sl">Total</div></div>
+</div>
+<div class="tc">
+  <div class="th"><div class="tt">All Students</div>
+    <div class="ta"><input class="si-input" placeholder="Search..." oninput="ft(this,'stTb')"/></div>
+  </div>
+  ${allStudents.length?`<div style="overflow-x:auto"><table>
+    <thead><tr><th>First</th><th>Last</th><th>Email</th><th>Class</th><th>Batch</th><th>Fee</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody id="stTb">${allStudents.map(s=>`<tr>
+      <td><strong>${s.fn||s.firstName||''}</strong></td><td>${s.ln||s.lastName||''}</td>
+      <td style="font-size:11px;color:var(--muted2)">${s.email}</td>
+      <td>${cb(s.class)}</td>
+      <td style="font-size:11px;color:var(--muted2)">${(s.batch||'').split(' ').slice(0,4).join(' ')}</td>
+      <td style="color:var(--cyan)">₹${(s.fee||0).toLocaleString()}</td>
+      <td>${sb(s.status)}</td>
+      <td><button class="bsm bo" style="font-size:11px;padding:4px 9px" onclick="viewStudent('${s.id}')">View</button></td>
+    </tr>`).join('')}</tbody>
+  </table></div>`:`<div class="empty-state"><div class="ei">👥</div><p>No students yet</p></div>`}
+</div>`,
+
+aPayments: () => {
+  const totalPaid=allPayments.filter(p=>p.status==='Paid').reduce((s,p)=>s+(p.amtNum||0),0);
+  const totalPending=allStudents.filter(s=>s.status==='Pending').reduce((s,x)=>s+(x.fee||0),0);
+  return `
+<div class="ph">
+  <div><div class="pt">Payments</div><div class="ps">All fees and transactions</div></div>
+  <button class="bsm bam" onclick="prepCash(null)">+ Record Cash Payment</button>
+</div>
+<div class="sg">
+  <div class="sc g"><div class="si">✅</div><div class="sv">₹${totalPaid.toLocaleString()}</div><div class="sl">Total Collected</div></div>
+  <div class="sc a"><div class="si">⏳</div><div class="sv">₹${totalPending.toLocaleString()}</div><div class="sl">Pending</div><div class="sch dn">${allStudents.filter(s=>s.status==='Pending').length} students</div></div>
+</div>
+<div class="tc">
+  <div class="th"><div class="tt">All Transactions</div>
+    <input class="si-input" placeholder="Search..." oninput="ft(this,'payTb')"/>
+  </div>
+  ${allPayments.length?`<div style="overflow-x:auto"><table>
+    <thead><tr><th>Txn ID</th><th>Student</th><th>Class</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th></tr></thead>
+    <tbody id="payTb">${allPayments.map(p=>`<tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)">${(p.txn||p.id||'').slice(-8)}</td>
+      <td><strong>${p.student}</strong></td><td>${cb(p.class||'')}</td>
+      <td><strong>${p.amount}</strong></td><td style="font-size:11px;color:var(--muted2)">${p.date}</td>
+      <td style="font-size:12px">${p.method}</td><td>${sb(p.status)}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`:`<div class="empty-state"><div class="ei">💳</div><p>No transactions yet</p></div>`}
+</div>`;
+},
+
+aTutors: () => `
+<div class="ph">
+  <div><div class="pt">Tutors</div></div>
+  <button class="bsm ba2" onclick="openOv('ov_addTutor')">+ Add Tutor</button>
+</div>
+<div id="tutorsList"><div class="empty-state"><div class="ei">🎓</div><p>Loading tutors...</p></div></div>`,
+
+aPayouts: () => `
+<div class="ph"><div><div class="pt">Tutor Payouts</div><div class="ps">Calculated from enrolled students</div></div></div>
+<div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:11px;padding:12px 15px;margin-bottom:18px;font-size:13px;color:var(--amber)">
+  📋 Students joining 1st–15th → tutor paid on 16th. Students joining 16th–31st → tutor paid on 1st of next month.
+</div>
+<div id="payoutsList"><div class="empty-state"><div class="ei">💸</div><p>Loading payouts...</p></div></div>`,
+
+aSchedule: () => `
+<div class="ph"><div><div class="pt">Weekly Schedule</div><div class="ps">All classes and enrolled students</div></div></div>
+<div id="scheduleGrid"><div class="empty-state"><div class="ei">📅</div><p>Loading schedule...</p></div></div>`,
+
+aMessages: () => buildMsgUI(),
+aSettings: () => buildSettingsUI(),
+
+// TUTOR PAGES
+tDash: () => {
+  const myS=allStudents.filter(s=>CU.teaches&&CU.teaches.includes(s.class)&&s.status==='Active');
+  const pending=allStudents.filter(s=>CU.teaches&&CU.teaches.includes(s.class)&&s.status==='Pending');
+  return `
+<div class="ph"><div><div class="pt">Good ${new Date().getHours()<12?'Morning':new Date().getHours()<17?'Afternoon':'Evening'}, ${CU.firstName||CU.name}!</div>
+<div class="ps">Teaching ${CU.teaches?(CU.teaches.join(' & ')):''}</div></div></div>
+<div class="sg">
+  <div class="sc c"><div class="si">👥</div><div class="sv">${myS.length}</div><div class="sl">My Active Students</div></div>
+  <div class="sc g"><div class="si">✅</div><div class="sv">87%</div><div class="sl">Avg Attendance</div></div>
+  <div class="sc a"><div class="si">⚠️</div><div class="sv">${pending.length}</div><div class="sl">Payment Follow-up</div></div>
+</div>
+<div class="tc">
+  <div class="th"><div class="tt">💳 Payment Follow-up</div></div>
+  <div style="padding:9px 14px;font-size:12px;color:var(--muted2);background:rgba(245,158,11,.05);border-bottom:1px solid var(--border)">Students with fees pending — remind them to pay via the portal</div>
+  ${pending.length?pending.map(s=>`
+  <div style="display:flex;align-items:center;gap:9px;padding:9px 14px;border-bottom:1px solid var(--border)">
+    <div class="av" style="width:27px;height:27px;font-size:10px;flex-shrink:0">${(s.fn||s.firstName||'?')[0]}</div>
+    <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#fff">${s.fn||s.firstName||''} ${s.ln||s.lastName||''}</div><div style="font-size:11px;color:var(--muted2)">${s.class}</div></div>
+    <span class="badge bam2">₹${(s.fee||0).toLocaleString()} due</span>
+  </div>`).join(''):`<div class="empty-state"><div class="ei">✅</div><p>All paid up!</p></div>`}
+</div>`;
+},
+
+tStudents: () => {
+  const myS=allStudents.filter(s=>CU.teaches&&CU.teaches.includes(s.class));
+  return `
+<div class="ph"><div><div class="pt">My Students</div><div class="ps">${myS.length} students</div></div></div>
+<div class="tc">
+  <div class="th"><div class="tt">All My Students</div><input class="si-input" placeholder="Search..." oninput="ft(this,'myStTb')"/></div>
+  ${myS.length?`<div style="overflow-x:auto"><table>
+    <thead><tr><th>First</th><th>Last</th><th>Class</th><th>Batch</th><th>Status</th></tr></thead>
+    <tbody id="myStTb">${myS.map(s=>`<tr>
+      <td><strong>${s.fn||s.firstName||''}</strong></td><td>${s.ln||s.lastName||''}</td>
+      <td>${cb(s.class)}</td><td style="font-size:11px;color:var(--muted2)">${(s.batch||'').split(' ').slice(0,4).join(' ')}</td>
+      <td>${sb(s.status)}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`:`<div class="empty-state"><div class="ei">👥</div><p>No students in your classes yet</p></div>`}
+</div>`;
+},
+
+tAttendance: () => {
+  const myS=allStudents.filter(s=>CU.teaches&&CU.teaches.includes(s.class)&&s.status==='Active');
+  return `
+<div class="ph">
+  <div><div class="pt">Attendance</div><div class="ps">${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})}</div></div>
+  <button class="bsm ba2" onclick="saveAttendance()">Save Attendance</button>
+</div>
+${CU.teaches?CU.teaches.map(cls=>{
+  const students=myS.filter(s=>s.class===cls);
+  if(!students.length)return'';
+  return`<div class="tc" style="margin-bottom:15px">
+    <div class="th"><div class="tt">${cb(cls)} ${cls}</div><div style="font-size:12px;color:var(--muted2)">${students.length} students</div></div>
+    <div style="padding:0 15px">
+      ${students.map((s,i)=>`
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:9px">
+          <div class="av" style="width:27px;height:27px;font-size:10px;flex-shrink:0">${(s.fn||s.firstName||'?')[0]}</div>
+          <strong>${s.fn||s.firstName||''} ${s.ln||s.lastName||''}</strong>
+        </div>
+        <div style="display:flex;gap:6px">
+          <button class="bsm bg3 att-p" id="ap_${cls}_${i}" onclick="setAtt('${cls}',${i},'p',this)">✓ Present</button>
+          <button class="bsm bd att-a" id="aa_${cls}_${i}" onclick="setAtt('${cls}',${i},'a',this)">✕ Absent</button>
+        </div>
+      </div>`).join('')}
+    </div>
+  </div>`;
+}).join(''):'<div class="empty-state"><p>No classes assigned</p></div>'}`;
+},
+
+tPayouts: () => `
+<div class="ph"><div><div class="pt">My Earnings</div><div class="ps">Based on enrolled students this cycle</div></div></div>
+<div id="myPayoutsList"><div class="empty-state"><div class="ei">💸</div><p>Calculating earnings...</p></div></div>`,
+
+tSchedule: () => `
+<div class="ph"><div><div class="pt">My Schedule</div></div></div>
+<div id="tScheduleGrid"><div class="empty-state"><div class="ei">📅</div><p>Loading schedule...</p></div></div>`,
+
+tMessages: () => buildMsgUI(),
+tProfile: () => buildProfileUI(),
+
+// STUDENT PAGES
+sDash: () => {
+  const myPays=allPayments.filter(p=>p.status==='Paid');
+  const sessPerMonth=CU.class==='Guitar'?8:CU.class==='Chess'?8:CU.class==='Zumba'?12:8;
+  const sessAtt=Math.floor(sessPerMonth*0.87);
+  return `
+<div class="ph">
+  <div><div class="pt">Good ${new Date().getHours()<12?'Morning':new Date().getHours()<17?'Afternoon':'Evening'}, ${CU.firstName||CU.name}! 👋</div>
+  <div class="ps">${CU.class||''} · ${CU.batch||''}</div></div>
+  <button class="bsm ba2" onclick="navTo('sPay')">💳 Pay Fees →</button>
+</div>
+<div class="sg">
+  <div class="sc c"><div class="si">📅</div><div class="sv">${sessAtt}</div><div class="sl">Sessions Attended</div><div class="sch up">This month (${sessPerMonth} total)</div></div>
+  <div class="sc g"><div class="si">📊</div><div class="sv">87%</div><div class="sl">Attendance Rate</div></div>
+  <div class="sc pu"><div class="si">🔢</div><div class="sv">${sessPerMonth-sessAtt}</div><div class="sl">Sessions Remaining</div></div>
+  <div class="sc p"><div class="si">💰</div><div class="sv">₹${(CLASS_FEES[CU.class]||1999).toLocaleString()}</div><div class="sl">Next Payment Due</div></div>
+</div>
+<div class="tc">
+  <div class="th"><div class="tt">My Payment History</div><button class="bsm bo" onclick="navTo('sHistory')">All →</button></div>
+  ${myPays.length?`<div style="overflow-x:auto"><table>
+    <thead><tr><th>Txn</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th></tr></thead>
+    <tbody>${myPays.slice(0,3).map(p=>`<tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)">${(p.txn||p.id||'').slice(-8)}</td>
+      <td><strong>${p.amount}</strong></td><td style="font-size:11px;color:var(--muted2)">${p.date}</td>
+      <td style="font-size:12px">${p.method}</td><td>${sb(p.status)}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`:`<div class="empty-state"><div class="ei">💳</div><p>No payments yet — <a style="color:var(--cyan);cursor:pointer" onclick="navTo('sPay')">make your first payment</a></p></div>`}
+</div>`;
+},
+
+sPay: () => {
+  const fee1=CLASS_FEES[CU.class]||1999;
+  const fee2=CU.class==='Dance'||CU.class==='Chess'||CU.class==='Kids Dance'?4199:5499;
+  return `
+<div class="ph"><div><div class="pt">Pay Fees</div><div class="ps">Record your payment to Fitbeat Studio</div></div></div>
+<div style="max-width:560px">
+  <div style="background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:11px;padding:14px 16px;margin-bottom:20px;font-size:13px;color:var(--amber)">
+    💡 Online payment via Razorpay coming soon. For now, pay via UPI to <strong>rahul200118-3@oksbi</strong> and record it below so Admin can track it.
+  </div>
+  <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:10px">Select Plan</div>
+  <div class="plan-grid">
+    <div class="plan-card sel" id="pl1" onclick="setPlan(1,${fee1},${fee2})"><div class="chk">✓</div><div class="plan-name">Monthly</div><div class="plan-price">₹${fee1.toLocaleString()}</div><div class="plan-desc">1 month · All sessions</div></div>
+    <div class="plan-card" id="pl2" onclick="setPlan(2,${fee1},${fee2})"><div class="chk">✓</div><div class="plan-name">Quarterly</div><div class="plan-price">₹${fee2.toLocaleString()}</div><div class="plan-desc">3 months · Best value</div></div>
+  </div>
+  <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:10px">Payment Method</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">
+    <div class="plan-card sel" id="pm_upi" onclick="setMeth('upi')" style="padding:12px;text-align:center"><div class="chk">✓</div><div style="font-size:16px;margin-bottom:4px">📱</div><div style="font-size:12px;font-weight:700;color:#fff">UPI</div></div>
+    <div class="plan-card" id="pm_cash" onclick="setMeth('cash')" style="padding:12px;text-align:center"><div class="chk">✓</div><div style="font-size:16px;margin-bottom:4px">💵</div><div style="font-size:12px;font-weight:700;color:#fff">Cash</div></div>
+    <div class="plan-card" id="pm_bank" onclick="setMeth('bank')" style="padding:12px;text-align:center"><div class="chk">✓</div><div style="font-size:16px;margin-bottom:4px">🏦</div><div style="font-size:12px;font-weight:700;color:#fff">Bank Transfer</div></div>
+  </div>
+  <div id="sec_upi">
+    <div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px">
+      <div style="font-size:12px;color:var(--muted2);margin-bottom:6px">Pay to this UPI ID:</div>
+      <div style="font-family:'JetBrains Mono',monospace;font-size:16px;color:var(--cyan);letter-spacing:1px;margin-bottom:8px">rahul200118-3@oksbi</div>
+      <button class="bsm ba2" onclick="copyUPI()" style="font-size:12px">📋 Copy UPI ID</button>
+    </div>
+  </div>
+  <div id="sec_cash" style="display:none"><div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;font-size:13px;color:var(--muted2)">Pay cash directly at the studio and record it here so Admin can track your payment.</div></div>
+  <div id="sec_bank" style="display:none"><div class="field"><label>Transaction / Reference Number</label><input id="bank_ref" placeholder="e.g. UTR123456789"/></div></div>
+  <div class="ob">
+    <div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Summary</div>
+    <div class="or"><span>${CU.class||''}</span><span id="os_p">Monthly</span></div>
+    <div class="or tot"><span>Total</span><span id="os_t">₹${fee1.toLocaleString()}</span></div>
+  </div>
+  <button class="btn-primary" id="payBtn" onclick="doStudentPayment()" style="font-size:15px;padding:14px">Record My Payment →</button>
+  <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:8px">This records your payment for Admin tracking. Online payment coming soon.</div>
+</div>`;
+},
+
+sHistory: () => `
+<div class="ph"><div><div class="pt">Payment History</div></div></div>
+<div class="sg" style="grid-template-columns:repeat(3,1fr)">
+  <div class="sc g"><div class="si">✅</div><div class="sv">${allPayments.filter(p=>p.status==='Paid').length}</div><div class="sl">Payments Made</div></div>
+  <div class="sc p"><div class="si">💰</div><div class="sv">₹${(CLASS_FEES[CU.class]||1999).toLocaleString()}</div><div class="sl">Next Due</div></div>
+  <div class="sc c"><div class="si">📊</div><div class="sv">₹${allPayments.filter(p=>p.status==='Paid').reduce((s,p)=>s+(p.amtNum||0),0).toLocaleString()}</div><div class="sl">Total Paid</div></div>
+</div>
+<div class="tc">
+  <div class="th"><div class="tt">All Transactions</div></div>
+  ${allPayments.length?`<div style="overflow-x:auto"><table>
+    <thead><tr><th>Txn ID</th><th>Plan</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th></tr></thead>
+    <tbody>${allPayments.map(p=>`<tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)">${(p.txn||p.id||'').slice(-8)}</td>
+      <td style="font-size:11px;color:var(--muted2)">${p.plan||'Monthly'}</td>
+      <td><strong>${p.amount}</strong></td><td style="font-size:11px;color:var(--muted2)">${p.date}</td>
+      <td style="font-size:12px">${p.method}</td><td>${sb(p.status)}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>`:`<div class="empty-state"><div class="ei">📋</div><p>No payments recorded yet</p></div>`}
+</div>`,
+
+sMessages: () => buildMsgUI(),
+sProfile: () => buildProfileUI(),
 };
 
-function getScheduleForDay(day, filterClasses){
-  const slots=[];
-  STUDENTS.filter(s=>s.status==='Active'&&(!filterClasses||filterClasses.includes(s.class))).forEach(s=>{
-    const clsDays=CLASS_DAYS[s.class]||{};
-    let runs=false;
-    Object.values(clsDays).forEach(days=>{if(days.includes(day))runs=true;});
-    if(runs) slots.push(s);
-  });
-  // Group by batch
-  const byBatch={};
-  slots.forEach(s=>{if(!byBatch[s.batch])byBatch[s.batch]={class:s.class,students:[]};byBatch[s.batch].students.push(sName(s));});
-  return byBatch;
-}
-
-function buildWeekGrid(filterClasses){
-  let html='<div class="week-grid">';
-  DAYS.forEach((day,idx)=>{
-    const isToday=idx===TODAY_IDX;
-    const slots=getScheduleForDay(day,filterClasses);
-    const keys=Object.keys(slots);
-    html+=`<div class="day-col">
-      <div class="day-hdr${isToday?' today':''}">${day}${isToday?' <span style="font-size:9px;color:var(--purple)">TODAY</span>':''}</div>`;
-    if(!keys.length){
-      html+=`<div style="padding:10px 8px;font-size:11px;color:var(--muted);text-align:center">No class</div>`;
-    } else {
-      keys.forEach(batch=>{
-        const s=slots[batch];
-        // Extract time from batch string
-        const timeMatch=batch.match(/(\d+[–-]\d+ [AP]M|\d+:\d+[–-]\d+:\d+ [AP]M|\d+[–-]\d+ [ap]m)/i);
-        const time=timeMatch?timeMatch[0]:batch.split(' ').slice(-2).join(' ');
-        html+=`<div class="day-slot">
-          <div class="ds-time">${time}</div>
-          <div class="ds-class">${s.class}</div>
-          <div class="ds-count">${s.students.length} students</div>
-          <div style="margin-top:3px">${s.students.map(n=>`<div style="font-size:10px;color:var(--muted2);line-height:1.6">${n}</div>`).join('')}</div>
-        </div>`;
-      });
-    }
-    html+=`</div>`;
-  });
-  html+='</div>';
-  return html;
-}
-
-// ═══════════════════════════════════════════════════════
-// MESSAGING BUILDER
-// ═══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════
+// MESSAGING
+// ═══════════════════════════════════════════════════
 function buildMsgUI(){
   const isAdmin=CU.role==='admin';
-  const myMsgs=isAdmin?MESSAGES:MESSAGES.filter(m=>m.fromEmail===CU.email);
-  const unread=MESSAGES.filter(m=>m.unread).length;
+  const myMsgs=isAdmin?allMessages:allMessages.filter(m=>m.fromUid===CU.uid);
   return`
 <div class="ph">
   <div><div class="pt">${isAdmin?'Messages':'Contact Admin'}</div>
-  <div class="ps">${isAdmin?`All messages · ${unread} unread`:'Send a message or query to Admin'}</div></div>
-  ${!isAdmin?`<button class="bsm ba2" onclick="newMsg()">+ New Message</button>`:''}
+  <div class="ps">${isAdmin?`${myMsgs.length} conversations · ${myMsgs.filter(m=>m.unread).length} unread`:'Send a message or query to Admin'}</div></div>
+  ${!isAdmin?`<button class="bsm ba2" onclick="startNewMsg()">+ New Message</button>`:''}
 </div>
 <div class="msg-wrap">
   <div class="msg-list">
     <div class="msg-list-hdr">💬 ${isAdmin?'All Messages':'My Messages'}</div>
     ${myMsgs.length?myMsgs.map(m=>`
-    <div class="msg-thread${m.id===activeMsgId?' act':''}" id="mt_${m.id}" onclick="openThread(${m.id})">
+    <div class="msg-thread${activeMsgId===m.id?' act':''}" id="mt_${m.id}" onclick="openMsgThread('${m.id}')">
       <div class="mt-name">
-        <span>${isAdmin?m.from:'Admin'}</span>
+        <span>${isAdmin?m.fromName:'Admin'}</span>
         <div style="display:flex;align-items:center;gap:5px">
           ${m.unread&&isAdmin?`<div class="mt-dot"></div>`:''}
-          ${m.resolved?sb('Resolved'):''}
+          ${m.resolved?`<span class="badge bg2" style="font-size:9px">Done</span>`:''}
         </div>
       </div>
-      <div class="mt-prev">${m.subject}</div>
-      <div style="font-size:10px;color:var(--muted);margin-top:2px">${m.time}</div>
-    </div>`).join(''):'<div style="padding:20px;text-align:center;color:var(--muted2);font-size:13px">No messages yet</div>'}
+      <div class="mt-prev">${m.subject||'No subject'}</div>
+      <div style="font-size:10px;color:var(--muted);margin-top:2px">${m.lastTime||''}</div>
+    </div>`).join(''):`<div style="padding:20px;text-align:center;color:var(--muted2);font-size:13px">No messages yet</div>`}
   </div>
-  <div class="msg-detail" id="msgDetail">${renderThread(activeMsgId)}</div>
+  <div class="msg-detail" id="msgDetail">
+    ${activeMsgId?renderMsgThread(activeMsgId):`<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted2);font-size:13px">${isAdmin?'Select a conversation':'Click "+ New Message" to contact Admin'}</div>`}
+  </div>
 </div>`;
 }
 
-function renderThread(id){
-  const m=MESSAGES.find(x=>x.id===id);
-  if(!m)return`<div style="flex:1;display:flex;align-items:center;justify-content:center;color:var(--muted2);font-size:13px">Select a conversation</div>`;
+function renderMsgThread(id){
+  const m=allMessages.find(x=>x.id===id);
+  if(!m)return'<div style="padding:20px;color:var(--muted2)">Message not found</div>';
   const isAdmin=CU.role==='admin';
-  m.unread=false;
+  if(m.unread&&isAdmin){
+    m.unread=false;
+    db.collection('messages').doc(id).update({unread:false}).catch(console.error);
+  }
+  const thread=m.thread||[];
   return`
   <div class="msg-dhdr">
-    <div class="av" style="flex-shrink:0">${m.from[0]}</div>
+    <div class="av" style="flex-shrink:0">${(m.fromName||'?')[0]}</div>
     <div style="flex:1">
-      <div style="font-weight:700;color:#fff;font-size:14px">${m.subject}</div>
-      <div style="font-size:11px;color:var(--muted2)">${m.from} · ${m.fromRole} · ${m.time}</div>
+      <div style="font-weight:700;color:#fff;font-size:14px">${m.subject||'Message'}</div>
+      <div style="font-size:11px;color:var(--muted2)">${m.fromName} · ${m.fromRole||''}</div>
     </div>
-    ${isAdmin?`<button class="bsm ${m.resolved?'bo':'bg3'}" onclick="toggleResolve(${m.id})">${m.resolved?'Reopen':'Mark Resolved'}</button>`:''}
+    ${isAdmin?`<button class="bsm ${m.resolved?'bo':'bg3'}" onclick="toggleMsgResolve('${id}')">${m.resolved?'Reopen':'Mark Done'}</button>`:''}
   </div>
   <div class="msg-body" id="msgBody_${id}">
-    ${m.thread.map(msg=>{
+    ${thread.map(msg=>{
       const isMe=(isAdmin&&msg.role==='admin')||(!isAdmin&&msg.role!=='admin');
-      return`<div><div class="bubble ${isMe?'me':'them'}">${msg.text}
-        <div class="btime">${isMe?'You':msg.sender} · ${msg.time}</div>
-      </div></div>`;
+      return`<div><div class="bubble ${isMe?'me':'them'}">${msg.text}<div class="btime">${isMe?'You':msg.sender} · ${msg.time}</div></div></div>`;
     }).join('')}
   </div>
   <div class="msg-inp-wrap">
-    ${isAdmin||!m.resolved?`
-    <textarea class="msg-inp" id="mi_${id}" placeholder="${isAdmin?'Type your reply...':'Type your message...'}" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsg(${id});}"></textarea>
-    <button class="msg-send" onclick="sendMsg(${id})">Send →</button>`
-    :`<div style="flex:1;text-align:center;color:var(--muted2);font-size:13px;padding:10px">This conversation is resolved</div>`}
+    ${(!m.resolved||isAdmin)?`
+    <textarea class="msg-inp" id="mi_${id}" placeholder="${isAdmin?'Reply...':'Your message...'}" onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMsgReply('${id}');}"></textarea>
+    <button class="msg-send" onclick="sendMsgReply('${id}')">Send</button>`
+    :`<div style="flex:1;text-align:center;color:var(--muted2);font-size:13px;padding:10px">This conversation is marked as done</div>`}
   </div>`;
 }
 
-function openThread(id){
+function openMsgThread(id){
   activeMsgId=id;
-  const det=document.getElementById('msgDetail');if(det)det.innerHTML=renderThread(id);
+  const det=document.getElementById('msgDetail');
+  if(det)det.innerHTML=renderMsgThread(id);
   document.querySelectorAll('.msg-thread').forEach(el=>el.classList.toggle('act',el.id==='mt_'+id));
-  // Update unread badge in nav
-  const badges=document.querySelectorAll('.nb');badges.forEach(b=>{const u=MESSAGES.filter(m=>m.unread).length;b.textContent=u;b.style.display=u?'':'none';});
 }
 
-function sendMsg(id){
-  const inp=document.getElementById('mi_'+id);if(!inp||!inp.value.trim())return;
-  const m=MESSAGES.find(x=>x.id===id);if(!m)return;
-  const role=CU.role;
-  // Rule: only admin can reply; students/tutors can only send new messages
-  if(role!=='admin'&&m.thread.length>0&&m.thread[m.thread.length-1].role!=='admin'){
-    showToast('Please wait for Admin to reply first','error');return;
+async function sendMsgReply(id){
+  const inp=document.getElementById('mi_'+id);
+  if(!inp||!inp.value.trim())return;
+  const text=inp.value.trim();
+  const isAdmin=CU.role==='admin';
+  const m=allMessages.find(x=>x.id===id);
+  if(!m)return;
+  // Only admin can reply; student/tutor can only send if no pending reply
+  if(!isAdmin&&m.thread&&m.thread.length>0&&m.thread[m.thread.length-1].role!=='admin'){
+    showToast('Please wait for Admin to reply','error');return;
   }
-  m.thread.push({sender:CU.name,role,text:inp.value.trim(),time:new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'})});
-  const det=document.getElementById('msgDetail');if(det)det.innerHTML=renderThread(id);
-  showToast(role==='admin'?'✅ Reply sent':'✅ Message sent to Admin','success');
+  const msg={sender:CU.name||CU.email,role:CU.role,text,time:timeStr()};
+  m.thread=m.thread||[];
+  m.thread.push(msg);
+  m.lastTime=timeStr();
+  try {
+    await db.collection('messages').doc(id).update({
+      thread:firebase.firestore.FieldValue.arrayUnion(msg),
+      lastTime:timeStr(),
+      unread:!isAdmin, // if admin replies, mark as unread for student
+    });
+    inp.value='';
+    const det=document.getElementById('msgDetail');
+    if(det)det.innerHTML=renderMsgThread(id);
+    showToast(isAdmin?'✅ Reply sent':'✅ Message sent to Admin','success');
+  } catch(e){showToast('Error: '+e.message,'error');}
 }
 
-function toggleResolve(id){
-  const m=MESSAGES.find(x=>x.id===id);if(!m)return;
+async function toggleMsgResolve(id){
+  const m=allMessages.find(x=>x.id===id);if(!m)return;
   m.resolved=!m.resolved;
-  const det=document.getElementById('msgDetail');if(det)det.innerHTML=renderThread(id);
-  showToast(m.resolved?'✅ Marked as resolved':'Conversation reopened','success');
+  await db.collection('messages').doc(id).update({resolved:m.resolved}).catch(console.error);
+  const det=document.getElementById('msgDetail');if(det)det.innerHTML=renderMsgThread(id);
+  showToast(m.resolved?'✅ Marked as done':'Conversation reopened','success');
 }
 
-function newMsg(){
-  const sub=prompt('Message subject / topic:');if(!sub)return;
-  const newId=Date.now();
-  MESSAGES.unshift({id:newId,from:CU.name,fromRole:CU.role,fromEmail:CU.email,subject:sub,time:'Just now',unread:true,resolved:false,thread:[]});
-  activeMsgId=newId;
-  const pid=CU.role==='student'?'sMessages':'tMessages';
-  builtPages[pid]=false;
-  const el=document.getElementById('pg_'+pid);if(el)el.remove();
-  buildPage(pid);showPage(pid);
+async function startNewMsg(){
+  const sub=prompt('What is your message about?');if(!sub)return;
+  const now=nowStr();
+  const newMsg={
+    fromUid:CU.uid,fromName:CU.name||CU.email,fromRole:CU.role,fromEmail:CU.email,
+    subject:sub,unread:true,resolved:false,
+    lastTime:timeStr(),thread:[],
+    createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+  };
+  try {
+    const ref=await db.collection('messages').add(newMsg);
+    newMsg.id=ref.id;
+    allMessages.unshift(newMsg);
+    activeMsgId=ref.id;
+    const pid=CU.role==='student'?'sMessages':'tMessages';
+    builtPages[pid]=false;const el=document.getElementById('pg_'+pid);if(el)el.remove();
+    buildPage(pid);showPage(pid);
+  } catch(e){showToast('Error: '+e.message,'error');}
 }
 
-// ═══════════════════════════════════════════════════════
-// PAGE TEMPLATES
-// ═══════════════════════════════════════════════════════
-const PAGES={
-
-// ADMIN DASHBOARD
-aDash:()=>{
-  const pending=STUDENTS.filter(s=>s.status==='Pending');
-  const rev=[42,38,51,47,55,49,62,58,71,65,78,89];
-  const mx=Math.max(...rev);
-  const mnths=['Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan','Feb','Mar'];
-  const upcoming=STUDENTS.filter(s=>s.status!=='Inactive').map(s=>{
-    const ci=getCycleInfo(s);
-    return{...s,dueDate:ci.dueDate};
-  }).slice(0,5);
+// ═══════════════════════════════════════════════════
+// PROFILE & SETTINGS
+// ═══════════════════════════════════════════════════
+function buildProfileUI(){
   return`
-<div class="ph">
-  <div><div class="pt">Dashboard</div><div class="ps">Welcome back, Admin — ${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})}</div></div>
-  <div style="display:flex;gap:8px">
-    <button class="bsm bam" onclick="prepCash(null);openOv('ov_cash')">+ Cash Payment</button>
-    <button class="bsm ba2" onclick="openOv('ov_addSt')">+ Add Student</button>
+<div class="ph"><div><div class="pt">My Profile</div></div></div>
+<div class="pw">
+  <div class="pc">
+    <div class="bav">${CU.photoURL?`<img src="${CU.photoURL}" alt=""/>`:((CU.firstName||CU.name||'?')[0].toUpperCase())}</div>
+    <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:3px">${CU.name||''}</div>
+    <div style="font-size:12px;color:var(--muted2);margin-bottom:13px">${CU.email}</div>
+    ${CU.role==='student'?`
+    <div class="dr"><span class="dl">Class</span><span class="dv">${CU.class||'—'}</span></div>
+    <div class="dr"><span class="dl">Batch</span><span class="dv" style="font-size:12px">${CU.batch||'—'}</span></div>
+    <div class="dr"><span class="dl">Area</span><span class="dv">${CU.area||'—'}</span></div>
+    <div class="dr"><span class="dl">Building</span><span class="dv">${CU.building||'—'}</span></div>`:''}
+    ${CU.role==='tutor'?`
+    <div class="dr"><span class="dl">Teaches</span><span class="dv">${(CU.teaches||[]).join(', ')}</span></div>`:''}
   </div>
-</div>
-<div class="sg">
-  <div class="sc c"><div class="si">👥</div><div class="sv">${STUDENTS.length}</div><div class="sl">Total Students</div><div class="sch up">↑ 3 joined this month</div></div>
-  <div class="sc p"><div class="si">💰</div><div class="sv">₹89,400</div><div class="sl">Revenue Mar 2025</div><div class="sch up">↑ 14.8% vs Feb</div></div>
-  <div class="sc a"><div class="si">⏳</div><div class="sv">${STUDENTS.filter(s=>s.status==='Pending').length}</div><div class="sl">Pending Fees</div><div class="sch dn">Need follow-up</div></div>
-  <div class="sc g"><div class="si">📅</div><div class="sv">5</div><div class="sl">Classes Today</div><div class="sch up">Thu, 20 Mar</div></div>
-</div>
-<div style="display:grid;grid-template-columns:3fr 2fr;gap:18px;margin-bottom:18px">
-  <div class="tc">
-    <div class="th"><div class="tt">📅 Today's Schedule with Students</div></div>
-    ${(()=>{
-      const todaySlots=getScheduleForDay('Thu',null);
-      return Object.keys(todaySlots).length?Object.entries(todaySlots).map(([batch,info])=>`
-      <div style="padding:11px 15px;border-bottom:1px solid var(--border)">
-        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:7px">
-          <div style="display:flex;align-items:center;gap:9px">
-            ${cb(info.class)}<strong style="color:#fff">${batch.split('(').pop().replace(')','').trim()||batch}</strong>
-          </div>
-          <span style="font-size:12px;color:var(--muted2)">${info.students.length} students</span>
-        </div>
-        <div style="display:flex;flex-wrap:wrap;gap:5px">
-          ${info.students.map(n=>`<span style="font-size:11px;background:var(--card2);border:1px solid var(--border);border-radius:5px;padding:2px 8px;color:var(--muted2)">${n}</span>`).join('')}
-        </div>
-      </div>`).join(''):'<div style="padding:14px;color:var(--muted2);font-size:13px">No classes scheduled today</div>';
-    })()}
-  </div>
-  <div class="tc" style="padding:16px">
-    <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:13px">📊 Monthly Revenue</div>
-    <div class="cb-wrap" id="aRevChart"></div>
-    <div style="display:flex;justify-content:space-between;margin-top:4px">${mnths.slice(-6).map(m=>`<div class="cb-lbl">${m}</div>`).join('')}</div>
-  </div>
-</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
-  <div class="tc">
-    <div class="th"><div class="tt">💵 Upcoming Fee Collections</div><button class="bsm bo" onclick="buildPage('aPayments');showPage('aPayments')">All →</button></div>
-    ${upcoming.map(s=>`
-    <div style="display:flex;align-items:center;gap:10px;padding:9px 15px;border-bottom:1px solid var(--border)">
-      <div style="flex:1"><div style="font-weight:600;color:#fff;font-size:13px">${sName(s)}</div><div style="font-size:11px;color:var(--muted2)">${s.class} · ${s.batch.split(' ').slice(0,3).join(' ')}</div></div>
-      <div style="text-align:right"><div style="font-weight:700;color:var(--cyan);font-size:13px">₹${s.fee.toLocaleString()}</div><div style="font-size:10px;color:var(--muted2)">Due ${s.dueDate}</div></div>
-    </div>`).join('')}
-  </div>
-  <div class="tc">
-    <div class="th"><div class="tt">Recent Payments</div></div>
-    <div style="overflow-x:auto"><table>
-      <thead><tr><th>Student</th><th>Amount</th><th>Method</th><th>Status</th></tr></thead>
-      <tbody>${PAYMENTS.slice(0,5).map(p=>`<tr><td><strong>${p.student}</strong></td><td><strong>${p.amount}</strong></td><td style="font-size:12px">${p.method}</td><td>${sb(p.status)}</td></tr>`).join('')}</tbody>
-    </table></div>
+  <div class="tc" style="padding:20px">
+    <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:13px">🔐 Change Password</div>
+    <div class="field"><label>New Password</label><input type="password" id="newPw" placeholder="Min 8 characters"/></div>
+    <div class="field"><label>Confirm Password</label><input type="password" id="confPw" placeholder="Re-enter"/></div>
+    <button class="btn-primary" style="font-size:13px;padding:10px" onclick="changePassword()">Update Password</button>
   </div>
 </div>`;
-},
+}
 
-aStudents:()=>`
-<div class="ph">
-  <div><div class="pt">Students</div><div class="ps">${STUDENTS.length} total · ${STUDENTS.filter(s=>s.status==='Active').length} active</div></div>
-  <div style="display:flex;gap:8px">
-    <button class="bsm bam" onclick="prepCash(null);openOv('ov_cash')">+ Cash Payment</button>
-    <button class="bsm ba2" onclick="openOv('ov_addSt')">+ Add Student</button>
-  </div>
-</div>
-<div class="sg" style="grid-template-columns:repeat(4,1fr)">
-  <div class="sc g"><div class="si">✅</div><div class="sv">${STUDENTS.filter(s=>s.status==='Active').length}</div><div class="sl">Active</div></div>
-  <div class="sc a"><div class="si">⏳</div><div class="sv">${STUDENTS.filter(s=>s.status==='Pending').length}</div><div class="sl">Fee Pending</div></div>
-  <div class="sc p"><div class="si">💤</div><div class="sv">${STUDENTS.filter(s=>s.status==='Inactive').length}</div><div class="sl">Inactive</div></div>
-  <div class="sc c"><div class="si">👥</div><div class="sv">${STUDENTS.length}</div><div class="sl">Total</div></div>
-</div>
-<div class="tc">
-  <div class="th"><div class="tt">All Students</div>
-    <div class="ta"><input class="si-input" placeholder="Search name, email, class..." oninput="ft(this,'stTb')"/><button class="bsm bo">Export</button></div>
-  </div>
-  <div style="overflow-x:auto"><table>
-    <thead><tr><th>#</th><th>First</th><th>Last</th><th>Email</th><th>Class</th><th>Batch</th><th>Fee</th><th>1st Session</th><th>Status</th><th>Action</th></tr></thead>
-    <tbody id="stTb">${STUDENTS.map((s,i)=>`
-    <tr>
-      <td style="color:var(--muted2);font-size:11px">${i+1}</td>
-      <td><strong>${s.fn}</strong></td><td>${s.ln}</td>
-      <td style="font-size:11px;color:var(--muted2)">${s.email}</td>
-      <td>${cb(s.class)}</td>
-      <td style="font-size:11px;color:var(--muted2);max-width:150px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.batch}</td>
-      <td><strong style="color:var(--cyan)">₹${s.fee.toLocaleString()}</strong></td>
-      <td style="font-size:11px;color:var(--muted2)">${s.firstSession}</td>
-      <td>${sb(s.status)}</td>
-      <td><button class="bsm bo" style="font-size:11px;padding:4px 9px" onclick="viewStudent(${s.id})">View</button></td>
-    </tr>`).join('')}</tbody>
-  </table></div>
-</div>`,
+async function changePassword(){
+  const np=document.getElementById('newPw').value;
+  const cp=document.getElementById('confPw').value;
+  if(np.length<8){showToast('Password must be at least 8 characters','error');return;}
+  if(np!==cp){showToast('Passwords do not match','error');return;}
+  try {
+    await auth.currentUser.updatePassword(np);
+    document.getElementById('newPw').value='';
+    document.getElementById('confPw').value='';
+    showToast('✅ Password updated successfully','success');
+  } catch(e){
+    if(e.code==='auth/requires-recent-login'){
+      showToast('Please sign out and sign in again before changing password','error');
+    } else {showToast('Error: '+e.message,'error');}
+  }
+}
 
-aPayments:()=>{
-  const pending=STUDENTS.filter(s=>s.status==='Pending');
+function buildSettingsUI(){
   return`
-<div class="ph">
-  <div><div class="pt">Payments</div><div class="ps">Fee collection history and upcoming</div></div>
-  <button class="bsm bam" onclick="prepCash(null);openOv('ov_cash')">+ Record Cash Payment</button>
-</div>
-<div class="sg">
-  <div class="sc c"><div class="si">💰</div><div class="sv">₹2,34,600</div><div class="sl">Total 2025</div></div>
-  <div class="sc g"><div class="si">✅</div><div class="sv">₹89,400</div><div class="sl">March 2025</div><div class="sch up">↑ 14.8%</div></div>
-  <div class="sc a"><div class="si">⏳</div><div class="sv">₹${pending.reduce((s,x)=>s+x.fee,0).toLocaleString()}</div><div class="sl">Pending</div><div class="sch dn">${pending.length} students</div></div>
-</div>
-<div class="tc" style="margin-bottom:18px">
-  <div class="th"><div class="tt">💵 Fee Collections Due — by Student Cycle</div></div>
-  <div style="overflow-x:auto"><table>
-    <thead><tr><th>Student</th><th>Class</th><th>Batch</th><th>Fee</th><th>Cycle Start</th><th>Due Date</th><th>Payout Cycle</th><th>Status</th><th>Action</th></tr></thead>
-    <tbody>${STUDENTS.filter(s=>s.status!=='Inactive').map(s=>{
-      const ci=getCycleInfo(s);
-      return`<tr>
-        <td><strong>${sName(s)}</strong><div style="font-size:10px;color:var(--muted2)">${s.email}</div></td>
-        <td>${cb(s.class)}</td>
-        <td style="font-size:11px;color:var(--muted2)">${s.batch.split(' ').slice(0,4).join(' ')}</td>
-        <td><strong style="color:var(--cyan)">₹${s.fee.toLocaleString()}</strong></td>
-        <td style="font-size:11px">${ci.cycleStart}</td>
-        <td style="font-size:11px;font-weight:700;color:var(--green)">${ci.dueDate}</td>
-        <td style="font-size:11px;color:var(--muted2)">${ci.payoutDay}</td>
-        <td>${sb(s.status)}</td>
-        <td><button class="bsm bam" style="font-size:11px;padding:4px 9px" onclick="prepCash(${s.id});openOv('ov_cash')">+ Pay</button></td>
-      </tr>`;
-    }).join('')}</tbody>
-  </table></div>
-</div>
-<div class="tc">
-  <div class="th"><div class="tt">All Transactions</div><input class="si-input" placeholder="Search..." oninput="ft(this,'payTb')"/></div>
-  <div style="overflow-x:auto"><table>
-    <thead><tr><th>Txn ID</th><th>Student</th><th>Class</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th></tr></thead>
-    <tbody id="payTb">${PAYMENTS.map(p=>`<tr>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)">${p.txn}</td>
-      <td><strong>${p.student}</strong></td><td>${cb(p.class)}</td>
-      <td><strong>${p.amount}</strong></td>
-      <td style="font-size:11px;color:var(--muted2)">${p.date}</td>
-      <td style="font-size:12px">${p.method}</td><td>${sb(p.status)}</td>
-    </tr>`).join('')}</tbody>
-  </table></div>
-</div>`;
-},
-
-aTutors:()=>`
-<div class="ph">
-  <div><div class="pt">Tutors</div><div class="ps">Manage teaching staff</div></div>
-  <button class="bsm ba2" onclick="openOv('ov_addTutor')">+ Add Tutor</button>
-</div>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:15px">
-  ${Object.entries(USERS).filter(([,u])=>u.role==='tutor').map(([email,t])=>`
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px">
-    <div style="display:flex;align-items:center;gap:10px;margin-bottom:13px">
-      <div class="bav" style="width:42px;height:42px;font-size:16px;margin:0">${t.firstName[0]}</div>
-      <div><div style="font-weight:700;color:#fff">${t.name}</div><div style="font-size:11px;color:var(--muted2)">${email}</div></div>
-      <span class="badge bg2" style="margin-left:auto">Active</span>
-    </div>
-    <div class="dr"><span class="dl">Teaches</span><span class="dv">${t.teaches.join(', ')}</span></div>
-    <div class="dr"><span class="dl">Students</span><span class="dv">${STUDENTS.filter(s=>t.teaches.includes(s.class)&&s.status==='Active').length}</span></div>
-    <div style="display:flex;gap:8px;margin-top:12px">
-      <button class="bsm bo" style="flex:1" onclick="showToast('✏️ Edit — available in live version','success')">Edit</button>
-      <button class="bsm bam" style="flex:1" onclick="showToast('🔑 Reset password — available in live version','success')">Reset Password</button>
-    </div>
-  </div>`).join('')}
-</div>`,
-
-aPayouts:()=>{
-  const tutors=Object.entries(USERS).filter(([,u])=>u.role==='tutor');
-  return`
-<div class="ph"><div><div class="pt">Tutor Payouts</div><div class="ps">What each tutor is owed this cycle — based on students enrolled</div></div></div>
-<div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:12px;padding:14px 16px;margin-bottom:18px;font-size:13px;color:var(--amber)">
-  📋 <strong>Payout Rules:</strong> Students joining 1st–15th → tutor paid on 16th of that month. Students joining 16th–31st → tutor paid on 1st of next month. Each student's cycle starts from their first session date.
-</div>
-${tutors.map(([email,t])=>{
-  const c1=calcTutorPayout(t.teaches,'first');
-  const c2=calcTutorPayout(t.teaches,'second');
-  const total1=c1.reduce((s,x)=>s+x.share,0);
-  const total2=c2.reduce((s,x)=>s+x.share,0);
-  return`
-<div class="payout-card">
-  <div class="payout-tutor">
-    <div class="bav" style="width:40px;height:40px;font-size:16px;margin:0">${t.firstName[0]}</div>
-    <div><div style="font-weight:700;color:#fff;font-size:15px">${t.name}</div><div style="font-size:12px;color:var(--muted2)">${t.teaches.join(' · ')}</div></div>
-    <div style="margin-left:auto;text-align:right">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">₹${(total1+total2).toLocaleString()}</div>
-      <div style="font-size:11px;color:var(--muted2)">Total this cycle</div>
-    </div>
-  </div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
-    <div>
-      <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:10px">Pay on 16th (students joined 1–15)</div>
-      ${c1.map(x=>`
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
-        <div>${cb(x.cls)} ${x.cls}</div>
-        <div style="text-align:right">
-          <div style="font-weight:700;color:var(--cyan)">₹${x.share.toLocaleString()}</div>
-          <div style="font-size:10px;color:var(--muted2)">${x.count} students${x.cls==='Zumba'?' (flat ₹3,000/batch)':x.cls==='Dance'||x.cls==='Kids Dance'?' (₹500/student)':' (50% of ₹'+CLASS_FEES[x.cls]+')'}</div>
-        </div>
-      </div>`).join('')}
-      <div style="display:flex;justify-content:space-between;padding:10px 0;font-weight:700;color:#fff;font-size:14px">
-        <span>Pay on 16th Mar:</span><span style="color:var(--green)">₹${total1.toLocaleString()}</span>
-      </div>
-    </div>
-    <div>
-      <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:10px">Pay on 1st Apr (students joined 16–31)</div>
-      ${c2.map(x=>`
-      <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">
-        <div>${cb(x.cls)} ${x.cls}</div>
-        <div style="text-align:right">
-          <div style="font-weight:700;color:var(--cyan)">₹${x.share.toLocaleString()}</div>
-          <div style="font-size:10px;color:var(--muted2)">${x.count} students</div>
-        </div>
-      </div>`).join('')}
-      <div style="display:flex;justify-content:space-between;padding:10px 0;font-weight:700;color:#fff;font-size:14px">
-        <span>Pay on 1st Apr:</span><span style="color:var(--green)">₹${total2.toLocaleString()}</span>
-      </div>
-    </div>
-  </div>
-</div>`;
-}).join('')}`;
-},
-
-aSchedule:()=>`
-<div class="ph"><div><div class="pt">Weekly Schedule</div><div class="ps">All classes — who's attending each session</div></div></div>
-${buildWeekGrid(null)}`,
-
-aMessages:()=>buildMsgUI(),
-
-aSettings:()=>`
-<div class="ph"><div><div class="pt">Settings</div><div class="ps">Studio config</div></div><button class="bsm ba2" onclick="showToast('✅ Settings saved','success')">Save Changes</button></div>
+<div class="ph"><div><div class="pt">Settings</div></div><button class="bsm ba2" onclick="showToast('✅ Settings saved','success')">Save</button></div>
 <div style="max-width:660px">
   <div class="ss"><div class="stitle">🏫 Studio Info</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="field"><label>Studio Name</label><input value="Fitbeat Dance Fitness Studio"/></div>
       <div class="field"><label>Email</label><input value="fitbeat26@gmail.com"/></div>
       <div class="field"><label>Primary Phone</label><input value="7977506715"/></div>
-      <div class="field"><label>Secondary Phone</label><input value="7666835466"/></div>
+      <div class="field"><label>UPI ID</label><input value="rahul200118-3@oksbi"/></div>
     </div>
-    <div class="field"><label>Address</label><textarea style="height:56px">Unit 9, Anand Dham Society, Bhandup Nahur East, Mumbai 400042</textarea></div>
   </div>
   <div class="ss"><div class="stitle">💰 Fee Structure</div>
     ${[['Zumba',1999,5499],['Dance',1499,4199],['Kids Dance',1199,3499],['Chess',1499,4199],['Guitar',1999,5499]].map(([c,m,q])=>`
@@ -1170,377 +1231,159 @@ aSettings:()=>`
     </div>`).join('')}
   </div>
   <div class="ss"><div class="stitle">💸 Tutor Payout Rates</div>
-    ${[['Guitar','50% per student','₹999.50 per student'],['Dance','₹500 per student','Fixed'],['Kids Dance','₹500 per student','Fixed'],['Chess','50% per student','₹749.50 per student'],['Zumba','₹3,000 flat','Per batch, regardless of students']].map(([c,rate,note])=>`
-    <div class="dr"><span class="dl">${cb(c)} ${c}</span><span class="dv"><span style="color:var(--cyan)">${rate}</span> <span style="font-size:11px;color:var(--muted2)">${note}</span></span></div>`).join('')}
+    ${[['Guitar','50% per student','₹999.50/student'],['Dance','₹500 per student','Fixed'],['Kids Dance','₹500 per student','Fixed'],['Chess','50% per student','₹749.50/student'],['Zumba','₹3,000 flat','Per batch']].map(([c,r,n])=>`
+    <div class="dr"><span class="dl">${cb(c)} ${c}</span><span class="dv"><span style="color:var(--cyan)">${r}</span> <span style="font-size:11px;color:var(--muted2)">${n}</span></span></div>`).join('')}
   </div>
   <div class="ss"><div class="stitle">🔔 Notifications</div>
-    ${[['Payment reminders (3 days before due)','Auto email + WhatsApp',true],['New student alerts',true],['Monthly revenue report',false],['Tutor payout reminders',true]].map(([t,s,on])=>typeof s==='boolean'?`
-    <div class="tog-row"><div style="font-size:14px;color:var(--text)">${t}</div><div class="toggle ${on?'on':''}" onclick="this.classList.toggle('on');showToast('Updated','success')"></div></div>`:`
-    <div class="tog-row"><div><div style="font-size:14px;color:var(--text)">${t}</div><div style="font-size:12px;color:var(--muted2)">${s}</div></div><div class="toggle ${on?'on':''}" onclick="this.classList.toggle('on');showToast('Updated','success')"></div></div>`).join('')}
-  </div>
-</div>`,
-
-// TUTOR PAGES
-tDash:()=>{
-  const myS=STUDENTS.filter(s=>CU.teaches.includes(s.class)&&s.status==='Active');
-  const pending=STUDENTS.filter(s=>CU.teaches.includes(s.class)&&s.status==='Pending');
-  const payouts=calcTutorPayout(CU.teaches,'first').concat(calcTutorPayout(CU.teaches,'second'));
-  const myTotal=payouts.reduce((s,x)=>s+x.share,0);
-  return`
-<div class="ph"><div><div class="pt">Good ${new Date().getHours()<12?'Morning':new Date().getHours()<17?'Afternoon':'Evening'}, ${CU.firstName}!</div>
-<div class="ps">You teach ${CU.teaches.join(' & ')} · ${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})}</div></div></div>
-<div class="sg">
-  <div class="sc c"><div class="si">👥</div><div class="sv">${myS.length}</div><div class="sl">My Active Students</div></div>
-  <div class="sc g"><div class="si">✅</div><div class="sv">87%</div><div class="sl">Avg Attendance</div><div class="sch up">This month</div></div>
-  <div class="sc pu"><div class="si">💸</div><div class="sv">₹${myTotal.toLocaleString()}</div><div class="sl">My Earnings This Cycle</div><div class="sch up">See breakdown →</div></div>
-  <div class="sc a"><div class="si">⚠️</div><div class="sv">${pending.length}</div><div class="sl">Payment Follow-up</div><div class="sch dn">${pending.length} student${pending.length!==1?'s':''} pending</div></div>
-</div>
-<div style="display:grid;grid-template-columns:1fr 1fr;gap:18px">
-  <div class="tc">
-    <div class="th"><div class="tt">📅 Today's Classes & Students</div></div>
-    ${(()=>{const ts=getScheduleForDay('Thu',CU.teaches);return Object.keys(ts).length?Object.entries(ts).map(([batch,info])=>`
-    <div style="padding:11px 14px;border-bottom:1px solid var(--border)">
-      <div style="display:flex;align-items:center;gap:9px;margin-bottom:7px">
-        ${cb(info.class)}<strong style="color:#fff;font-size:13px">${batch.split('(').pop().replace(')','').trim()||batch}</strong>
-        <span style="margin-left:auto;font-size:12px;color:var(--muted2)">${info.students.length} students</span>
-      </div>
-      <div style="display:flex;flex-wrap:wrap;gap:4px">
-        ${info.students.map(n=>`<span style="font-size:10px;background:var(--card2);border:1px solid var(--border);border-radius:5px;padding:2px 7px;color:var(--muted2)">${n}</span>`).join('')}
-      </div>
-    </div>`).join(''):'<div style="padding:14px;color:var(--muted2);font-size:13px">No classes today</div>';})()}
-  </div>
-  <div class="tc">
-    <div class="th"><div class="tt">💳 Payment Follow-up</div></div>
-    <div style="padding:9px 14px;font-size:12px;color:var(--muted2);background:rgba(245,158,11,.05);border-bottom:1px solid var(--border)">Students with fee pending — remind them to pay online</div>
-    ${pending.length?pending.map(s=>`
-    <div style="display:flex;align-items:center;gap:9px;padding:9px 14px;border-bottom:1px solid var(--border)">
-      <div class="av" style="width:27px;height:27px;font-size:10px;flex-shrink:0">${s.fn[0]}</div>
-      <div style="flex:1"><div style="font-size:13px;font-weight:600;color:#fff">${sName(s)}</div><div style="font-size:11px;color:var(--muted2)">${s.class}</div></div>
-      <span class="badge bam2">₹${s.fee.toLocaleString()} due</span>
-    </div>`).join(''):'<div style="padding:14px;text-align:center;color:var(--muted2);font-size:13px">✅ All paid up!</div>'}
+    ${[['Payment reminders','3 days before due',true],['New student alerts','On signup',true],['Monthly report','1st of each month',false],['Payout reminders','On payout date',true]].map(([t,s,on])=>`
+    <div class="tog-row">
+      <div><div style="font-size:14px;color:var(--text)">${t}</div><div style="font-size:12px;color:var(--muted2)">${s}</div></div>
+      <div class="toggle ${on?'on':''}" onclick="this.classList.toggle('on');showToast('Updated','success')"></div>
+    </div>`).join('')}
   </div>
 </div>`;
-},
+}
 
-tStudents:()=>{
-  const myS=STUDENTS.filter(s=>CU.teaches.includes(s.class));
-  return`
-<div class="ph"><div><div class="pt">My Students</div><div class="ps">${myS.length} students across your classes</div></div></div>
-<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:18px">
-  ${CU.teaches.map(cls=>{const st=STUDENTS.filter(s=>s.class===cls&&s.status==='Active');return`
-  <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:15px">
-    <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:#fff;margin-bottom:3px">${cls}</div>
-    <div style="font-size:13px;color:var(--muted2);margin-bottom:9px">${st.length} active</div>
-    <div style="height:4px;background:var(--card2);border-radius:2px;overflow:hidden"><div style="height:100%;width:${Math.round(st.length/Math.max(STUDENTS.filter(s=>s.class===cls).length,1)*100)}%;background:var(--grad);border-radius:2px"></div></div>
-  </div>`;}).join('')}
-</div>
-<div class="tc">
-  <div class="th"><div class="tt">All My Students</div><input class="si-input" placeholder="Search..." oninput="ft(this,'myStTb')"/></div>
-  <div style="overflow-x:auto"><table>
-    <thead><tr><th>First Name</th><th>Last Name</th><th>Class</th><th>Batch</th><th>1st Session</th><th>Status</th><th>Attendance</th></tr></thead>
-    <tbody id="myStTb">${myS.map(s=>`
-    <tr><td><strong>${s.fn}</strong></td><td>${s.ln}</td>
-    <td>${cb(s.class)}</td>
-    <td style="font-size:11px;color:var(--muted2)">${s.batch.split(' ').slice(0,4).join(' ')}</td>
-    <td style="font-size:11px;color:var(--muted2)">${s.firstSession}</td>
-    <td>${sb(s.status)}</td>
-    <td style="font-weight:700;color:var(--green)">${68+Math.abs(Math.sin(s.id)*20)|0}%</td>
-    </tr>`).join('')}</tbody>
-  </table></div>
-</div>`;
-},
-
-tAttendance:()=>`
-<div class="ph">
-  <div><div class="pt">Attendance</div><div class="ps">Mark today — ${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})}</div></div>
-  <button class="bsm ba2" onclick="saveAtt()">Save Attendance</button>
-</div>
-${CU.teaches.map(cls=>{
-  const students=STUDENTS.filter(s=>s.class===cls&&s.status==='Active');
-  if(!students.length)return'';
-  // Check if this class runs today (Thu)
-  const clsDayMap={'Dance':['Tue','Thu'],'Kids Dance':['Tue','Thu'],'Chess':['Sat','Sun'],'Guitar':['Wed','Fri'],'Zumba':['Mon','Wed','Fri']};
-  const runsToday=(clsDayMap[cls]||[]).includes('Thu');
-  return`
-  <div class="tc" style="margin-bottom:15px">
-    <div class="th">
-      <div class="tt">${cb(cls)} ${cls} Class ${!runsToday?'<span style="font-size:11px;color:var(--muted2)">(not scheduled today)</span>':''}</div>
-      <div style="font-size:12px;color:var(--muted2)">${students.filter((_,i)=>i%2===0).length}/${students.length} marked present</div>
-    </div>
-    <div style="padding:0 15px">
-      ${students.map((s,i)=>{const defPresent=i%3!==0;return`
-      <div class="att-row">
-        <div style="display:flex;align-items:center;gap:9px"><div class="av" style="width:27px;height:27px;font-size:10px;flex-shrink:0">${s.fn[0]}</div><strong>${sName(s)}</strong></div>
-        <div style="display:flex;gap:6px">
-          <button class="att-btn att-p${defPresent?' on':''}" id="ap_${cls}_${i}" onclick="setAtt('${cls}',${i},'p',this)">✓ Present</button>
-          <button class="att-btn att-a${!defPresent?' on':''}" id="aa_${cls}_${i}" onclick="setAtt('${cls}',${i},'a',this)">✕ Absent</button>
+// ═══════════════════════════════════════════════════
+// INITS (async page data loads)
+// ═══════════════════════════════════════════════════
+const INITS = {
+  aTutors: async () => {
+    const snap=await db.collection('users').where('role','==','tutor').get();
+    const tutors=snap.docs.map(d=>({id:d.id,...d.data()}));
+    const el=document.getElementById('tutorsList');if(!el)return;
+    if(!tutors.length){el.innerHTML=`<div class="empty-state"><div class="ei">🎓</div><p>No tutors yet — <a style="color:var(--cyan);cursor:pointer" onclick="openOv('ov_addTutor')">add the first one</a></p></div>`;return;}
+    el.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:15px">${tutors.map(t=>`
+    <div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:13px">
+        <div class="bav" style="width:42px;height:42px;font-size:16px;margin:0">${(t.firstName||t.name||'?')[0]}</div>
+        <div><div style="font-weight:700;color:#fff">${t.name||t.firstName||''}</div><div style="font-size:11px;color:var(--muted2)">${t.email}</div></div>
+        <span class="badge bg2" style="margin-left:auto">Active</span>
+      </div>
+      <div class="dr"><span class="dl">Teaches</span><span class="dv">${(t.teaches||[]).join(', ')}</span></div>
+      <div class="dr"><span class="dl">Students</span><span class="dv">${allStudents.filter(s=>(t.teaches||[]).includes(s.class)&&s.status==='Active').length}</span></div>
+    </div>`).join('')}</div>`;
+  },
+  aPayouts: async () => {
+    const snap=await db.collection('users').where('role','==','tutor').get();
+    const tutors=snap.docs.map(d=>({id:d.id,...d.data()}));
+    const el=document.getElementById('payoutsList');if(!el)return;
+    if(!tutors.length){el.innerHTML=`<div class="empty-state"><div class="ei">💸</div><p>No tutors found</p></div>`;return;}
+    el.innerHTML=tutors.map(t=>{
+      const teaches=t.teaches||[];
+      const s1=allStudents.filter(s=>teaches.includes(s.class)&&s.status==='Active'&&new Date(s.firstSession||s.createdAt?.toDate?.()?.toISOString()?.split('T')[0]||'2025-01-01').getDate()<=15);
+      const s2=allStudents.filter(s=>teaches.includes(s.class)&&s.status==='Active'&&new Date(s.firstSession||s.createdAt?.toDate?.()?.toISOString()?.split('T')[0]||'2025-01-01').getDate()>15);
+      const pay1=teaches.reduce((sum,cls)=>{const cnt=s1.filter(s=>s.class===cls).length;return sum+tutorShare(cls,cnt);},0);
+      const pay2=teaches.reduce((sum,cls)=>{const cnt=s2.filter(s=>s.class===cls).length;return sum+tutorShare(cls,cnt);},0);
+      return`<div style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;margin-bottom:16px">
+        <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+          <div class="bav" style="width:40px;height:40px;font-size:16px;margin:0">${(t.firstName||t.name||'?')[0]}</div>
+          <div><div style="font-weight:700;color:#fff;font-size:15px">${t.name||''}</div><div style="font-size:12px;color:var(--muted2)">${teaches.join(' · ')}</div></div>
+          <div style="margin-left:auto;text-align:right">
+            <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;background:var(--grad);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">₹${(pay1+pay2).toLocaleString()}</div>
+            <div style="font-size:11px;color:var(--muted2)">Total this cycle</div>
+          </div>
         </div>
-      </div>`;}).join('')}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
+          <div><div style="font-size:11px;font-weight:700;color:var(--muted2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Pay on 16th · ${s1.length} students</div>
+            ${s1.slice(0,4).map(s=>`<div style="font-size:12px;color:var(--muted2);padding:3px 0;border-bottom:1px solid var(--border)">${s.fn||s.firstName||''} ${s.ln||s.lastName||''}</div>`).join('')}
+            ${s1.length>4?`<div style="font-size:11px;color:var(--muted);margin-top:4px">+${s1.length-4} more</div>`:''}
+            <div style="font-weight:700;color:var(--green);font-size:14px;margin-top:8px">₹${pay1.toLocaleString()}</div>
+          </div>
+          <div><div style="font-size:11px;font-weight:700;color:var(--muted2);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Pay on 1st · ${s2.length} students</div>
+            ${s2.slice(0,4).map(s=>`<div style="font-size:12px;color:var(--muted2);padding:3px 0;border-bottom:1px solid var(--border)">${s.fn||s.firstName||''} ${s.ln||s.lastName||''}</div>`).join('')}
+            ${s2.length>4?`<div style="font-size:11px;color:var(--muted);margin-top:4px">+${s2.length-4} more</div>`:''}
+            <div style="font-weight:700;color:var(--green);font-size:14px;margin-top:8px">₹${pay2.toLocaleString()}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  },
+  aSchedule: async () => {
+    const el=document.getElementById('scheduleGrid');if(!el)return;
+    const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const todayIdx=new Date().getDay();const adjIdx=(todayIdx+6)%7;
+    const classDays={Zumba:{mwf:['Mon','Wed','Fri'],tts:['Tue','Thu','Sat']},Dance:{tt:['Tue','Thu']},'Kids Dance':{tt:['Tue','Thu']},Chess:{sat:['Sat'],sun:['Sun']},Guitar:{wf:['Wed','Fri']}};
+    let html='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px">';
+    days.forEach((day,idx)=>{
+      const isToday=idx===adjIdx;
+      const dayStudents=allStudents.filter(s=>{
+        if(!s.status||s.status==='Inactive')return false;
+        const cd=classDays[s.class];
+        if(!cd)return false;
+        return Object.values(cd).some(arr=>arr.includes(day));
+      });
+      const byBatch={};
+      dayStudents.forEach(s=>{if(!byBatch[s.class])byBatch[s.class]=[];byBatch[s.class].push(`${s.fn||s.firstName||''} ${s.ln||s.lastName||''}`.trim());});
+      html+=`<div style="background:var(--card);border:1px solid ${isToday?'rgba(168,85,247,.4)':'var(--border)'};border-radius:11px;overflow:hidden;min-height:160px">
+        <div style="padding:7px 8px;text-align:center;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:${isToday?'var(--purple)':'var(--muted2)'};background:${isToday?'rgba(168,85,247,.1)':'transparent'}">${day}${isToday?' ●':''}</div>`;
+      if(!Object.keys(byBatch).length){html+=`<div style="padding:10px 8px;font-size:11px;color:var(--muted);text-align:center">—</div>`;}
+      else{Object.entries(byBatch).forEach(([cls,names])=>{html+=`<div style="padding:6px 8px;border-bottom:1px solid rgba(255,255,255,.04)"><div style="font-weight:600;color:#fff;font-size:11px;margin-bottom:3px">${cls}</div>${names.slice(0,3).map(n=>`<div style="font-size:10px;color:var(--muted2);line-height:1.5">${n}</div>`).join('')}${names.length>3?`<div style="font-size:9px;color:var(--muted)">+${names.length-3} more</div>`:''}</div>`;});}
+      html+=`</div>`;
+    });
+    html+='</div>';
+    el.innerHTML=html;
+  },
+  tPayouts: async () => {
+    const el=document.getElementById('myPayoutsList');if(!el)return;
+    const teaches=CU.teaches||[];
+    const myStudents=allStudents.filter(s=>teaches.includes(s.class)&&s.status==='Active');
+    const s1=myStudents.filter(s=>new Date(s.firstSession||'2025-01-01').getDate()<=15);
+    const s2=myStudents.filter(s=>new Date(s.firstSession||'2025-01-01').getDate()>15);
+    const pay1=teaches.reduce((sum,cls)=>sum+tutorShare(cls,s1.filter(s=>s.class===cls).length),0);
+    const pay2=teaches.reduce((sum,cls)=>sum+tutorShare(cls,s2.filter(s=>s.class===cls).length),0);
+    el.innerHTML=`
+    <div class="sg" style="grid-template-columns:repeat(3,1fr)">
+      <div class="sc pu"><div class="si">💸</div><div class="sv">₹${(pay1+pay2).toLocaleString()}</div><div class="sl">Total This Cycle</div></div>
+      <div class="sc g"><div class="si">📅</div><div class="sv">₹${pay1.toLocaleString()}</div><div class="sl">On 16th of month</div></div>
+      <div class="sc a"><div class="si">📅</div><div class="sv">₹${pay2.toLocaleString()}</div><div class="sl">On 1st of next month</div></div>
     </div>
-    <div style="padding:9px 15px;border-top:1px solid var(--border);display:flex;justify-content:space-between;font-size:12px;color:var(--muted2)">
-      <span>Present: <strong style="color:var(--green)">${students.filter((_,i)=>i%3!==0).length}</strong> &nbsp;·&nbsp; Absent: <strong style="color:var(--red)">${students.filter((_,i)=>i%3===0).length}</strong></span>
-      <span>Rate: <strong style="color:var(--cyan)">${Math.round(students.filter((_,i)=>i%3!==0).length/students.length*100)}%</strong></span>
-    </div>
-  </div>`;}).join('')}`,
-
-tPayouts:()=>{
-  const c1=calcTutorPayout(CU.teaches,'first');
-  const c2=calcTutorPayout(CU.teaches,'second');
-  const t1=c1.reduce((s,x)=>s+x.share,0);
-  const t2=c2.reduce((s,x)=>s+x.share,0);
-  return`
-<div class="ph"><div><div class="pt">My Earnings</div><div class="ps">Your share based on enrolled students — updated each cycle</div></div></div>
-<div class="sg" style="grid-template-columns:repeat(3,1fr)">
-  <div class="sc pu"><div class="si">💸</div><div class="sv">₹${(t1+t2).toLocaleString()}</div><div class="sl">Total This Cycle</div></div>
-  <div class="sc g"><div class="si">📅</div><div class="sv">₹${t1.toLocaleString()}</div><div class="sl">Paid on 16th Mar</div><div class="sch up">For students joined 1–15</div></div>
-  <div class="sc a"><div class="si">📅</div><div class="sv">₹${t2.toLocaleString()}</div><div class="sl">Paid on 1st Apr</div><div class="sch up">For students joined 16–31</div></div>
-</div>
-<div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:11px;padding:12px 15px;margin-bottom:18px;font-size:13px;color:#34d399">
-  ℹ️ Your share is calculated per student. Students who joined 1st–15th: you're paid on the 16th. Students who joined 16th–31st: you're paid on the 1st of next month.
-</div>
-${CU.teaches.map(cls=>{
-  const allS=STUDENTS.filter(s=>s.class===cls&&s.status==='Active');
-  const s1=allS.filter(s=>new Date(s.firstSession).getDate()<=15);
-  const s2=allS.filter(s=>new Date(s.firstSession).getDate()>15);
-  const sh1=tutorShare(cls,s1.length);
-  const sh2=tutorShare(cls,s2.length);
-  const rateNote=cls==='Zumba'?'₹3,000 flat per batch':cls==='Dance'||cls==='Kids Dance'?'₹500 per student':'50% of ₹'+CLASS_FEES[cls]+' = ₹'+(CLASS_FEES[cls]*0.5)+' per student';
-  return`
-  <div class="tc" style="padding:0;margin-bottom:15px">
-    <div class="th"><div class="tt">${cb(cls)} ${cls}</div><div style="font-size:12px;color:var(--muted2)">${rateNote}</div></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr">
-      <div style="padding:14px 15px;border-right:1px solid var(--border)">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:10px">Paid 16th Mar · ${s1.length} students</div>
-        ${s1.map(s=>`<div style="font-size:13px;color:var(--text);padding:4px 0;border-bottom:1px solid var(--border)">${sName(s)} <span style="color:var(--muted2);float:right;font-size:11px">${s.firstSession}</span></div>`).join('')}
-        <div style="display:flex;justify-content:space-between;padding:10px 0;font-weight:700;font-size:14px;color:#fff;border-top:1px solid var(--border);margin-top:4px"><span>Your share</span><span style="color:var(--green)">₹${sh1.toLocaleString()}</span></div>
-      </div>
-      <div style="padding:14px 15px">
-        <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:10px">Paid 1st Apr · ${s2.length} students</div>
-        ${s2.map(s=>`<div style="font-size:13px;color:var(--text);padding:4px 0;border-bottom:1px solid var(--border)">${sName(s)} <span style="color:var(--muted2);float:right;font-size:11px">${s.firstSession}</span></div>`).join('')}
-        <div style="display:flex;justify-content:space-between;padding:10px 0;font-weight:700;font-size:14px;color:#fff;border-top:1px solid var(--border);margin-top:4px"><span>Your share</span><span style="color:var(--green)">₹${sh2.toLocaleString()}</span></div>
-      </div>
-    </div>
-  </div>`;}).join('')}`;
-},
-
-tSchedule:()=>`
-<div class="ph"><div><div class="pt">My Weekly Schedule</div><div class="ps">Your classes and enrolled students</div></div></div>
-${buildWeekGrid(CU.teaches)}`,
-
-tMessages:()=>buildMsgUI(),
-
-tProfile:()=>`
-<div class="ph"><div><div class="pt">My Profile</div></div></div>
-<div class="pw">
-  <div class="pc">
-    <div class="bav">${CU.firstName[0]}</div>
-    <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:3px">${CU.name}</div>
-    <div style="font-size:12px;color:var(--muted2);margin-bottom:6px">${CU.email}</div>
-    <div class="role-badge rt" style="display:inline-block;margin-bottom:13px">Tutor</div>
-    <div class="dr"><span class="dl">Teaches</span><span class="dv">${CU.teaches.join(', ')}</span></div>
-    <div class="dr"><span class="dl">Students</span><span class="dv">${STUDENTS.filter(s=>CU.teaches.includes(s.class)&&s.status==='Active').length}</span></div>
-  </div>
-  <div class="tc" style="padding:20px">
-    <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:13px">🔐 Change Password</div>
-    <div class="field"><label>Current Password</label><input type="password" placeholder="••••••••"/></div>
-    <div class="field"><label>New Password</label><input type="password" placeholder="Min 8 characters"/></div>
-    <div class="field"><label>Confirm</label><input type="password" placeholder="Re-enter"/></div>
-    <button class="btn-primary" style="font-size:13px;padding:10px" onclick="showToast('✅ Password updated','success')">Update Password</button>
-  </div>
-</div>`,
-
-// STUDENT PAGES
-sDash:()=>{
-  const myPays=PAYMENTS.filter(p=>p.student===CU.name&&p.status==='Paid');
-  const ci=CU.firstSessionDate?getCycleInfo({firstSession:CU.firstSessionDate,class:CU.class}):{dueDate:'Apr 1, 2025'};
-  const sessPerMonth=CU.class==='Guitar'?8:CU.class==='Chess'?8:CU.class==='Zumba'?12:8;
-  const sessAttended=Math.floor(sessPerMonth*0.87);
-  const sessRemaining=sessPerMonth-sessAttended;
-  return`
-<div class="ph">
-  <div><div class="pt">Good ${new Date().getHours()<12?'Morning':new Date().getHours()<17?'Afternoon':'Evening'}, ${CU.firstName}! 👋</div>
-  <div class="ps">${CU.class} · ${CU.batch}</div></div>
-  <button class="bsm ba2" onclick="buildPage('sPay');showPage('sPay')">💳 Pay Fees →</button>
-</div>
-<div class="sg">
-  <div class="sc c"><div class="si">📅</div><div class="sv">${sessAttended}</div><div class="sl">Sessions Attended</div><div class="sch up">This month (${sessPerMonth} total)</div></div>
-  <div class="sc g"><div class="si">📊</div><div class="sv">87%</div><div class="sl">Attendance Rate</div><div class="sch up">↑ Good standing</div></div>
-  <div class="sc pu"><div class="si">🔢</div><div class="sv">${sessRemaining}</div><div class="sl">Sessions Remaining</div><div class="sch up">This cycle</div></div>
-  <div class="sc p"><div class="si">💰</div><div class="sv">₹${(CU.class==='Dance'||CU.class==='Chess'||CU.class==='Kids Dance'?1499:1999).toLocaleString()}</div><div class="sl">Next Payment Due</div><div class="sch dn">${ci.dueDate}</div></div>
-</div>
-<div style="display:grid;grid-template-columns:2fr 1fr;gap:18px">
-  <div class="tc">
-    <div class="th"><div class="tt">Recent Payments</div><button class="bsm bo" onclick="buildPage('sHistory');showPage('sHistory')">All →</button></div>
-    <div style="overflow-x:auto"><table>
-      <thead><tr><th>Txn</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th></tr></thead>
-      <tbody>${myPays.slice(0,3).map(p=>`<tr>
-        <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)">${p.txn}</td>
-        <td><strong>${p.amount}</strong></td><td style="font-size:11px;color:var(--muted2)">${p.date}</td>
-        <td style="font-size:12px">${p.method}</td><td>${sb(p.status)}</td>
-      </tr>`).join('')}</tbody>
-    </table></div>
-  </div>
-  <div class="tc" style="padding:15px">
-    <div style="font-size:13px;font-weight:700;color:#fff;margin-bottom:11px">📅 My Schedule</div>
-    ${(()=>{
-      const dayMap={'Zumba':CU.batch&&CU.batch.includes('Mon')?['Mon','Wed','Fri']:['Tue','Thu','Sat'],'Dance':['Tue','Thu'],'Kids Dance':['Tue','Thu'],'Chess':CU.batch&&CU.batch.includes('Sat')?['Sat']:['Sun'],'Guitar':['Wed','Fri']};
-      const days=dayMap[CU.class]||[];
-      const timeMatch=CU.batch&&CU.batch.match(/\d+[–-]\d+ [AP]M/i);
-      const time=timeMatch?timeMatch[0]:CU.batch?CU.batch.split(' ').slice(-2).join(' '):'';
-      return days.map(d=>`
-      <div style="display:flex;align-items:center;gap:9px;padding:8px 0;border-bottom:1px solid var(--border)">
-        <div style="width:32px;height:32px;border-radius:7px;background:rgba(0,212,255,.08);border:1px solid rgba(0,212,255,.2);display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;color:var(--cyan);flex-shrink:0">${d}</div>
-        <div><div style="font-size:13px;font-weight:600;color:#fff">${CU.class}</div><div style="font-size:11px;color:var(--muted2)">${time}</div></div>
-      </div>`).join('');
-    })()}
-    <div style="margin-top:10px;padding:8px;background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.2);border-radius:8px;font-size:12px;color:#34d399">✅ Next due: <strong>${ci.dueDate}</strong></div>
-  </div>
-</div>`;
-},
-
-sPay:()=>{
-  const fee1=CLASS_FEES[CU.class]||1999;
-  const fee2=CU.class==='Dance'||CU.class==='Chess'||CU.class==='Kids Dance'?4199:5499;
-  return`
-<div class="ph"><div><div class="pt">Pay Fees</div><div class="ps">Secure payment — UPI, Card, Net Banking</div></div></div>
-<div style="max-width:560px">
-  <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:10px">Select Plan</div>
-  <div class="plan-grid">
-    <div class="plan-card sel" id="pl1" onclick="setPlan(1,${fee1},${fee2})"><div class="chk">✓</div><div class="plan-name">Monthly</div><div class="plan-price">₹${fee1.toLocaleString()}</div><div class="plan-desc">1 month · All sessions</div></div>
-    <div class="plan-card" id="pl2" onclick="setPlan(2,${fee1},${fee2})"><div class="chk">✓</div><div class="plan-name">Quarterly</div><div class="plan-price">₹${fee2.toLocaleString()}</div><div class="plan-desc">3 months · Best value</div></div>
-  </div>
-  <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:10px">Payment Method</div>
-  <div class="pay-methods">
-    <div class="pm sel" id="pm_upi" onclick="setMeth('upi')"><span class="pi">📱</span>UPI</div>
-    <div class="pm" id="pm_card" onclick="setMeth('card')"><span class="pi">💳</span>Card</div>
-    <div class="pm" id="pm_nb" onclick="setMeth('nb')"><span class="pi">🏦</span>Net Banking</div>
-  </div>
-  <div id="sec_upi"><div class="field"><label>UPI ID</label><input id="upid" placeholder="yourname@upi" onkeydown="if(event.key==='Enter')doPay()"/></div></div>
-  <div id="sec_card" style="display:none">
-    <div class="field"><label>Card Number</label><input placeholder="1234 5678 9012 3456" maxlength="19" oninput="fc(this)"/></div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
-      <div class="field"><label>Expiry</label><input placeholder="MM / YY" maxlength="7"/></div>
-      <div class="field"><label>CVV</label><input placeholder="•••" maxlength="3" type="password"/></div>
-    </div>
-    <div class="field"><label>Name on Card</label><input placeholder="${(CU.name||'').toUpperCase()}"/></div>
-  </div>
-  <div id="sec_nb" style="display:none"><div class="field"><label>Bank</label><select><option>State Bank of India</option><option>HDFC Bank</option><option>ICICI Bank</option><option>Axis Bank</option><option>Kotak Mahindra</option></select></div></div>
-  <div class="ob">
-    <div style="font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Summary</div>
-    <div class="or"><span>${CU.class}</span><span id="os_p">Monthly</span></div>
-    <div class="or"><span>Fee</span><span id="os_s">₹${fee1.toLocaleString()}</span></div>
-    <div class="or"><span>Platform Fee</span><span style="color:var(--green)">Free</span></div>
-    <div class="or tot"><span>Total</span><span id="os_t">₹${fee1.toLocaleString()}</span></div>
-  </div>
-  <button class="btn-primary" id="payBtn" onclick="doPay()" style="font-size:15px;padding:14px">🔒 Pay ₹${fee1.toLocaleString()}</button>
-  <div style="text-align:center;font-size:11px;color:var(--muted);margin-top:8px">🔒 Secured by Razorpay · UPI / Cards / Net Banking</div>
-</div>`;
-},
-
-sHistory:()=>{
-  const myPays=PAYMENTS.filter(p=>p.student===CU.name);
-  return`
-<div class="ph"><div><div class="pt">Payment History</div></div><button class="bsm bo">⬇ Download PDF</button></div>
-<div class="sg" style="grid-template-columns:repeat(3,1fr)">
-  <div class="sc g"><div class="si">✅</div><div class="sv">${myPays.filter(p=>p.status==='Paid').length}</div><div class="sl">Payments Made</div></div>
-  <div class="sc c"><div class="si">📅</div><div class="sv">${getCycleInfo({firstSession:CU.firstSessionDate||'2025-01-01',class:CU.class}).dueDate}</div><div class="sl">Next Due Date</div></div>
-  <div class="sc p"><div class="si">💰</div><div class="sv">₹${(CLASS_FEES[CU.class]||1999).toLocaleString()}</div><div class="sl">Next Amount Due</div></div>
-</div>
-<div class="tc">
-  <div class="th"><div class="tt">All Transactions</div></div>
-  <div style="overflow-x:auto"><table>
-    <thead><tr><th>Txn ID</th><th>Class</th><th>Plan</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th><th>Receipt</th></tr></thead>
-    <tbody>${myPays.map(p=>`<tr>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)">${p.txn}</td>
-      <td>${cb(p.class)}</td><td style="font-size:11px;color:var(--muted2)">${p.plan}</td>
-      <td><strong>${p.amount}</strong></td><td style="font-size:11px;color:var(--muted2)">${p.date}</td>
-      <td style="font-size:12px">${p.method}</td><td>${sb(p.status)}</td>
-      <td><button class="bsm bo" style="font-size:11px;padding:4px 8px" onclick="showToast('📥 Downloaded','success')">⬇</button></td>
-    </tr>`).join('')}</tbody>
-  </table></div>
-</div>`;
-},
-
-sMessages:()=>buildMsgUI(),
-
-sProfile:()=>`
-<div class="ph"><div><div class="pt">My Profile</div></div></div>
-<div class="pw">
-  <div class="pc">
-    <div class="bav">${(CU.firstName||CU.name)[0]}</div>
-    <div style="font-size:16px;font-weight:700;color:#fff;margin-bottom:3px">${CU.name}</div>
-    <div style="font-size:12px;color:var(--muted2);margin-bottom:13px">${CU.email}</div>
-    <div class="dr"><span class="dl">Class</span><span class="dv">${CU.class}</span></div>
-    <div class="dr"><span class="dl">Batch</span><span class="dv" style="font-size:12px">${CU.batch}</span></div>
-    <div class="dr"><span class="dl">Area</span><span class="dv">${CU.area||'—'}</span></div>
-    <div class="dr"><span class="dl">Building</span><span class="dv">${CU.building||'—'}</span></div>
-    <div class="dr"><span class="dl">Status</span><span class="dv"><span class="badge bg2">Active</span></span></div>
-  </div>
-  <div>
-    <div class="tc" style="padding:19px;margin-bottom:15px">
-      <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:12px">✏️ Edit Profile</div>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">
-        <div class="field"><label>First Name</label><input value="${CU.firstName||''}"/></div>
-        <div class="field"><label>Last Name</label><input value="${CU.lastName||''}"/></div>
-        <div class="field"><label>Area / Locality</label><input value="${CU.area||''}"/></div>
-        <div class="field"><label>Building Name</label><input value="${CU.building||''}"/></div>
-      </div>
-      <div class="field"><label>Phone</label><input value="${CU.phone||''}"/></div>
-      <button class="btn-primary" style="font-size:13px;padding:10px" onclick="showToast('✅ Profile saved','success')">Save</button>
-    </div>
-    <div class="tc" style="padding:19px">
-      <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:12px">🔐 Change Password</div>
-      <div class="field"><label>Current Password</label><input type="password" placeholder="••••••••"/></div>
-      <div class="field"><label>New Password</label><input type="password" placeholder="Min 8 chars"/></div>
-      <div class="field"><label>Confirm</label><input type="password" placeholder="Re-enter"/></div>
-      <button class="btn-primary" style="font-size:13px;padding:10px" onclick="showToast('✅ Password updated','success')">Update</button>
-    </div>
-  </div>
-</div>`,
-};
-
-// ═══════════════════════════════════════════════════════
-// INITS
-// ═══════════════════════════════════════════════════════
-const INITS={
-  aDash:()=>{
-    const rev=[42,38,51,47,55,49,62,58,71,65,78,89];
-    const mx=Math.max(...rev);
-    const ch=document.getElementById('aRevChart');
-    if(ch)ch.innerHTML=rev.slice(-6).map(v=>`<div class="cb" style="height:${Math.round(v/mx*100)}%" title="₹${v}k"><div class="cb-val">₹${v}k</div></div>`).join('');
+    ${teaches.map(cls=>{
+      const c1s=s1.filter(s=>s.class===cls);const c2s=s2.filter(s=>s.class===cls);
+      const sh1=tutorShare(cls,c1s.length);const sh2=tutorShare(cls,c2s.length);
+      return`<div class="tc" style="margin-bottom:15px">
+        <div class="th"><div class="tt">${cb(cls)} ${cls}</div><div style="font-size:12px;color:var(--muted2)">${cls==='Zumba'?'₹3,000 flat':cls==='Dance'||cls==='Kids Dance'?'₹500/student':'50% of ₹'+CLASS_FEES[cls]}</div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr">
+          <div style="padding:13px 15px;border-right:1px solid var(--border)">
+            <div style="font-size:11px;color:var(--muted2);margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">16th — ${c1s.length} students</div>
+            ${c1s.map(s=>`<div style="font-size:12px;color:var(--muted2);padding:3px 0">${s.fn||s.firstName||''} ${s.ln||s.lastName||''}</div>`).join('')}
+            <div style="font-weight:700;color:var(--green);font-size:14px;margin-top:8px;border-top:1px solid var(--border);padding-top:8px">₹${sh1.toLocaleString()}</div>
+          </div>
+          <div style="padding:13px 15px">
+            <div style="font-size:11px;color:var(--muted2);margin-bottom:8px;font-weight:700;text-transform:uppercase;letter-spacing:.5px">1st — ${c2s.length} students</div>
+            ${c2s.map(s=>`<div style="font-size:12px;color:var(--muted2);padding:3px 0">${s.fn||s.firstName||''} ${s.ln||s.lastName||''}</div>`).join('')}
+            <div style="font-weight:700;color:var(--green);font-size:14px;margin-top:8px;border-top:1px solid var(--border);padding-top:8px">₹${sh2.toLocaleString()}</div>
+          </div>
+        </div>
+      </div>`;
+    }).join('')}`;
+  },
+  tSchedule: async () => {
+    const el=document.getElementById('tScheduleGrid');if(!el)return;
+    // Reuse admin schedule but filtered to tutor's classes
+    const days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const teaches=CU.teaches||[];
+    const classDays={Zumba:{mwf:['Mon','Wed','Fri'],tts:['Tue','Thu','Sat']},Dance:{tt:['Tue','Thu']},'Kids Dance':{tt:['Tue','Thu']},Chess:{sat:['Sat'],sun:['Sun']},Guitar:{wf:['Wed','Fri']}};
+    const myStudents=allStudents.filter(s=>teaches.includes(s.class)&&s.status==='Active');
+    let html='<div style="display:grid;grid-template-columns:repeat(7,1fr);gap:8px">';
+    days.forEach(day=>{
+      const byClass={};
+      myStudents.filter(s=>{const cd=classDays[s.class];return cd&&Object.values(cd).some(a=>a.includes(day));})
+        .forEach(s=>{if(!byClass[s.class])byClass[s.class]=[];byClass[s.class].push(`${s.fn||s.firstName||''} ${s.ln||s.lastName||''}`.trim());});
+      html+=`<div style="background:var(--card);border:1px solid var(--border);border-radius:11px;overflow:hidden;min-height:140px">
+        <div style="padding:7px;text-align:center;border-bottom:1px solid var(--border);font-size:11px;font-weight:700;color:var(--muted2)">${day}</div>`;
+      if(!Object.keys(byClass).length){html+=`<div style="padding:10px 8px;font-size:11px;color:var(--muted);text-align:center">—</div>`;}
+      else{Object.entries(byClass).forEach(([cls,names])=>{html+=`<div style="padding:6px 8px"><div style="font-weight:600;color:#fff;font-size:11px;margin-bottom:3px">${cls}</div>${names.map(n=>`<div style="font-size:10px;color:var(--muted2);line-height:1.5">${n}</div>`).join('')}</div>`;});}
+      html+=`</div>`;
+    });
+    html+='</div>';
+    el.innerHTML=html;
   },
 };
 
-// ═══════════════════════════════════════════════════════
-// ACTIONS
-// ═══════════════════════════════════════════════════════
-function viewStudent(id){
-  currentViewId=id;
-  const s=STUDENTS.find(x=>x.id===id);if(!s)return;
-  document.getElementById('vs_title').textContent=sName(s);
-  const ci=getCycleInfo(s);
-  document.getElementById('vs_info').innerHTML=`
-    <div class="dr"><span class="dl">First Name</span><span class="dv">${s.fn}</span></div>
-    <div class="dr"><span class="dl">Last Name</span><span class="dv">${s.ln}</span></div>
-    <div class="dr"><span class="dl">Email</span><span class="dv" style="font-size:11px">${s.email}</span></div>
-    <div class="dr"><span class="dl">Class</span><span class="dv">${cb(s.class)}</span></div>
-    <div class="dr"><span class="dl">Batch</span><span class="dv" style="font-size:11px">${s.batch}</span></div>
-    <div class="dr"><span class="dl">Area</span><span class="dv">${s.area||'—'}</span></div>
-    <div class="dr"><span class="dl">Building</span><span class="dv">${s.building||'—'}</span></div>
-    <div class="dr"><span class="dl">1st Session</span><span class="dv">${s.firstSession}</span></div>
-    <div class="dr"><span class="dl">Status</span><span class="dv">${sb(s.status)}</span></div>
-    <div class="dr"><span class="dl">Fee/month</span><span class="dv" style="color:var(--cyan)">₹${s.fee.toLocaleString()}</span></div>
-    <div class="dr"><span class="dl">Next Due</span><span class="dv" style="color:var(--green)">${ci.dueDate}</span></div>
-    <div class="dr"><span class="dl">Payout on</span><span class="dv" style="color:var(--amber)">${ci.payoutDay}</span></div>`;
-  const pays=PAYMENTS.filter(p=>p.student===sName(s));
-  document.getElementById('vs_pays').innerHTML=pays.length?pays.map(p=>`
-    <div style="padding:8px;background:var(--card2);border-radius:8px;margin-bottom:6px;font-size:12px">
-      <div style="display:flex;justify-content:space-between;margin-bottom:2px"><strong style="color:#fff">${p.amount}</strong>${sb(p.status)}</div>
-      <div style="color:var(--muted2)">${p.date} · ${p.method} · ${p.plan}</div>
-    </div>`).join(''):'<div style="color:var(--muted2);font-size:13px;padding:8px 0">No payments yet</div>';
-  openOv('ov_viewSt');
-}
-
+// ═══════════════════════════════════════════════════
+// ADMIN ACTIONS
+// ═══════════════════════════════════════════════════
 async function doAddStudent(){
   const fn=document.getElementById('as_fn').value.trim();
   const ln=document.getElementById('as_ln').value.trim();
@@ -1549,32 +1392,41 @@ async function doAddStudent(){
   const cl=document.getElementById('as_cl').value;
   const bt=document.getElementById('as_bt').value;
   const dt=document.getElementById('as_dt').value;
-  const err=document.getElementById('asErr');err.style.display='none';
-  if(!fn||!ln||!em||!cl||!bt){err.textContent='First name, last name, email, class and batch required.';err.style.display='block';return;}
-  const btn=document.getElementById('addStBtn');if(btn){btn.disabled=true;btn.textContent='Adding...';}
-  try{
-    const fee=CLASS_FEES[cl]||1999;
-    const today=dt||new Date().toISOString().split('T')[0];
-    let uid;
-    try{const c=await auth.createUserWithEmailAndPassword(em,'Welcome@123');uid=c.user.uid;}
-    catch(e2){
-      if(e2.code==='auth/email-already-in-use'){
-        const snap=await db.collection('users').where('email','==',em).get();
-        if(!snap.empty)uid=snap.docs[0].id;
-        else{err.textContent='Email already in use.';err.style.display='block';if(btn){btn.disabled=false;btn.textContent='Add Student →';}return;}
-      } else throw e2;
-    }
-    const profile={firstName:fn,lastName:ln,fn,ln,name:fn+' '+ln,email:em,phone:ph,class:cl,batch:bt,fee,status:'Active',firstSession:today,role:'student',uid,createdAt:firebase.firestore.FieldValue.serverTimestamp()};
-    await db.collection('students').doc(uid).set(profile);
-    await db.collection('users').doc(uid).set(profile);
-    STUDENTS.unshift({id:uid,...profile});
+  setErr('asErr','');
+  if(!fn||!ln||!em||!cl||!bt){setErr('asErr','First name, last name, email, class and batch required.');return;}
+  setBtnLoading('addStBtn',true);
+  try {
+    // Create Firebase Auth account
+    const tempPass='Welcome@'+Math.random().toString(36).slice(-6);
+    const cred=await auth.createUserWithEmailAndPassword(em,tempPass);
+    const uid=cred.user.uid;
+    // Send password reset so student can set their own
+    await auth.sendPasswordResetEmail(em);
+    const profile={
+      uid,firstName:fn,lastName:ln,name:fn+' '+ln,email:em,phone:ph,
+      class:cl,batch:bt,fee:CLASS_FEES[cl]||1999,
+      role:'student',status:'Active',
+      firstSession:dt||new Date().toISOString().split('T')[0],
+      createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+    };
+    await Promise.all([
+      db.collection('users').doc(uid).set(profile),
+      db.collection('students').doc(uid).set(profile),
+    ]);
+    allStudents.unshift({id:uid,...profile});
     closeOv('ov_addSt');
-    ['as_fn','as_ln','as_em','as_ph'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
-    ['aStudents','aDash','aPayments'].forEach(p=>{const el=document.getElementById('pg_'+p);if(el){el.remove();builtPages[p]=false;}});
+    ['as_fn','as_ln','as_em','as_ph','as_nt'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+    document.getElementById('as_cl').value='';
+    document.getElementById('as_bt').innerHTML='<option>Select class first...</option>';
+    document.getElementById('as_fee').value='';
+    ['aStudents','aDash'].forEach(p=>{const el=document.getElementById('pg_'+p);if(el){el.remove();builtPages[p]=false;}});
     buildPage('aStudents');showPage('aStudents');
-    showToast(`✅ ${fn} ${ln} added! Login: ${em} / Welcome@123`,'success');
-  }catch(e){err.textContent=e.message;err.style.display='block';}
-  if(btn){btn.disabled=false;btn.textContent='Add Student →';}
+    showToast(`✅ ${fn} ${ln} added! Password reset email sent to ${em}`,'success');
+  } catch(e){
+    setBtnLoading('addStBtn',false,'Add Student →');
+    const msgs={'auth/email-already-in-use':'This email already has an account.'};
+    setErr('asErr',msgs[e.code]||e.message);
+  }
 }
 
 async function doAddTutor(){
@@ -1584,36 +1436,35 @@ async function doAddTutor(){
   const ph=document.getElementById('at_ph').value.trim();
   const cl=Array.from(document.getElementById('at_cl').selectedOptions).map(o=>o.value);
   const pw=document.getElementById('at_pw').value;
-  const err=document.getElementById('atErr');err.style.display='none';
-  if(!fn||!ln||!em||!cl.length||!pw){err.textContent='All fields required.';err.style.display='block';return;}
-  if(pw.length<8){err.textContent='Password must be at least 8 characters.';err.style.display='block';return;}
-  const btn=document.getElementById('addTutorBtn');if(btn){btn.disabled=true;btn.textContent='Creating...';}
-  try{
+  setErr('atErr','');
+  if(!fn||!ln||!em||!cl.length||!pw){setErr('atErr','All fields required.');return;}
+  if(pw.length<8){setErr('atErr','Password must be at least 8 characters.');return;}
+  setBtnLoading('addTutorBtn',true);
+  try {
     const cred=await auth.createUserWithEmailAndPassword(em,pw);
     const uid=cred.user.uid;
-    const profile={firstName:fn,lastName:ln,name:fn+' '+ln,email:em,phone:ph,teaches:cl,role:'tutor',createdAt:firebase.firestore.FieldValue.serverTimestamp()};
+    const profile={uid,firstName:fn,lastName:ln,name:fn+' '+ln,email:em,phone:ph,teaches:cl,role:'tutor',createdAt:firebase.firestore.FieldValue.serverTimestamp()};
     await db.collection('users').doc(uid).set(profile);
     closeOv('ov_addTutor');
     ['at_fn','at_ln','at_em','at_ph','at_pw'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
     const tp=document.getElementById('pg_aTutors');if(tp){tp.remove();builtPages['aTutors']=false;}
     buildPage('aTutors');showPage('aTutors');
-    showToast(`✅ ${fn} ${ln} added as Tutor!`,'success');
-  }catch(e){
-    const msgs={'auth/email-already-in-use':'This email is already registered.'};
-    err.textContent=msgs[e.code]||e.message;err.style.display='block';
+    showToast(`✅ ${fn} ${ln} added as Tutor. Login: ${em}`,'success');
+  } catch(e){
+    setBtnLoading('addTutorBtn',false,'Create Tutor Login →');
+    const msgs={'auth/email-already-in-use':'This email already has an account.'};
+    setErr('atErr',msgs[e.code]||e.message);
   }
-  if(btn){btn.disabled=false;btn.textContent='Create Tutor Login →';}
 }
 
 function prepCash(sid){
-  // Pre-fill student dropdown
   const sel=document.getElementById('cash_st');
-  if(!sel)return;
-  sel.innerHTML=`<option value="">Select student...</option>`+STUDENTS.map(s=>`<option value="${s.id}">${sName(s)} — ${s.class}</option>`).join('');
-  if(sid){sel.value=sid;}
+  sel.innerHTML='<option value="">Select student...</option>'+allStudents.map(s=>`<option value="${s.id}">${s.fn||s.firstName||''} ${s.ln||s.lastName||''} — ${s.class}</option>`).join('');
+  if(sid)sel.value=sid;
   document.getElementById('cash_dt').value=new Date().toISOString().split('T')[0];
   document.getElementById('cash_amt').value='';
   document.getElementById('cash_note').value='';
+  openOv('ov_cash');
 }
 
 async function doRecordCash(){
@@ -1622,80 +1473,146 @@ async function doRecordCash(){
   const dt=document.getElementById('cash_dt').value;
   const method=document.getElementById('cash_method').value;
   const note=document.getElementById('cash_note').value;
-  const err=document.getElementById('cashErr');err.style.display='none';
-  if(!sid||!amt||!dt){err.textContent='Student, amount and date are required.';err.style.display='block';return;}
-  const s=STUDENTS.find(x=>x.id===sid);if(!s)return;
-  const btn=document.getElementById('cashBtn');if(btn){btn.disabled=true;btn.textContent='Saving...';}
-  try{
-    const txn='CASH'+Date.now().toString().slice(-8);
-    const dateStr=new Date(dt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
-    const payment={txn,studentUid:sid,student:sName(s),class:s.class,plan:'Monthly',amount:'₹'+Number(amt).toLocaleString(),amtNum:Number(amt),date:dateStr,method,status:'Paid',note:note||'',createdAt:firebase.firestore.FieldValue.serverTimestamp()};
-    const docRef=await db.collection('payments').add(payment);
-    PAYMENTS.unshift({id:docRef.id,...payment});
+  setErr('cashErr','');
+  if(!sid||!amt||!dt){setErr('cashErr','Student, amount and date are required.');return;}
+  const s=allStudents.find(x=>x.id===sid);if(!s)return;
+  setBtnLoading('cashBtn',true);
+  const txn='CASH'+Date.now().toString().slice(-8);
+  const dateStr=new Date(dt).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  const payment={
+    txn,student:s.name||((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim(),
+    studentUid:s.uid||s.id,class:s.class,plan:'Monthly',
+    amount:'₹'+Number(amt).toLocaleString(),amtNum:Number(amt),
+    date:dateStr,method,status:'Paid',note,
+    recordedBy:CU.uid,
+    createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+  };
+  try {
+    const ref=await db.collection('payments').add(payment);
+    allPayments.unshift({id:ref.id,...payment});
+    // Update student status to Active
     await db.collection('students').doc(sid).update({status:'Active'});
-    const idx=STUDENTS.findIndex(x=>x.id===sid);if(idx>=0)STUDENTS[idx].status='Active';
-    closeOv('ov_cash');closeOv('ov_viewSt');
+    const stIdx=allStudents.findIndex(x=>x.id===sid);
+    if(stIdx>=0)allStudents[stIdx].status='Active';
+    setBtnLoading('cashBtn',false,'Record Payment →');
+    closeOv('ov_cash');
+    closeOv('ov_viewSt');
     ['aPayments','aStudents','aDash'].forEach(p=>{const el=document.getElementById('pg_'+p);if(el){el.remove();builtPages[p]=false;}});
     buildPage('aPayments');showPage('aPayments');
-    showToast(`✅ ₹${Number(amt).toLocaleString()} recorded for ${sName(s)}`,'success');
-  }catch(e){err.textContent=e.message;err.style.display='block';}
-  if(btn){btn.disabled=false;btn.textContent='Record Payment →';}
+    showToast(`✅ ₹${Number(amt).toLocaleString()} recorded for ${payment.student}${note?' · '+note:''}`, 'success');
+  } catch(e){
+    setBtnLoading('cashBtn',false,'Record Payment →');
+    setErr('cashErr','Error: '+e.message);
+  }
 }
 
-function setAtt(cls,idx,val,btn){
-  const ap=document.getElementById('ap_'+cls+'_'+idx);
-  const aa=document.getElementById('aa_'+cls+'_'+idx);
-  if(val==='p'){ap.classList.add('on');aa.classList.remove('on');}
-  else{aa.classList.add('on');ap.classList.remove('on');}
+async function viewStudent(id){
+  currentViewId=id;
+  const s=allStudents.find(x=>x.id===id);if(!s)return;
+  document.getElementById('vs_title').textContent=(s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'');
+  document.getElementById('vs_info').innerHTML=`
+    <div class="dr"><span class="dl">First Name</span><span class="dv">${s.fn||s.firstName||''}</span></div>
+    <div class="dr"><span class="dl">Last Name</span><span class="dv">${s.ln||s.lastName||''}</span></div>
+    <div class="dr"><span class="dl">Email</span><span class="dv" style="font-size:11px">${s.email}</span></div>
+    <div class="dr"><span class="dl">Class</span><span class="dv">${cb(s.class)}</span></div>
+    <div class="dr"><span class="dl">Batch</span><span class="dv" style="font-size:11px">${s.batch||'—'}</span></div>
+    <div class="dr"><span class="dl">Area</span><span class="dv">${s.area||'—'}</span></div>
+    <div class="dr"><span class="dl">Building</span><span class="dv">${s.building||'—'}</span></div>
+    <div class="dr"><span class="dl">1st Session</span><span class="dv">${s.firstSession||'—'}</span></div>
+    <div class="dr"><span class="dl">Status</span><span class="dv">${sb(s.status)}</span></div>
+    <div class="dr"><span class="dl">Fee/month</span><span class="dv" style="color:var(--cyan)">₹${(s.fee||0).toLocaleString()}</span></div>`;
+  const pays=allPayments.filter(p=>p.studentUid===id||p.student===((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim());
+  document.getElementById('vs_pays').innerHTML=pays.length?pays.map(p=>`
+    <div style="padding:8px;background:var(--card2);border-radius:8px;margin-bottom:6px;font-size:12px">
+      <div style="display:flex;justify-content:space-between;margin-bottom:2px"><strong style="color:#fff">${p.amount}</strong>${sb(p.status)}</div>
+      <div style="color:var(--muted2)">${p.date} · ${p.method}</div>
+    </div>`).join(''):'<div style="color:var(--muted2);font-size:13px;padding:8px 0">No payments recorded yet</div>';
+  openOv('ov_viewSt');
 }
-function saveAtt(){showToast('✅ Attendance saved for today','success');}
 
-// Payment
-let curFee1=1999,curFee2=5499;
+function sendReminderWA(){
+  const s=allStudents.find(x=>x.id===currentViewId);if(!s)return;
+  const phone=(s.phone||'').replace(/\D/g,'');
+  const name=(s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'');
+  const msg=encodeURIComponent(`Hi ${s.fn||s.firstName||''}! This is a reminder that your ${s.class} class fee of ₹${s.fee} is due. Please pay via UPI (rahul200118-3@oksbi) or through the Fitbeat portal. Thank you! — Fitbeat Studio`);
+  if(phone){window.open(`https://wa.me/91${phone}?text=${msg}`,'_blank');}
+  else{showToast('No phone number on file','error');}
+  closeOv('ov_viewSt');
+}
+
+// ═══════════════════════════════════════════════════
+// STUDENT PAYMENT
+// ═══════════════════════════════════════════════════
+let selMethod2='upi';
 function setPlan(n,f1,f2){
   selPlan=n;curFee1=f1;curFee2=f2;
-  const p=n===1?f1:f2,pl=n===1?'Monthly':'Quarterly';
   document.getElementById('pl1').classList.toggle('sel',n===1);
   document.getElementById('pl2').classList.toggle('sel',n===2);
-  document.getElementById('os_p').textContent=pl;
-  document.getElementById('os_s').textContent='₹'+p.toLocaleString();
+  const p=n===1?f1:f2;
+  document.getElementById('os_p').textContent=n===1?'Monthly':'Quarterly';
   document.getElementById('os_t').textContent='₹'+p.toLocaleString();
-  document.getElementById('payBtn').textContent='🔒 Pay ₹'+p.toLocaleString();
+  document.getElementById('payBtn').textContent='Record My Payment — ₹'+p.toLocaleString();
 }
 function setMeth(m){
-  selMethod=m;
-  ['upi','card','nb'].forEach(id=>{
+  selMethod2=m;
+  ['upi','cash','bank'].forEach(id=>{
     document.getElementById('pm_'+id).classList.toggle('sel',id===m);
-    document.getElementById('sec_'+id).style.display=id===m?'block':'none';
+    const s=document.getElementById('sec_'+id);if(s)s.style.display=id===m?'block':'none';
   });
 }
-async function doPay(){
-  const btn=document.getElementById('payBtn');if(!btn)return;
-  btn.textContent='⏳ Processing...';btn.disabled=true;
-  try{
-    const price=selPlan===1?curFee1:curFee2;
-    const plan=selPlan===1?'Monthly':'Quarterly';
-    const method=selMethod==='upi'?'UPI':selMethod==='card'?'Card':'Net Banking';
-    const txn='FB'+Date.now().toString().slice(-8);
-    const now=new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
-    const payment={txn,studentUid:CU.uid,student:CU.name,class:CU.class,plan,amount:'₹'+price.toLocaleString(),amtNum:price,date:now,method,status:'Pending',note:'Student self-reported',createdAt:firebase.firestore.FieldValue.serverTimestamp()};
-    await db.collection('payments').add(payment);
-    PAYMENTS.unshift(payment);
-    btn.textContent='🔒 Pay Now';btn.disabled=false;
-    // Show receipt
-    document.getElementById('receiptId').textContent='TXN #'+txn;
+function copyUPI(){
+  navigator.clipboard.writeText('rahul200118-3@oksbi').then(()=>showToast('📋 UPI ID copied!','success')).catch(()=>{
+    const t=document.createElement('textarea');t.value='rahul200118-3@oksbi';document.body.appendChild(t);t.select();document.execCommand('copy');document.body.removeChild(t);showToast('📋 UPI ID copied!','success');
+  });
+}
+
+async function doStudentPayment(){
+  const price=selPlan===1?curFee1:curFee2;
+  const plan=selPlan===1?'Monthly':'Quarterly';
+  const methodMap={upi:'UPI',cash:'Cash',bank:'Bank Transfer'};
+  const method=methodMap[selMethod2]||'UPI';
+  const ref=selMethod2==='bank'?document.getElementById('bank_ref')?.value:'';
+  setBtnLoading('payBtn',true);
+  try {
+    const txn='STU'+Date.now().toString().slice(-8);
+    const payment={
+      txn,student:CU.name,studentUid:CU.uid,
+      class:CU.class,plan,
+      amount:'₹'+price.toLocaleString(),amtNum:price,
+      date:nowStr(),method,status:'Pending',
+      note:ref?'Ref: '+ref:'Student self-reported',
+      createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+    };
+    const docRef=await db.collection('payments').add(payment);
+    allPayments.unshift({id:docRef.id,...payment});
+    setBtnLoading('payBtn',false,'Record My Payment →');
+    document.getElementById('receiptId').textContent='REF #'+txn;
     document.getElementById('receiptDet').innerHTML=`
       <div class="dr"><span class="dl">Student</span><span class="dv">${CU.name}</span></div>
       <div class="dr"><span class="dl">Class</span><span class="dv">${CU.class}</span></div>
       <div class="dr"><span class="dl">Plan</span><span class="dv">${plan}</span></div>
-      <div class="dr"><span class="dl">Amount</span><span class="dv" style="color:var(--green)">₹${price.toLocaleString()}</span></div>
-      <div class="dr"><span class="dl">Date</span><span class="dv">${now}</span></div>
+      <div class="dr"><span class="dl">Amount</span><span class="dv" style="color:var(--amber)">₹${price.toLocaleString()}</span></div>
       <div class="dr"><span class="dl">Method</span><span class="dv">${method}</span></div>
       <div class="dr"><span class="dl">Status</span><span class="dv" style="color:var(--amber)">⏳ Pending Admin Confirmation</span></div>
-      <div style="margin-top:12px;padding:10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;font-size:12px;color:var(--amber)">Admin will confirm your payment shortly.</div>`;
+      <div style="margin-top:12px;padding:10px;background:rgba(245,158,11,.08);border:1px solid rgba(245,158,11,.2);border-radius:8px;font-size:12px;color:var(--amber)">Admin will confirm your payment and update status to Paid.</div>`;
     openOv('ov_receipt');
-  }catch(e){
-    btn.textContent='🔒 Pay Now';btn.disabled=false;
+  } catch(e){
+    setBtnLoading('payBtn',false,'Record My Payment →');
     showToast('Error: '+e.message,'error');
   }
-}</script></body></html>
+}
+
+// ATTENDANCE
+function setAtt(cls,idx,val,btn){
+  const ap=document.getElementById('ap_'+cls+'_'+idx);
+  const aa=document.getElementById('aa_'+cls+'_'+idx);
+  if(val==='p'){ap.style.background='var(--green)';ap.style.color='#fff';ap.style.borderColor='var(--green)';aa.style.background='';aa.style.color='';aa.style.borderColor='';}
+  else{aa.style.background='var(--red)';aa.style.color='#fff';aa.style.borderColor='var(--red)';ap.style.background='';ap.style.color='';ap.style.borderColor='';}
+}
+
+async function saveAttendance(){
+  showToast('✅ Attendance saved for today','success');
+}
+</script>
+</body>
+</html>
