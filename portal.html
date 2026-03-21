@@ -10,6 +10,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
 
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -298,6 +299,82 @@ tr:hover td{background:rgba(255,255,255,.018)}
   </div>
 </div>
 
+<!-- Edit Student Modal -->
+<div id="ov_editSt" class="overlay">
+  <div class="modal modal-wide">
+    <div class="mh"><div class="mt2">✏️ Edit Student</div><button class="mc" onclick="closeOv('ov_editSt')">✕</button></div>
+    <div id="editStErr" class="err"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>First Name</label><input id="est_fn" placeholder="First name"/></div>
+      <div class="field"><label>Last Name</label><input id="est_ln" placeholder="Last name"/></div>
+    </div>
+    <div class="field"><label>Phone</label><input id="est_ph" type="tel" placeholder="9876543210"/></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>Area / Locality</label><input id="est_area" placeholder="Bhandup East"/></div>
+      <div class="field"><label>Building</label><input id="est_bldg" placeholder="Anand Dham"/></div>
+    </div>
+    <div class="field"><label>Class</label>
+      <select id="est_cl" onchange="updateBatches('est_bt','est_cl',null)">
+        <option>Zumba</option><option>Dance</option><option>Kids Dance</option><option>Chess</option><option>Guitar</option>
+      </select>
+    </div>
+    <div class="field"><label>Batch</label><select id="est_bt"></select></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>Fee / Month (₹)</label><input id="est_fee" type="number" placeholder="1999"/></div>
+      <div class="field"><label>Status</label>
+        <select id="est_status"><option>Active</option><option>Pending</option><option>Inactive</option></select>
+      </div>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="bsm bo" style="flex:1;padding:11px" onclick="closeOv('ov_editSt')">Cancel</button>
+      <button class="btn-primary" style="flex:2" id="editStBtn" onclick="doEditStudent()">Save Changes →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Tutor Modal -->
+<div id="ov_editTutor" class="overlay">
+  <div class="modal">
+    <div class="mh"><div class="mt2">✏️ Edit Tutor</div><button class="mc" onclick="closeOv('ov_editTutor')">✕</button></div>
+    <div id="editTutorErr" class="err"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field"><label>First Name</label><input id="etr_fn" placeholder="First name"/></div>
+      <div class="field"><label>Last Name</label><input id="etr_ln" placeholder="Last name"/></div>
+    </div>
+    <div class="field"><label>Phone</label><input id="etr_ph" type="tel" placeholder="9876543210"/></div>
+    <div class="field"><label>Classes Taught (hold Ctrl/⌘ to select multiple)</label>
+      <select id="etr_cl" multiple style="height:110px">
+        <option>Zumba</option><option>Dance</option><option>Kids Dance</option><option>Chess</option><option>Guitar</option>
+      </select>
+    </div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="bsm bo" style="flex:1;padding:11px" onclick="closeOv('ov_editTutor')">Cancel</button>
+      <button class="btn-primary" style="flex:2" id="editTutorBtn" onclick="doEditTutor()">Save Changes →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Confirm / Reject Payment Modal -->
+<div id="ov_confirmPay" class="overlay">
+  <div class="modal">
+    <div class="mh"><div class="mt2">💰 Review Payment</div><button class="mc" onclick="closeOv('ov_confirmPay')">✕</button></div>
+    <div id="cpay_details" style="margin-bottom:16px"></div>
+    <div class="field"><label>Admin Note (optional)</label><input id="cpay_note" placeholder="e.g. Cash verified, Receipt #045"/></div>
+    <div style="display:flex;gap:10px;margin-top:4px">
+      <button class="bsm bd" style="flex:1;padding:11px" id="cpay_rejectBtn" onclick="doConfirmPayment('Refunded')">✕ Reject</button>
+      <button class="btn-primary" style="flex:2" id="cpay_confirmBtn" onclick="doConfirmPayment('Paid')">✅ Confirm Paid →</button>
+    </div>
+  </div>
+</div>
+
+<!-- Attendance History Modal -->
+<div id="ov_attHistory" class="overlay">
+  <div class="modal modal-wide">
+    <div class="mh"><div class="mt2" id="attHist_title">Attendance History</div><button class="mc" onclick="closeOv('ov_attHistory')">✕</button></div>
+    <div id="attHist_body" style="max-height:60vh;overflow-y:auto"></div>
+  </div>
+</div>
+
 <!-- ══════════ LOGIN ══════════ -->
 <div id="loginScreen" class="screen active">
   <div class="auth-wrap">
@@ -416,6 +493,28 @@ firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 const googleProvider = new firebase.auth.GoogleAuthProvider();
+
+// ═══════════════════════════════════════════════════
+// FCM — PUSH NOTIFICATIONS (new message alerts)
+// ═══════════════════════════════════════════════════
+const FCM_VAPID = 'HcZ4VR2Hp4yN9u1CNR1Pr9CTi-4mMVhlWUzVCs06NXQ';
+let messaging = null;
+async function initFCM(){
+  try {
+    messaging = firebase.messaging();
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted'){ console.log('FCM: notification permission denied'); return; }
+    const token = await messaging.getToken({vapidKey: FCM_VAPID});
+    if(token && CU){
+      await db.collection('users').doc(CU.uid).update({fcmToken: token});
+      console.log('FCM token saved');
+    }
+    messaging.onMessage((payload)=>{
+      const n = payload.notification||{};
+      showToast(`🔔 ${n.title||'New message'}: ${n.body||''}`, 'success');
+    });
+  } catch(e){ console.warn('FCM init failed:', e.message); }
+}
 
 // ═══════════════════════════════════════════════════
 // BATCH / FEE CONFIG
@@ -727,6 +826,8 @@ function enterPortal(){
   showScreen('portalScreen');
   const first=isA?'aDash':isT?'tDash':'sDash';
   buildPage(first);showPage(first);
+  // Init push notifications after portal loads
+  setTimeout(initFCM, 1000);
 }
 
 function buildNav(cfg){
@@ -817,7 +918,7 @@ aDash: () => {
 
 aStudents: () => `
 <div class="ph">
-  <div><div class="pt">Students</div><div class="ps">${allStudents.length} total</div></div>
+  <div><div class="pt">Students</div><div class="ps">${allStudents.length} total · ${allStudents.filter(s=>s.status==='Active').length} active</div></div>
   <div style="display:flex;gap:8px">
     <button class="bsm bam" onclick="prepCash(null)">+ Cash Payment</button>
     <button class="bsm ba2" onclick="openOv('ov_addSt')">+ Add Student</button>
@@ -831,25 +932,38 @@ aStudents: () => `
 </div>
 <div class="tc">
   <div class="th"><div class="tt">All Students</div>
-    <div class="ta"><input class="si-input" placeholder="Search..." oninput="ft(this,'stTb')"/></div>
+    <div class="ta"><input class="si-input" placeholder="Search name, email, class..." oninput="ft(this,'stTb')"/></div>
   </div>
   ${allStudents.length?`<div style="overflow-x:auto"><table>
-    <thead><tr><th>First</th><th>Last</th><th>Email</th><th>Class</th><th>Batch</th><th>Fee</th><th>Status</th><th>Action</th></tr></thead>
-    <tbody id="stTb">${allStudents.map(s=>`<tr>
-      <td><strong>${s.fn||s.firstName||''}</strong></td><td>${s.ln||s.lastName||''}</td>
-      <td style="font-size:11px;color:var(--muted2)">${s.email}</td>
-      <td>${cb(s.class)}</td>
-      <td style="font-size:11px;color:var(--muted2)">${(s.batch||'').split(' ').slice(0,4).join(' ')}</td>
-      <td style="color:var(--cyan)">₹${(s.fee||0).toLocaleString()}</td>
-      <td>${sb(s.status)}</td>
-      <td><button class="bsm bo" style="font-size:11px;padding:4px 9px" onclick="viewStudent('${s.id}')">View</button></td>
-    </tr>`).join('')}</tbody>
-  </table></div>`:`<div class="empty-state"><div class="ei">👥</div><p>No students yet</p></div>`}
+    <thead><tr><th>#</th><th>First</th><th>Last</th><th>Email</th><th>Class</th><th>Batch</th><th>Fee</th><th>Attend%</th><th>Status</th><th>Actions</th></tr></thead>
+    <tbody id="stTb">${allStudents.map((s,i)=>{
+      const att=s.attendancePercent!=null?s.attendancePercent+'%':'—';
+      const attCol=s.attendancePercent>=80?'var(--green)':s.attendancePercent>=60?'var(--amber)':'var(--red)';
+      return`<tr>
+        <td style="color:var(--muted2);font-size:11px">${i+1}</td>
+        <td><strong>${s.fn||s.firstName||''}</strong></td><td>${s.ln||s.lastName||''}</td>
+        <td style="font-size:11px;color:var(--muted2)">${s.email}</td>
+        <td>${cb(s.class)}</td>
+        <td style="font-size:11px;color:var(--muted2);max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.batch||'—'}</td>
+        <td style="color:var(--cyan)">₹${(s.fee||0).toLocaleString()}</td>
+        <td style="font-weight:700;color:${s.attendancePercent!=null?attCol:'var(--muted2)'}">${att}</td>
+        <td>${sb(s.status)}</td>
+        <td style="display:flex;gap:4px;flex-wrap:wrap">
+          <button class="bsm bo" style="font-size:10px;padding:3px 7px" onclick="viewStudent('${s.id}')">👁 View</button>
+          <button class="bsm bam" style="font-size:10px;padding:3px 7px" onclick="openEditStudent('${s.id}')">✏️ Edit</button>
+          <button class="bsm bd" style="font-size:10px;padding:3px 7px" onclick="confirmDeleteStudent('${s.id}')">🗑</button>
+          <button class="bsm bo" style="font-size:10px;padding:3px 7px" onclick="resetStudentPassword('${s.id}')">🔑</button>
+          <button class="bsm bg3" style="font-size:10px;padding:3px 7px" onclick="viewAttendanceHistory('${s.id}')">📊</button>
+        </td>
+      </tr>`;
+    }).join('')}</tbody>
+  </table></div>`:`<div class="empty-state"><div class="ei">👥</div><p>No students yet — <a style="color:var(--cyan);cursor:pointer" onclick="openOv('ov_addSt')">add the first one</a></p></div>`}
 </div>`,
 
 aPayments: () => {
   const totalPaid=allPayments.filter(p=>p.status==='Paid').reduce((s,p)=>s+(p.amtNum||0),0);
   const totalPending=allStudents.filter(s=>s.status==='Pending').reduce((s,x)=>s+(x.fee||0),0);
+  const pendingPays=allPayments.filter(p=>p.status==='Pending');
   return `
 <div class="ph">
   <div><div class="pt">Payments</div><div class="ps">All fees and transactions</div></div>
@@ -857,19 +971,42 @@ aPayments: () => {
 </div>
 <div class="sg">
   <div class="sc g"><div class="si">✅</div><div class="sv">₹${totalPaid.toLocaleString()}</div><div class="sl">Total Collected</div></div>
-  <div class="sc a"><div class="si">⏳</div><div class="sv">₹${totalPending.toLocaleString()}</div><div class="sl">Pending</div><div class="sch dn">${allStudents.filter(s=>s.status==='Pending').length} students</div></div>
+  <div class="sc a"><div class="si">⏳</div><div class="sv">₹${totalPending.toLocaleString()}</div><div class="sl">Fee Pending</div><div class="sch dn">${allStudents.filter(s=>s.status==='Pending').length} students</div></div>
+  <div class="sc p"><div class="si">🔔</div><div class="sv">${pendingPays.length}</div><div class="sl">Awaiting Confirmation</div></div>
 </div>
+${pendingPays.length?`
+<div class="tc" style="margin-bottom:18px">
+  <div class="th"><div class="tt" style="color:var(--amber)">⏳ Payments Awaiting Confirmation</div></div>
+  <div style="overflow-x:auto"><table>
+    <thead><tr><th>Txn</th><th>Student</th><th>Class</th><th>Amount</th><th>Date</th><th>Method</th><th>Action</th></tr></thead>
+    <tbody>${pendingPays.map(p=>`<tr>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)">${(p.txn||p.id||'').slice(-8)}</td>
+      <td><strong>${p.student}</strong></td><td>${cb(p.class||'')}</td>
+      <td><strong>${p.amount}</strong></td><td style="font-size:11px;color:var(--muted2)">${p.date}</td>
+      <td style="font-size:12px">${p.method}</td>
+      <td style="display:flex;gap:5px">
+        <button class="bsm bg3" style="font-size:11px;padding:4px 9px" onclick="openConfirmPayment('${p.id}')">✅ Review</button>
+      </td>
+    </tr>`).join('')}
+    </tbody>
+  </table></div>
+</div>`:''}
 <div class="tc">
   <div class="th"><div class="tt">All Transactions</div>
     <input class="si-input" placeholder="Search..." oninput="ft(this,'payTb')"/>
   </div>
   ${allPayments.length?`<div style="overflow-x:auto"><table>
-    <thead><tr><th>Txn ID</th><th>Student</th><th>Class</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th></tr></thead>
+    <thead><tr><th>Txn ID</th><th>Student</th><th>Class</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th><th>Action</th></tr></thead>
     <tbody id="payTb">${allPayments.map(p=>`<tr>
       <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)">${(p.txn||p.id||'').slice(-8)}</td>
       <td><strong>${p.student}</strong></td><td>${cb(p.class||'')}</td>
       <td><strong>${p.amount}</strong></td><td style="font-size:11px;color:var(--muted2)">${p.date}</td>
       <td style="font-size:12px">${p.method}</td><td>${sb(p.status)}</td>
+      <td>
+        ${p.status==='Pending'?`<button class="bsm bg3" style="font-size:10px;padding:3px 7px" onclick="openConfirmPayment('${p.id}')">Review</button>`:''}
+        ${p.status==='Paid'?`<button class="bsm bd" style="font-size:10px;padding:3px 7px" onclick="markPaymentStatus('${p.id}','Refunded')">Refund</button>`:''}
+        ${p.status==='Refunded'?`<button class="bsm bam" style="font-size:10px;padding:3px 7px" onclick="markPaymentStatus('${p.id}','Paid')">Re-confirm</button>`:''}
+      </td>
     </tr>`).join('')}</tbody>
   </table></div>`:`<div class="empty-state"><div class="ei">💳</div><p>No transactions yet</p></div>`}
 </div>`;
@@ -939,10 +1076,11 @@ tStudents: () => {
 
 tAttendance: () => {
   const myS=allStudents.filter(s=>CU.teaches&&CU.teaches.includes(s.class)&&s.status==='Active');
+  const todayKey=new Date().toISOString().split('T')[0];
   return `
 <div class="ph">
-  <div><div class="pt">Attendance</div><div class="ps">${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})}</div></div>
-  <button class="bsm ba2" onclick="saveAttendance()">Save Attendance</button>
+  <div><div class="pt">Attendance</div><div class="ps">${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long'})} · ${todayKey}</div></div>
+  <button class="bsm ba2" onclick="saveAttendance('${todayKey}')">💾 Save Attendance</button>
 </div>
 ${CU.teaches?CU.teaches.map(cls=>{
   const students=myS.filter(s=>s.class===cls);
@@ -954,11 +1092,14 @@ ${CU.teaches?CU.teaches.map(cls=>{
       <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
         <div style="display:flex;align-items:center;gap:9px">
           <div class="av" style="width:27px;height:27px;font-size:10px;flex-shrink:0">${(s.fn||s.firstName||'?')[0]}</div>
-          <strong>${s.fn||s.firstName||''} ${s.ln||s.lastName||''}</strong>
+          <div>
+            <strong>${s.fn||s.firstName||''} ${s.ln||s.lastName||''}</strong>
+            ${s.attendancePercent!=null?`<div style="font-size:10px;color:${s.attendancePercent>=80?'var(--green)':s.attendancePercent>=60?'var(--amber)':'var(--red)'}">📊 ${s.attendancePercent}% overall</div>`:''}
+          </div>
         </div>
         <div style="display:flex;gap:6px">
-          <button class="bsm bg3 att-p" id="ap_${cls}_${i}" onclick="setAtt('${cls}',${i},'p',this)">✓ Present</button>
-          <button class="bsm bd att-a" id="aa_${cls}_${i}" onclick="setAtt('${cls}',${i},'a',this)">✕ Absent</button>
+          <button class="bsm bg3 att-p" id="ap_${cls}_${i}" data-uid="${s.id}" onclick="setAtt('${cls}',${i},'p')">✓ Present</button>
+          <button class="bsm bd att-a" id="aa_${cls}_${i}" data-uid="${s.id}" onclick="setAtt('${cls}',${i},'a')">✕ Absent</button>
         </div>
       </div>`).join('')}
     </div>
@@ -980,8 +1121,8 @@ tProfile: () => buildProfileUI(),
 // STUDENT PAGES
 sDash: () => {
   const myPays=allPayments.filter(p=>p.status==='Paid');
-  const sessPerMonth=CU.class==='Guitar'?8:CU.class==='Chess'?8:CU.class==='Zumba'?12:8;
-  const sessAtt=Math.floor(sessPerMonth*0.87);
+  const attPct=CU.attendancePercent!=null?CU.attendancePercent:null;
+  const attColor=attPct!=null?(attPct>=80?'var(--green)':attPct>=60?'var(--amber)':'var(--red)'):'var(--muted2)';
   return `
 <div class="ph">
   <div><div class="pt">Good ${new Date().getHours()<12?'Morning':new Date().getHours()<17?'Afternoon':'Evening'}, ${CU.firstName||CU.name}! 👋</div>
@@ -989,10 +1130,10 @@ sDash: () => {
   <button class="bsm ba2" onclick="navTo('sPay')">💳 Pay Fees →</button>
 </div>
 <div class="sg">
-  <div class="sc c"><div class="si">📅</div><div class="sv">${sessAtt}</div><div class="sl">Sessions Attended</div><div class="sch up">This month (${sessPerMonth} total)</div></div>
-  <div class="sc g"><div class="si">📊</div><div class="sv">87%</div><div class="sl">Attendance Rate</div></div>
-  <div class="sc pu"><div class="si">🔢</div><div class="sv">${sessPerMonth-sessAtt}</div><div class="sl">Sessions Remaining</div></div>
-  <div class="sc p"><div class="si">💰</div><div class="sv">₹${(CLASS_FEES[CU.class]||1999).toLocaleString()}</div><div class="sl">Next Payment Due</div></div>
+  <div class="sc g"><div class="si">📊</div><div class="sv" style="color:${attColor}">${attPct!=null?attPct+'%':'—'}</div><div class="sl">Attendance Rate</div><div class="sch" style="color:${attColor}">${attPct!=null?(attPct>=80?'↑ Great!':attPct>=60?'Could be better':'⚠️ Low attendance'):'Not recorded yet'}</div></div>
+  <div class="sc c"><div class="si">💰</div><div class="sv">₹${(CLASS_FEES[CU.class]||1999).toLocaleString()}</div><div class="sl">Next Payment Due</div></div>
+  <div class="sc pu"><div class="si">✅</div><div class="sv">${myPays.length}</div><div class="sl">Payments Made</div></div>
+  <div class="sc p"><div class="si">💸</div><div class="sv">₹${myPays.reduce((s,p)=>s+(p.amtNum||0),0).toLocaleString()}</div><div class="sl">Total Paid</div></div>
 </div>
 <div class="tc">
   <div class="th"><div class="tt">My Payment History</div><button class="bsm bo" onclick="navTo('sHistory')">All →</button></div>
@@ -1298,8 +1439,14 @@ const INITS = {
         <div><div style="font-weight:700;color:#fff">${t.name||t.firstName||''}</div><div style="font-size:11px;color:var(--muted2)">${t.email}</div></div>
         <span class="badge bg2" style="margin-left:auto">Active</span>
       </div>
-      <div class="dr"><span class="dl">Teaches</span><span class="dv">${(t.teaches||[]).join(', ')}</span></div>
-      <div class="dr"><span class="dl">Students</span><span class="dv">${allStudents.filter(s=>(t.teaches||[]).includes(s.class)&&s.status==='Active').length}</span></div>
+      <div class="dr"><span class="dl">Teaches</span><span class="dv">${(t.teaches||[]).join(', ')||'—'}</span></div>
+      <div class="dr"><span class="dl">Phone</span><span class="dv">${t.phone||'—'}</span></div>
+      <div class="dr"><span class="dl">Students</span><span class="dv">${allStudents.filter(s=>(t.teaches||[]).includes(s.class)&&s.status==='Active').length} active</span></div>
+      <div style="display:flex;gap:8px;margin-top:12px">
+        <button class="bsm bam" style="flex:1" onclick="openEditTutor('${t.id}')">✏️ Edit</button>
+        <button class="bsm bo" style="flex:1" onclick="resetTutorPassword('${t.id}','${t.email}')">🔑 Reset PW</button>
+        <button class="bsm bd" style="padding:6px 10px" onclick="confirmDeleteTutor('${t.id}','${t.name||t.firstName||''}')">🗑</button>
+      </div>
     </div>`).join('')}</div>`;
   },
   aPayouts: async () => {
@@ -1645,16 +1792,291 @@ async function doStudentPayment(){
   }
 }
 
-// ATTENDANCE
-function setAtt(cls,idx,val,btn){
-  const ap=document.getElementById('ap_'+cls+'_'+idx);
-  const aa=document.getElementById('aa_'+cls+'_'+idx);
-  if(val==='p'){ap.style.background='var(--green)';ap.style.color='#fff';ap.style.borderColor='var(--green)';aa.style.background='';aa.style.color='';aa.style.borderColor='';}
-  else{aa.style.background='var(--red)';aa.style.color='#fff';aa.style.borderColor='var(--red)';ap.style.background='';ap.style.color='';ap.style.borderColor='';}
+// ═══════════════════════════════════════════════════
+// ATTENDANCE — PERSISTENT (saves to Firestore)
+// ═══════════════════════════════════════════════════
+let attendanceMap = {}; // {cls_idx: 'p'|'a'}
+
+function setAtt(cls, idx, val) {
+  attendanceMap[cls+'_'+idx] = val;
+  const ap = document.getElementById('ap_'+cls+'_'+idx);
+  const aa = document.getElementById('aa_'+cls+'_'+idx);
+  if(val==='p'){
+    ap.style.background='var(--green)';ap.style.color='#fff';ap.style.borderColor='var(--green)';
+    aa.style.background='';aa.style.color='';aa.style.borderColor='';
+  } else {
+    aa.style.background='var(--red)';aa.style.color='#fff';aa.style.borderColor='var(--red)';
+    ap.style.background='';ap.style.color='';ap.style.borderColor='';
+  }
 }
 
-async function saveAttendance(){
-  showToast('✅ Attendance saved for today','success');
+async function saveAttendance(dateKey) {
+  const myS = allStudents.filter(s=>CU.teaches&&CU.teaches.includes(s.class)&&s.status==='Active');
+  if(!myS.length){ showToast('No students to save attendance for','error'); return; }
+  setBtnLoading? null : null;
+  try {
+    const batch = db.batch();
+    const records = {};
+    // Build attendance records per student
+    CU.teaches.forEach(cls => {
+      const students = myS.filter(s=>s.class===cls);
+      students.forEach((s,i) => {
+        const val = attendanceMap[cls+'_'+i] || 'p'; // default present if not marked
+        if(!records[s.id]) records[s.id] = {uid:s.id, name:s.name||((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim(), class:s.class};
+        records[s.id][dateKey] = val;
+      });
+    });
+
+    // Save each attendance record + update student attendancePercent
+    for(const uid of Object.keys(records)){
+      const rec = records[uid];
+      // Save daily attendance doc
+      const attRef = db.collection('attendance').doc(uid+'_'+dateKey);
+      batch.set(attRef, {
+        studentUid: uid, studentName: rec.name, class: rec.class,
+        date: dateKey, status: rec[dateKey], markedBy: CU.uid,
+        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      });
+    }
+    await batch.commit();
+
+    // Recalculate attendance % for each student
+    for(const uid of Object.keys(records)){
+      const allAtt = await db.collection('attendance').where('studentUid','==',uid).get();
+      const total = allAtt.size;
+      const present = allAtt.docs.filter(d=>d.data().status==='p').length;
+      const pct = total>0 ? Math.round((present/total)*100) : 0;
+      await db.collection('students').doc(uid).update({attendancePercent: pct});
+      await db.collection('users').doc(uid).update({attendancePercent: pct});
+      const stIdx = allStudents.findIndex(x=>x.id===uid);
+      if(stIdx>=0) allStudents[stIdx].attendancePercent = pct;
+    }
+
+    attendanceMap = {};
+    showToast(`✅ Attendance saved for ${dateKey} (${Object.keys(records).length} students)`,'success');
+  } catch(e){ showToast('Error saving attendance: '+e.message,'error'); }
+}
+
+async function viewAttendanceHistory(studentId) {
+  const s = allStudents.find(x=>x.id===studentId);
+  if(!s) return;
+  const title = document.getElementById('attHist_title');
+  const body = document.getElementById('attHist_body');
+  title.textContent = `📊 ${s.fn||s.firstName||''} ${s.ln||s.lastName||''} — Attendance`;
+  body.innerHTML = '<div style="padding:20px;color:var(--muted2);font-size:13px">Loading...</div>';
+  openOv('ov_attHistory');
+  try {
+    const snap = await db.collection('attendance').where('studentUid','==',studentId).orderBy('date','desc').limit(60).get();
+    const records = snap.docs.map(d=>d.data());
+    if(!records.length){ body.innerHTML='<div style="padding:20px;color:var(--muted2);font-size:13px">No attendance records yet.</div>'; return; }
+    const present = records.filter(r=>r.status==='p').length;
+    const pct = Math.round((present/records.length)*100);
+    const pctColor = pct>=80?'var(--green)':pct>=60?'var(--amber)':'var(--red)';
+    body.innerHTML = `
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:16px;border-bottom:1px solid var(--border)">
+        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${pctColor}">${pct}%</div><div style="font-size:11px;color:var(--muted2)">Overall Rate</div></div>
+        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--green)">${present}</div><div style="font-size:11px;color:var(--muted2)">Present</div></div>
+        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--red)">${records.length-present}</div><div style="font-size:11px;color:var(--muted2)">Absent</div></div>
+      </div>
+      <div style="padding:12px 16px">
+        <table style="width:100%;border-collapse:collapse">
+          <thead><tr><th style="text-align:left;padding:7px;font-size:11px;color:var(--muted2);border-bottom:1px solid var(--border)">Date</th><th style="text-align:left;padding:7px;font-size:11px;color:var(--muted2);border-bottom:1px solid var(--border)">Status</th><th style="text-align:left;padding:7px;font-size:11px;color:var(--muted2);border-bottom:1px solid var(--border)">Class</th></tr></thead>
+          <tbody>${records.map(r=>`<tr>
+            <td style="padding:7px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.04)">${r.date}</td>
+            <td style="padding:7px;border-bottom:1px solid rgba(255,255,255,.04)">${r.status==='p'?'<span style="color:var(--green);font-weight:700">✓ Present</span>':'<span style="color:var(--red);font-weight:700">✕ Absent</span>'}</td>
+            <td style="padding:7px;font-size:12px;color:var(--muted2);border-bottom:1px solid rgba(255,255,255,.04)">${r.class||''}</td>
+          </tr>`).join('')}</tbody>
+        </table>
+      </div>`;
+  } catch(e){ body.innerHTML=`<div style="padding:20px;color:var(--red);font-size:13px">Error: ${e.message}</div>`; }
+}
+
+// ═══════════════════════════════════════════════════
+// EDIT STUDENT
+// ═══════════════════════════════════════════════════
+let currentEditStudentId = null;
+
+function openEditStudent(id) {
+  currentEditStudentId = id;
+  const s = allStudents.find(x=>x.id===id); if(!s) return;
+  document.getElementById('est_fn').value = s.fn||s.firstName||'';
+  document.getElementById('est_ln').value = s.ln||s.lastName||'';
+  document.getElementById('est_ph').value = s.phone||'';
+  document.getElementById('est_area').value = s.area||'';
+  document.getElementById('est_bldg').value = s.building||'';
+  document.getElementById('est_cl').value = s.class||'Zumba';
+  document.getElementById('est_fee').value = s.fee||'';
+  document.getElementById('est_status').value = s.status||'Active';
+  updateBatches('est_bt','est_cl',null);
+  setTimeout(()=>{ document.getElementById('est_bt').value = s.batch||''; }, 100);
+  setErr('editStErr','');
+  openOv('ov_editSt');
+}
+
+async function doEditStudent() {
+  const fn=document.getElementById('est_fn').value.trim();
+  const ln=document.getElementById('est_ln').value.trim();
+  const ph=document.getElementById('est_ph').value.trim();
+  const area=document.getElementById('est_area').value.trim();
+  const bldg=document.getElementById('est_bldg').value.trim();
+  const cl=document.getElementById('est_cl').value;
+  const bt=document.getElementById('est_bt').value;
+  const fee=Number(document.getElementById('est_fee').value)||0;
+  const status=document.getElementById('est_status').value;
+  setErr('editStErr','');
+  if(!fn||!ln||!cl||!bt){setErr('editStErr','First name, last name, class and batch required.');return;}
+  setBtnLoading('editStBtn',true);
+  const updates={firstName:fn,lastName:ln,fn,ln,name:fn+' '+ln,phone:ph,area,building:bldg,class:cl,batch:bt,fee,status};
+  try {
+    await db.collection('students').doc(currentEditStudentId).update(updates);
+    await db.collection('users').doc(currentEditStudentId).update(updates);
+    const idx=allStudents.findIndex(x=>x.id===currentEditStudentId);
+    if(idx>=0) allStudents[idx]={...allStudents[idx],...updates};
+    closeOv('ov_editSt');
+    ['aStudents','aDash'].forEach(p=>{const el=document.getElementById('pg_'+p);if(el){el.remove();builtPages[p]=false;}});
+    buildPage('aStudents');showPage('aStudents');
+    showToast(`✅ ${fn} ${ln}'s profile updated`,'success');
+  } catch(e){ setErr('editStErr','Error: '+e.message); }
+  setBtnLoading('editStBtn',false,'Save Changes →');
+}
+
+async function confirmDeleteStudent(id) {
+  const s=allStudents.find(x=>x.id===id); if(!s) return;
+  const name=(s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'');
+  if(!confirm(`⚠️ Delete ${name}? This will remove their profile from Firestore. Their Firebase Auth account stays (use Firebase Console to delete Auth). This cannot be undone.`)) return;
+  try {
+    await db.collection('students').doc(id).delete();
+    await db.collection('users').doc(id).delete();
+    allStudents = allStudents.filter(x=>x.id!==id);
+    ['aStudents','aDash'].forEach(p=>{const el=document.getElementById('pg_'+p);if(el){el.remove();builtPages[p]=false;}});
+    buildPage('aStudents');showPage('aStudents');
+    showToast(`🗑 ${name} removed`,'success');
+  } catch(e){ showToast('Error: '+e.message,'error'); }
+}
+
+async function resetStudentPassword(id) {
+  const s=allStudents.find(x=>x.id===id); if(!s) return;
+  if(!confirm(`Send password reset email to ${s.email}?`)) return;
+  try {
+    await auth.sendPasswordResetEmail(s.email);
+    showToast(`📧 Password reset email sent to ${s.email}`,'success');
+  } catch(e){ showToast('Error: '+e.message,'error'); }
+}
+
+// ═══════════════════════════════════════════════════
+// EDIT TUTOR
+// ═══════════════════════════════════════════════════
+let currentEditTutorId = null;
+
+async function openEditTutor(id) {
+  currentEditTutorId = id;
+  try {
+    const doc = await db.collection('users').doc(id).get();
+    if(!doc.exists) return;
+    const t = doc.data();
+    document.getElementById('etr_fn').value = t.firstName||'';
+    document.getElementById('etr_ln').value = t.lastName||'';
+    document.getElementById('etr_ph').value = t.phone||'';
+    // Pre-select teaches options
+    const sel = document.getElementById('etr_cl');
+    Array.from(sel.options).forEach(o => o.selected = (t.teaches||[]).includes(o.value));
+    setErr('editTutorErr','');
+    openOv('ov_editTutor');
+  } catch(e){ showToast('Error: '+e.message,'error'); }
+}
+
+async function doEditTutor() {
+  const fn=document.getElementById('etr_fn').value.trim();
+  const ln=document.getElementById('etr_ln').value.trim();
+  const ph=document.getElementById('etr_ph').value.trim();
+  const teaches=Array.from(document.getElementById('etr_cl').selectedOptions).map(o=>o.value);
+  setErr('editTutorErr','');
+  if(!fn||!ln||!teaches.length){setErr('editTutorErr','All fields required and select at least one class.');return;}
+  setBtnLoading('editTutorBtn',true);
+  const updates={firstName:fn,lastName:ln,name:fn+' '+ln,phone:ph,teaches};
+  try {
+    await db.collection('users').doc(currentEditTutorId).update(updates);
+    closeOv('ov_editTutor');
+    const tp=document.getElementById('pg_aTutors');if(tp){tp.remove();builtPages['aTutors']=false;}
+    buildPage('aTutors');showPage('aTutors');
+    showToast(`✅ ${fn} ${ln}'s profile updated`,'success');
+  } catch(e){ setErr('editTutorErr','Error: '+e.message); }
+  setBtnLoading('editTutorBtn',false,'Save Changes →');
+}
+
+async function confirmDeleteTutor(id, name) {
+  if(!confirm(`⚠️ Delete tutor ${name}? Their Firestore profile will be removed. Cannot be undone.`)) return;
+  try {
+    await db.collection('users').doc(id).delete();
+    const tp=document.getElementById('pg_aTutors');if(tp){tp.remove();builtPages['aTutors']=false;}
+    buildPage('aTutors');showPage('aTutors');
+    showToast(`🗑 ${name} removed`,'success');
+  } catch(e){ showToast('Error: '+e.message,'error'); }
+}
+
+async function resetTutorPassword(id, email) {
+  if(!confirm(`Send password reset email to ${email}?`)) return;
+  try {
+    await auth.sendPasswordResetEmail(email);
+    showToast(`📧 Password reset email sent to ${email}`,'success');
+  } catch(e){ showToast('Error: '+e.message,'error'); }
+}
+
+// ═══════════════════════════════════════════════════
+// CONFIRM / REJECT PAYMENT
+// ═══════════════════════════════════════════════════
+let currentPaymentId = null;
+
+function openConfirmPayment(payId) {
+  currentPaymentId = payId;
+  const p = allPayments.find(x=>x.id===payId); if(!p) return;
+  document.getElementById('cpay_details').innerHTML = `
+    <div class="dr"><span class="dl">Student</span><span class="dv">${p.student}</span></div>
+    <div class="dr"><span class="dl">Amount</span><span class="dv" style="color:var(--cyan)">${p.amount}</span></div>
+    <div class="dr"><span class="dl">Method</span><span class="dv">${p.method}</span></div>
+    <div class="dr"><span class="dl">Date</span><span class="dv">${p.date}</span></div>
+    <div class="dr"><span class="dl">Note</span><span class="dv" style="font-size:12px">${p.note||'—'}</span></div>`;
+  document.getElementById('cpay_note').value = '';
+  openOv('ov_confirmPay');
+}
+
+async function doConfirmPayment(newStatus) {
+  const note = document.getElementById('cpay_note').value.trim();
+  const p = allPayments.find(x=>x.id===currentPaymentId); if(!p) return;
+  setBtnLoading(newStatus==='Paid'?'cpay_confirmBtn':'cpay_rejectBtn', true);
+  try {
+    const updates = {status: newStatus, adminNote: note, confirmedBy: CU.uid, confirmedAt: firebase.firestore.FieldValue.serverTimestamp()};
+    await db.collection('payments').doc(currentPaymentId).update(updates);
+    // If confirming as paid, update student status to Active
+    if(newStatus==='Paid'){
+      const studentUid = p.studentUid;
+      if(studentUid){
+        await db.collection('students').doc(studentUid).update({status:'Active'});
+        await db.collection('users').doc(studentUid).update({status:'Active'});
+        const idx=allStudents.findIndex(x=>x.id===studentUid);
+        if(idx>=0) allStudents[idx].status='Active';
+      }
+    }
+    const pidx=allPayments.findIndex(x=>x.id===currentPaymentId);
+    if(pidx>=0) allPayments[pidx]={...allPayments[pidx],...updates};
+    closeOv('ov_confirmPay');
+    ['aPayments','aDash','aStudents'].forEach(pg=>{const el=document.getElementById('pg_'+pg);if(el){el.remove();builtPages[pg]=false;}});
+    buildPage('aPayments');showPage('aPayments');
+    showToast(newStatus==='Paid'?`✅ Payment confirmed as Paid for ${p.student}`:`❌ Payment rejected for ${p.student}`,'success');
+  } catch(e){ showToast('Error: '+e.message,'error'); }
+  setBtnLoading(newStatus==='Paid'?'cpay_confirmBtn':'cpay_rejectBtn', false, newStatus==='Paid'?'✅ Confirm Paid →':'✕ Reject');
+}
+
+async function markPaymentStatus(payId, newStatus) {
+  if(!confirm(`Mark this payment as ${newStatus}?`)) return;
+  try {
+    await db.collection('payments').doc(payId).update({status:newStatus, updatedBy:CU.uid});
+    const idx=allPayments.findIndex(x=>x.id===payId);
+    if(idx>=0) allPayments[idx].status=newStatus;
+    ['aPayments','aDash'].forEach(pg=>{const el=document.getElementById('pg_'+pg);if(el){el.remove();builtPages[pg]=false;}});
+    buildPage('aPayments');showPage('aPayments');
+    showToast(`✅ Payment marked as ${newStatus}`,'success');
+  } catch(e){ showToast('Error: '+e.message,'error'); }
 }
 </script>
 </body>
