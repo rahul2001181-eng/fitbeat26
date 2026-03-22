@@ -501,13 +501,23 @@ const FCM_VAPID = 'HcZ4VR2Hp4yN9u1CNR1Pr9CTi-4mMVhlWUzVCs06NXQ';
 let messaging = null;
 async function initFCM(){
   try {
+    // Register service worker first — required for FCM
+    if(!('serviceWorker' in navigator)){
+      console.warn('FCM: Service workers not supported in this browser');
+      return;
+    }
+    const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    console.log('FCM: Service worker registered ✅', swReg.scope);
+
     messaging = firebase.messaging();
+
     const perm = await Notification.requestPermission();
     if(perm !== 'granted'){ console.log('FCM: notification permission denied'); return; }
-    const token = await messaging.getToken({vapidKey: FCM_VAPID});
+
+    const token = await messaging.getToken({vapidKey: FCM_VAPID, serviceWorkerRegistration: swReg});
     if(token && CU){
       await db.collection('users').doc(CU.uid).update({fcmToken: token});
-      console.log('FCM token saved');
+      console.log('FCM token saved ✅', token.slice(0,20)+'...');
     }
     messaging.onMessage((payload)=>{
       const n = payload.notification||{};
