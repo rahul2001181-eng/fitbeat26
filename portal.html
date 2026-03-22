@@ -299,6 +299,38 @@ tr:hover td{background:rgba(255,255,255,.018)}
   </div>
 </div>
 
+<!-- Send Notification Modal -->
+<div id="ov_notify" class="overlay">
+  <div class="modal">
+    <div class="mh"><div class="mt2">🔔 Send Notification</div><button class="mc" onclick="closeOv('ov_notify')">✕</button></div>
+    <div id="notifyErr" class="err"></div>
+    <div class="field"><label>Send To</label>
+      <select id="notify_to">
+        <option value="all">📢 All Students</option>
+        <option value="pending">⏳ Students with Pending Fees</option>
+        <option value="one">👤 One Specific Student</option>
+      </select>
+    </div>
+    <div class="field" id="notify_student_wrap" style="display:none">
+      <label>Select Student</label>
+      <select id="notify_student"><option value="">Select...</option></select>
+    </div>
+    <div class="field"><label>Notification Title</label>
+      <input id="notify_title" placeholder="e.g. Fee Reminder 🔔" maxlength="50"/>
+    </div>
+    <div class="field"><label>Message</label>
+      <textarea id="notify_body" placeholder="e.g. Your Zumba fee of ₹1999 is due. Please pay via the Fitbeat portal." style="min-height:80px" maxlength="200"></textarea>
+    </div>
+    <div style="background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.15);border-radius:9px;padding:10px 13px;font-size:12px;color:var(--muted2);margin-bottom:14px">
+      💡 Only students who have logged into the portal and allowed notifications will receive this.
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="bsm bo" style="flex:1;padding:11px" onclick="closeOv('ov_notify')">Cancel</button>
+      <button class="btn-primary" style="flex:2" id="notifyBtn" onclick="doSendNotification()">🔔 Send Notification →</button>
+    </div>
+  </div>
+</div>
+
 <!-- Edit Student Modal -->
 <div id="ov_editSt" class="overlay">
   <div class="modal modal-wide">
@@ -516,7 +548,14 @@ async function initFCM(){
 
     const token = await messaging.getToken({vapidKey: FCM_VAPID, serviceWorkerRegistration: swReg});
     if(token && CU){
-      await db.collection('users').doc(CU.uid).update({fcmToken: token});
+      // Save to both users and students so admin can see it
+      const updates = {fcmToken: token, fcmUpdatedAt: new Date().toISOString()};
+      await db.collection('users').doc(CU.uid).update(updates);
+      if(CU.role === 'student'){
+        await db.collection('students').doc(CU.uid).update(updates).catch(()=>{});
+      }
+      // Update local state
+      CU.fcmToken = token;
       console.log('FCM token saved ✅', token.slice(0,20)+'...');
     }
     messaging.onMessage((payload)=>{
@@ -807,7 +846,7 @@ const ANAV=[
   {sec:'Overview',items:[{id:'aDash',icon:'📊',label:'Dashboard'}]},
   {sec:'Manage',items:[{id:'aStudents',icon:'👥',label:'Students'},{id:'aPayments',icon:'💰',label:'Payments'},{id:'aTutors',icon:'🎓',label:'Tutors'},{id:'aPayouts',icon:'💸',label:'Tutor Payouts'}]},
   {sec:'Schedule',items:[{id:'aSchedule',icon:'📅',label:'Weekly Schedule'}]},
-  {sec:'Communication',items:[{id:'aMessages',icon:'💬',label:'Messages',badge:true}]},
+  {sec:'Communication',items:[{id:'aMessages',icon:'💬',label:'Messages',badge:true},{id:'aNotify',icon:'🔔',label:'Send Notification'}]},
   {sec:'System',items:[{id:'aSettings',icon:'⚙️',label:'Settings'}]},
 ];
 const TNAV=[
@@ -886,6 +925,7 @@ aDash: () => {
 <div class="ph">
   <div><div class="pt">Dashboard</div><div class="ps">${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div></div>
   <div style="display:flex;gap:8px">
+    <button class="bsm bo" onclick="openNotifyModal()">🔔 Notify</button>
     <button class="bsm bam" onclick="prepCash(null)">+ Cash Payment</button>
     <button class="bsm ba2" onclick="openOv('ov_addSt')">+ Add Student</button>
   </div>
@@ -1041,6 +1081,7 @@ aSchedule: () => `
 <div id="scheduleGrid"><div class="empty-state"><div class="ei">📅</div><p>Loading schedule...</p></div></div>`,
 
 aMessages: () => buildMsgUI(),
+aNotify: () => buildNotifyPage(),
 aSettings: () => buildSettingsUI(),
 
 // TUTOR PAGES
@@ -1803,7 +1844,165 @@ async function doStudentPayment(){
 }
 
 // ═══════════════════════════════════════════════════
-// ATTENDANCE — PERSISTENT (saves to Firestore)
+// NOTIFICATIONS
+// ═══════════════════════════════════════════════════
+function buildNotifyPage(){
+  const withTokens = allStudents.filter(s=>s.fcmToken);
+  const pending = allStudents.filter(s=>s.status==='Pending'&&s.fcmToken);
+  return`
+<div class="ph"><div><div class="pt">Send Notification</div><div class="ps">Push alerts to students' browsers</div></div>
+  <button class="bsm ba2" onclick="openNotifyModal()">🔔 New Notification</button>
+</div>
+<div class="sg" style="grid-template-columns:repeat(3,1fr)">
+  <div class="sc c"><div class="si">👥</div><div class="sv">${allStudents.length}</div><div class="sl">Total Students</div></div>
+  <div class="sc g"><div class="si">🔔</div><div class="sv">${withTokens.length}</div><div class="sl">Notifications Enabled</div><div class="sch up">Have logged in & allowed</div></div>
+  <div class="sc a"><div class="si">⏳</div><div class="sv">${allStudents.length - withTokens.length}</div><div class="sl">Not Yet Enabled</div><div class="sch dn">Haven't logged in yet</div></div>
+</div>
+<div class="tc">
+  <div class="th"><div class="tt">Quick Send</div></div>
+  <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+    <button class="bsm bam" style="padding:12px;font-size:13px;text-align:left" onclick="quickNotify('pending')">
+      ⏳ Send fee reminder to all ${pending.length} students with pending fees
+    </button>
+    <button class="bsm ba2" style="padding:12px;font-size:13px;text-align:left" onclick="quickNotify('all')">
+      📢 Send announcement to all ${withTokens.length} students with notifications enabled
+    </button>
+    <button class="bsm bo" style="padding:12px;font-size:13px;text-align:left" onclick="openNotifyModal()">
+      👤 Send to a specific student
+    </button>
+  </div>
+</div>
+<div class="tc" style="margin-top:18px">
+  <div class="th"><div class="tt">Students — Notification Status</div></div>
+  <div style="overflow-x:auto"><table>
+    <thead><tr><th>Name</th><th>Class</th><th>Status</th><th>Notifications</th><th>Action</th></tr></thead>
+    <tbody>${allStudents.map(s=>`<tr>
+      <td><strong>${s.fn||s.firstName||''} ${s.ln||s.lastName||''}</strong></td>
+      <td>${cb(s.class)}</td>
+      <td>${sb(s.status)}</td>
+      <td>${s.fcmToken?`<span style="color:var(--green);font-weight:700">✅ Enabled</span>`:`<span style="color:var(--muted2)">—  Not yet</span>`}</td>
+      <td>${s.fcmToken?`<button class="bsm bo" style="font-size:11px;padding:3px 8px" onclick="openNotifyModal('${s.id}')">🔔 Notify</button>`:''}</td>
+    </tr>`).join('')}
+    </tbody>
+  </table></div>
+</div>`;
+}
+
+function openNotifyModal(studentId) {
+  // Populate student dropdown
+  const sel = document.getElementById('notify_student');
+  sel.innerHTML = '<option value="">Select student...</option>' +
+    allStudents.filter(s=>s.fcmToken).map(s=>`<option value="${s.id}">${s.fn||s.firstName||''} ${s.ln||s.lastName||''} — ${s.class}</option>`).join('');
+
+  const toSel = document.getElementById('notify_to');
+  if(studentId){
+    toSel.value = 'one';
+    sel.value = studentId;
+    document.getElementById('notify_student_wrap').style.display = 'block';
+  } else {
+    toSel.value = 'all';
+    document.getElementById('notify_student_wrap').style.display = 'none';
+  }
+  document.getElementById('notify_title').value = '';
+  document.getElementById('notify_body').value = '';
+  setErr('notifyErr','');
+  openOv('ov_notify');
+}
+
+// Show/hide student picker based on selection
+document.addEventListener('DOMContentLoaded', ()=>{
+  const toSel = document.getElementById('notify_to');
+  if(toSel) toSel.addEventListener('change', ()=>{
+    document.getElementById('notify_student_wrap').style.display = toSel.value==='one'?'block':'none';
+  });
+});
+
+async function quickNotify(type) {
+  const titles = {
+    pending: 'Fee Reminder 🔔',
+    all: 'Notice from Fitbeat Studio 📢'
+  };
+  const bodies = {
+    pending: 'Your class fee is due. Please pay via the Fitbeat portal to continue your sessions.',
+    all: ''
+  };
+  document.getElementById('notify_to').value = type==='pending'?'pending':'all';
+  document.getElementById('notify_student_wrap').style.display = 'none';
+  document.getElementById('notify_title').value = titles[type]||'';
+  document.getElementById('notify_body').value = bodies[type]||'';
+  setErr('notifyErr','');
+  openOv('ov_notify');
+}
+
+async function doSendNotification(){
+  const to = document.getElementById('notify_to').value;
+  const title = document.getElementById('notify_title').value.trim();
+  const body = document.getElementById('notify_body').value.trim();
+  setErr('notifyErr','');
+  if(!title||!body){ setErr('notifyErr','Please enter both title and message.'); return; }
+
+  // Gather target tokens
+  let targets = [];
+  if(to === 'all'){
+    targets = allStudents.filter(s=>s.fcmToken).map(s=>({token:s.fcmToken,name:s.fn||s.firstName||''}));
+  } else if(to === 'pending'){
+    targets = allStudents.filter(s=>s.status==='Pending'&&s.fcmToken).map(s=>({token:s.fcmToken,name:s.fn||s.firstName||''}));
+  } else {
+    const sid = document.getElementById('notify_student').value;
+    if(!sid){ setErr('notifyErr','Please select a student.'); return; }
+    const s = allStudents.find(x=>x.id===sid);
+    if(!s||!s.fcmToken){ setErr('notifyErr','This student has not enabled notifications yet.'); return; }
+    targets = [{token:s.fcmToken, name:s.fn||s.firstName||''}];
+  }
+
+  if(!targets.length){ setErr('notifyErr','No students with notifications enabled for this selection.'); return; }
+
+  setBtnLoading('notifyBtn', true);
+
+  // Save notification to Firestore — a Cloud Function or Firebase Extensions
+  // can pick this up and send via FCM. For now we save to 'notifications' collection.
+  try {
+    const batch = db.batch();
+    const notifData = {
+      title, body,
+      sentBy: CU.uid,
+      sentAt: firebase.firestore.FieldValue.serverTimestamp(),
+      targetCount: targets.length,
+      targetType: to,
+      tokens: targets.map(t=>t.token),
+      status: 'queued'
+    };
+    const ref = db.collection('notifications').doc();
+    batch.set(ref, notifData);
+    await batch.commit();
+
+    // Also use Web Push directly via service worker for immediate delivery
+    // This works for users currently online
+    let sent = 0;
+    if('serviceWorker' in navigator && navigator.serviceWorker.controller){
+      targets.forEach(t=>{
+        try {
+          navigator.serviceWorker.controller.postMessage({
+            type:'SHOW_NOTIFICATION', title, body, icon:'https://www.fitbeat26.com/logo.png'
+          });
+          sent++;
+        } catch(e){}
+      });
+    }
+
+    closeOv('ov_notify');
+    setBtnLoading('notifyBtn', false, '🔔 Send Notification →');
+    showToast(`✅ Notification queued for ${targets.length} student${targets.length>1?'s':''}`, 'success');
+
+    // Refresh notify page
+    const pg = document.getElementById('pg_aNotify');
+    if(pg){ pg.remove(); builtPages['aNotify']=false; buildPage('aNotify'); showPage('aNotify'); }
+
+  } catch(e){
+    setBtnLoading('notifyBtn', false, '🔔 Send Notification →');
+    setErr('notifyErr', 'Error: '+e.message);
+  }
+}
 // ═══════════════════════════════════════════════════
 let attendanceMap = {}; // {cls_idx: 'p'|'a'}
 

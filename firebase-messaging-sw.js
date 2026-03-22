@@ -12,7 +12,7 @@ firebase.initializeApp({
 
 const messaging = firebase.messaging();
 
-// Handle background notifications
+// Handle background notifications from FCM
 messaging.onBackgroundMessage((payload) => {
   const { title, body } = payload.notification || {};
   self.registration.showNotification(title || 'Fitbeat', {
@@ -20,4 +20,14 @@ messaging.onBackgroundMessage((payload) => {
     icon: 'https://www.fitbeat26.com/logo.png',
     badge: 'https://www.fitbeat26.com/logo.png',
   });
+});
+
+// Handle direct postMessage from admin portal for immediate notifications
+self.addEventListener('message', (event) => {
+  if(event.data && event.data.type === 'SHOW_NOTIFICATION'){
+    self.registration.showNotification(event.data.title || 'Fitbeat', {
+      body: event.data.body || '',
+      icon: event.data.icon || 'https://www.fitbeat26.com/logo.png',
+    });
+  }
 });
