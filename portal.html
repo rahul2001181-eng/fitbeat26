@@ -2171,10 +2171,15 @@ async function doSendSMS(){
     const phone=(s.phone||'').replace(/\D/g,'').slice(-10);
     if(phone.length!==10){failed++;continue;}
     try{
-      const res=await fetch(`https://www.fast2sms.com/dev/bulkV2?authorization=${FAST2SMS_KEY}&route=q&message=${encodeURIComponent(msg)}&flash=0&numbers=${phone}`,{method:'GET'});
+      const res=await fetch('https://www.fast2sms.com/dev/bulkV2',{
+        method:'POST',
+        headers:{'authorization':FAST2SMS_KEY,'Content-Type':'application/json'},
+        body:JSON.stringify({route:'q',message:msg,flash:0,numbers:phone})
+      });
       const data=await res.json();
-      if(data.return===true)sent++;else failed++;
-    }catch(e){failed++;}
+      console.log('SMS response:',data);
+      if(data.return===true)sent++;else{failed++;console.error('SMS failed:',data.message||data);}
+    }catch(e){failed++;console.error('SMS error:',e);}
   }
   setBtnLoading('smsBtn',false,'📱 Send SMS →');
   closeOv('ov_sms');
