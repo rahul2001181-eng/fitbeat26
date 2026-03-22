@@ -1174,12 +1174,24 @@ sDash: () => {
   const myPays=allPayments.filter(p=>p.status==='Paid');
   const attPct=CU.attendancePercent!=null?CU.attendancePercent:null;
   const attColor=attPct!=null?(attPct>=80?'var(--green)':attPct>=60?'var(--amber)':'var(--red)'):'var(--muted2)';
+  const notifEnabled=CU.fcmToken?true:false;
   return `
 <div class="ph">
   <div><div class="pt">Good ${new Date().getHours()<12?'Morning':new Date().getHours()<17?'Afternoon':'Evening'}, ${CU.firstName||CU.name}! 👋</div>
   <div class="ps">${CU.class||''} · ${CU.batch||''}</div></div>
   <button class="bsm ba2" onclick="navTo('sPay')">💳 Pay Fees →</button>
 </div>
+${!notifEnabled?`
+<div style="background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.3);border-radius:12px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+  <div>
+    <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:3px">🔔 Enable Notifications</div>
+    <div style="font-size:12px;color:var(--muted2)">Get alerts for fee reminders and messages from Fitbeat Studio</div>
+  </div>
+  <button class="bsm ba2" style="padding:9px 18px;white-space:nowrap" onclick="enableStudentNotifications()">Enable Now →</button>
+</div>`:`
+<div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:12px;padding:10px 16px;margin-bottom:18px;font-size:13px;color:var(--green)">
+  ✅ Notifications enabled — you'll receive alerts from Fitbeat Studio
+</div>`}
 <div class="sg">
   <div class="sc g"><div class="si">📊</div><div class="sv" style="color:${attColor}">${attPct!=null?attPct+'%':'—'}</div><div class="sl">Attendance Rate</div><div class="sch" style="color:${attColor}">${attPct!=null?(attPct>=80?'↑ Great!':attPct>=60?'Could be better':'⚠️ Low attendance'):'Not recorded yet'}</div></div>
   <div class="sc c"><div class="si">💰</div><div class="sv">₹${(CLASS_FEES[CU.class]||1999).toLocaleString()}</div><div class="sl">Next Payment Due</div></div>
@@ -1410,7 +1422,12 @@ function buildProfileUI(){
     <div class="dr"><span class="dl">Class</span><span class="dv">${CU.class||'—'}</span></div>
     <div class="dr"><span class="dl">Batch</span><span class="dv" style="font-size:12px">${CU.batch||'—'}</span></div>
     <div class="dr"><span class="dl">Area</span><span class="dv">${CU.area||'—'}</span></div>
-    <div class="dr"><span class="dl">Building</span><span class="dv">${CU.building||'—'}</span></div>`:''}
+    <div class="dr"><span class="dl">Building</span><span class="dv">${CU.building||'—'}</span></div>
+    <div class="dr"><span class="dl">Notifications</span><span class="dv">
+      ${CU.fcmToken
+        ?`<span style="color:var(--green);font-size:12px">✅ Enabled</span>`
+        :`<button class="bsm ba2" style="font-size:11px;padding:4px 10px" onclick="enableStudentNotifications()">Enable 🔔</button>`}
+    </span></div>`:''}
     ${CU.role==='tutor'?`
     <div class="dr"><span class="dl">Teaches</span><span class="dv">${(CU.teaches||[]).join(', ')}</span></div>`:''}
   </div>
@@ -1840,6 +1857,29 @@ async function doStudentPayment(){
   } catch(e){
     setBtnLoading('payBtn',false,'Record My Payment →');
     showToast('Error: '+e.message,'error');
+  }
+}
+
+// ═══════════════════════════════════════════════════
+// STUDENT NOTIFICATION ENABLE
+// ═══════════════════════════════════════════════════
+async function enableStudentNotifications(){
+  try {
+    if(!('Notification' in window)){
+      showToast('Your browser does not support notifications','error'); return;
+    }
+    const perm = await Notification.requestPermission();
+    if(perm !== 'granted'){
+      showToast('❌ Blocked. Tap the 🔒 lock icon in address bar → Notifications → Allow, then refresh','error');
+      return;
+    }
+    await initFCM();
+    showToast('✅ Notifications enabled! You will receive alerts from Fitbeat Studio','success');
+    // Refresh student dashboard to show enabled state
+    const pg = document.getElementById('pg_sDash');
+    if(pg){ pg.remove(); builtPages['sDash']=false; buildPage('sDash'); showPage('sDash'); }
+  } catch(e){
+    showToast('Error enabling notifications: '+e.message,'error');
   }
 }
 
