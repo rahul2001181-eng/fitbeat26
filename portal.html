@@ -10,7 +10,6 @@
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-messaging-compat.js"></script>
 
 <style>
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
@@ -299,51 +298,19 @@ tr:hover td{background:rgba(255,255,255,.018)}
   </div>
 </div>
 
-<!-- Send Notification Modal -->
-<div id="ov_notify" class="overlay">
-  <div class="modal">
-    <div class="mh"><div class="mt2">🔔 Send Notification</div><button class="mc" onclick="closeOv('ov_notify')">✕</button></div>
-    <div id="notifyErr" class="err"></div>
-    <div class="field"><label>Send To</label>
-      <select id="notify_to">
-        <option value="all">📢 All Students</option>
-        <option value="pending">⏳ Students with Pending Fees</option>
-        <option value="one">👤 One Specific Student</option>
-      </select>
-    </div>
-    <div class="field" id="notify_student_wrap" style="display:none">
-      <label>Select Student</label>
-      <select id="notify_student"><option value="">Select...</option></select>
-    </div>
-    <div class="field"><label>Notification Title</label>
-      <input id="notify_title" placeholder="e.g. Fee Reminder 🔔" maxlength="50"/>
-    </div>
-    <div class="field"><label>Message</label>
-      <textarea id="notify_body" placeholder="e.g. Your Zumba fee of ₹1999 is due. Please pay via the Fitbeat portal." style="min-height:80px" maxlength="200"></textarea>
-    </div>
-    <div style="background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.15);border-radius:9px;padding:10px 13px;font-size:12px;color:var(--muted2);margin-bottom:14px">
-      💡 Only students who have logged into the portal and allowed notifications will receive this.
-    </div>
-    <div style="display:flex;gap:10px">
-      <button class="bsm bo" style="flex:1;padding:11px" onclick="closeOv('ov_notify')">Cancel</button>
-      <button class="btn-primary" style="flex:2" id="notifyBtn" onclick="doSendNotification()">🔔 Send Notification →</button>
-    </div>
-  </div>
-</div>
-
 <!-- Edit Student Modal -->
 <div id="ov_editSt" class="overlay">
   <div class="modal modal-wide">
     <div class="mh"><div class="mt2">✏️ Edit Student</div><button class="mc" onclick="closeOv('ov_editSt')">✕</button></div>
     <div id="editStErr" class="err"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="field"><label>First Name</label><input id="est_fn" placeholder="First name"/></div>
-      <div class="field"><label>Last Name</label><input id="est_ln" placeholder="Last name"/></div>
+      <div class="field"><label>First Name</label><input id="est_fn"/></div>
+      <div class="field"><label>Last Name</label><input id="est_ln"/></div>
     </div>
     <div class="field"><label>Phone</label><input id="est_ph" type="tel" placeholder="9876543210"/></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="field"><label>Area / Locality</label><input id="est_area" placeholder="Bhandup East"/></div>
-      <div class="field"><label>Building</label><input id="est_bldg" placeholder="Anand Dham"/></div>
+      <div class="field"><label>Area</label><input id="est_area"/></div>
+      <div class="field"><label>Building</label><input id="est_bldg"/></div>
     </div>
     <div class="field"><label>Class</label>
       <select id="est_cl" onchange="updateBatches('est_bt','est_cl',null)">
@@ -352,7 +319,7 @@ tr:hover td{background:rgba(255,255,255,.018)}
     </div>
     <div class="field"><label>Batch</label><select id="est_bt"></select></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="field"><label>Fee / Month (₹)</label><input id="est_fee" type="number" placeholder="1999"/></div>
+      <div class="field"><label>Fee / Month (₹)</label><input id="est_fee" type="number"/></div>
       <div class="field"><label>Status</label>
         <select id="est_status"><option>Active</option><option>Pending</option><option>Inactive</option></select>
       </div>
@@ -370,11 +337,11 @@ tr:hover td{background:rgba(255,255,255,.018)}
     <div class="mh"><div class="mt2">✏️ Edit Tutor</div><button class="mc" onclick="closeOv('ov_editTutor')">✕</button></div>
     <div id="editTutorErr" class="err"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="field"><label>First Name</label><input id="etr_fn" placeholder="First name"/></div>
-      <div class="field"><label>Last Name</label><input id="etr_ln" placeholder="Last name"/></div>
+      <div class="field"><label>First Name</label><input id="etr_fn"/></div>
+      <div class="field"><label>Last Name</label><input id="etr_ln"/></div>
     </div>
-    <div class="field"><label>Phone</label><input id="etr_ph" type="tel" placeholder="9876543210"/></div>
-    <div class="field"><label>Classes Taught (hold Ctrl/⌘ to select multiple)</label>
+    <div class="field"><label>Phone</label><input id="etr_ph" type="tel"/></div>
+    <div class="field"><label>Classes Taught (Ctrl/⌘ for multiple)</label>
       <select id="etr_cl" multiple style="height:110px">
         <option>Zumba</option><option>Dance</option><option>Kids Dance</option><option>Chess</option><option>Guitar</option>
       </select>
@@ -386,7 +353,7 @@ tr:hover td{background:rgba(255,255,255,.018)}
   </div>
 </div>
 
-<!-- Confirm / Reject Payment Modal -->
+<!-- Confirm Payment Modal -->
 <div id="ov_confirmPay" class="overlay">
   <div class="modal">
     <div class="mh"><div class="mt2">💰 Review Payment</div><button class="mc" onclick="closeOv('ov_confirmPay')">✕</button></div>
@@ -404,6 +371,36 @@ tr:hover td{background:rgba(255,255,255,.018)}
   <div class="modal modal-wide">
     <div class="mh"><div class="mt2" id="attHist_title">Attendance History</div><button class="mc" onclick="closeOv('ov_attHistory')">✕</button></div>
     <div id="attHist_body" style="max-height:60vh;overflow-y:auto"></div>
+  </div>
+</div>
+
+<!-- Send SMS Modal -->
+<div id="ov_sms" class="overlay">
+  <div class="modal">
+    <div class="mh"><div class="mt2">📱 Send SMS</div><button class="mc" onclick="closeOv('ov_sms')">✕</button></div>
+    <div id="smsErr" class="err"></div>
+    <div class="field"><label>Send To</label>
+      <select id="sms_to" onchange="toggleSmsStudent()">
+        <option value="all">📢 All Students</option>
+        <option value="pending">⏳ Pending Fee Students Only</option>
+        <option value="one">👤 One Specific Student</option>
+      </select>
+    </div>
+    <div class="field" id="sms_student_wrap" style="display:none">
+      <label>Select Student</label>
+      <select id="sms_student"><option value="">Select...</option></select>
+    </div>
+    <div class="field"><label>Message</label>
+      <textarea id="sms_body" style="min-height:90px" maxlength="160" placeholder="e.g. Hi {name}, your Zumba fee of ₹1999 is due. Pay via Fitbeat portal: fitbeat26.com/portal.html — Fitbeat Studio"></textarea>
+      <div style="font-size:11px;color:var(--muted2);margin-top:4px">Use {name} to insert student's first name · Max 160 chars</div>
+    </div>
+    <div style="background:rgba(0,212,255,.06);border:1px solid rgba(0,212,255,.15);border-radius:9px;padding:10px 13px;font-size:12px;color:var(--muted2);margin-bottom:14px">
+      💡 Uses Fast2SMS API · ~₹0.20 per SMS · Make sure phone numbers are saved for students
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="bsm bo" style="flex:1;padding:11px" onclick="closeOv('ov_sms')">Cancel</button>
+      <button class="btn-primary" style="flex:2" id="smsBtn" onclick="doSendSMS()">📱 Send SMS →</button>
+    </div>
   </div>
 </div>
 
@@ -527,43 +524,10 @@ const db = firebase.firestore();
 const googleProvider = new firebase.auth.GoogleAuthProvider();
 
 // ═══════════════════════════════════════════════════
-// FCM — PUSH NOTIFICATIONS (new message alerts)
+// SMS CONFIG — Fast2SMS
+// Get free API key at: fast2sms.com → Dashboard → Dev API
 // ═══════════════════════════════════════════════════
-const FCM_VAPID = 'BEwJ2Km-bAUdPqR9h7wZyfbGKNHFVMU--l-UmYMoPtYSVMUhqgZrbRW_-6tmqtUfsWNY7fPphf2C8EEDyMuxP8w';
-let messaging = null;
-async function initFCM(){
-  try {
-    // Register service worker first — required for FCM
-    if(!('serviceWorker' in navigator)){
-      console.warn('FCM: Service workers not supported in this browser');
-      return;
-    }
-    const swReg = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
-    console.log('FCM: Service worker registered ✅', swReg.scope);
-
-    messaging = firebase.messaging();
-
-    const perm = await Notification.requestPermission();
-    if(perm !== 'granted'){ console.log('FCM: notification permission denied'); return; }
-
-    const token = await messaging.getToken({vapidKey: FCM_VAPID, serviceWorkerRegistration: swReg});
-    if(token && CU){
-      // Save to both users and students so admin can see it
-      const updates = {fcmToken: token, fcmUpdatedAt: new Date().toISOString()};
-      await db.collection('users').doc(CU.uid).update(updates);
-      if(CU.role === 'student'){
-        await db.collection('students').doc(CU.uid).update(updates).catch(()=>{});
-      }
-      // Update local state
-      CU.fcmToken = token;
-      console.log('FCM token saved ✅', token.slice(0,20)+'...');
-    }
-    messaging.onMessage((payload)=>{
-      const n = payload.notification||{};
-      showToast(`🔔 ${n.title||'New message'}: ${n.body||''}`, 'success');
-    });
-  } catch(e){ console.warn('FCM init failed:', e.message); }
-}
+const FAST2SMS_KEY = 'YOUR_FAST2SMS_API_KEY'; // ← paste your key here
 
 // ═══════════════════════════════════════════════════
 // BATCH / FEE CONFIG
@@ -846,7 +810,7 @@ const ANAV=[
   {sec:'Overview',items:[{id:'aDash',icon:'📊',label:'Dashboard'}]},
   {sec:'Manage',items:[{id:'aStudents',icon:'👥',label:'Students'},{id:'aPayments',icon:'💰',label:'Payments'},{id:'aTutors',icon:'🎓',label:'Tutors'},{id:'aPayouts',icon:'💸',label:'Tutor Payouts'}]},
   {sec:'Schedule',items:[{id:'aSchedule',icon:'📅',label:'Weekly Schedule'}]},
-  {sec:'Communication',items:[{id:'aMessages',icon:'💬',label:'Messages',badge:true},{id:'aNotify',icon:'🔔',label:'Send Notification'}]},
+  {sec:'Communication',items:[{id:'aMessages',icon:'💬',label:'Messages',badge:true},{id:'aSMS',icon:'📱',label:'Send SMS'}]},
   {sec:'System',items:[{id:'aSettings',icon:'⚙️',label:'Settings'}]},
 ];
 const TNAV=[
@@ -875,8 +839,6 @@ function enterPortal(){
   showScreen('portalScreen');
   const first=isA?'aDash':isT?'tDash':'sDash';
   buildPage(first);showPage(first);
-  // Init push notifications after portal loads
-  setTimeout(initFCM, 1000);
 }
 
 function buildNav(cfg){
@@ -925,7 +887,6 @@ aDash: () => {
 <div class="ph">
   <div><div class="pt">Dashboard</div><div class="ps">${new Date().toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div></div>
   <div style="display:flex;gap:8px">
-    <button class="bsm bo" onclick="openNotifyModal()">🔔 Notify</button>
     <button class="bsm bam" onclick="prepCash(null)">+ Cash Payment</button>
     <button class="bsm ba2" onclick="openOv('ov_addSt')">+ Add Student</button>
   </div>
@@ -970,6 +931,7 @@ aStudents: () => `
 <div class="ph">
   <div><div class="pt">Students</div><div class="ps">${allStudents.length} total · ${allStudents.filter(s=>s.status==='Active').length} active</div></div>
   <div style="display:flex;gap:8px">
+    <button class="bsm bo" onclick="openSMSModal()">📱 SMS</button>
     <button class="bsm bam" onclick="prepCash(null)">+ Cash Payment</button>
     <button class="bsm ba2" onclick="openOv('ov_addSt')">+ Add Student</button>
   </div>
@@ -985,34 +947,32 @@ aStudents: () => `
     <div class="ta"><input class="si-input" placeholder="Search name, email, class..." oninput="ft(this,'stTb')"/></div>
   </div>
   ${allStudents.length?`<div style="overflow-x:auto"><table>
-    <thead><tr><th>#</th><th>First</th><th>Last</th><th>Email</th><th>Class</th><th>Batch</th><th>Fee</th><th>Attend%</th><th>Status</th><th>Actions</th></tr></thead>
+    <thead><tr><th>#</th><th>Name</th><th>Class</th><th>Fee</th><th>Attend%</th><th>Status</th><th>Actions</th></tr></thead>
     <tbody id="stTb">${allStudents.map((s,i)=>{
       const att=s.attendancePercent!=null?s.attendancePercent+'%':'—';
       const attCol=s.attendancePercent>=80?'var(--green)':s.attendancePercent>=60?'var(--amber)':'var(--red)';
       return`<tr>
         <td style="color:var(--muted2);font-size:11px">${i+1}</td>
-        <td><strong>${s.fn||s.firstName||''}</strong></td><td>${s.ln||s.lastName||''}</td>
-        <td style="font-size:11px;color:var(--muted2)">${s.email}</td>
+        <td><strong>${s.fn||s.firstName||''} ${s.ln||s.lastName||''}</strong><div style="font-size:11px;color:var(--muted2)">${s.email}</div></td>
         <td>${cb(s.class)}</td>
-        <td style="font-size:11px;color:var(--muted2);max-width:130px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${s.batch||'—'}</td>
         <td style="color:var(--cyan)">₹${(s.fee||0).toLocaleString()}</td>
         <td style="font-weight:700;color:${s.attendancePercent!=null?attCol:'var(--muted2)'}">${att}</td>
         <td>${sb(s.status)}</td>
-        <td style="display:flex;gap:4px;flex-wrap:wrap">
-          <button class="bsm bo" style="font-size:10px;padding:3px 7px" onclick="viewStudent('${s.id}')">👁 View</button>
-          <button class="bsm bam" style="font-size:10px;padding:3px 7px" onclick="openEditStudent('${s.id}')">✏️ Edit</button>
+        <td><div style="display:flex;gap:3px;flex-wrap:wrap">
+          <button class="bsm bo" style="font-size:10px;padding:3px 7px" onclick="viewStudent('${s.id}')">👁</button>
+          <button class="bsm bam" style="font-size:10px;padding:3px 7px" onclick="openEditStudent('${s.id}')">✏️</button>
           <button class="bsm bd" style="font-size:10px;padding:3px 7px" onclick="confirmDeleteStudent('${s.id}')">🗑</button>
           <button class="bsm bo" style="font-size:10px;padding:3px 7px" onclick="resetStudentPassword('${s.id}')">🔑</button>
           <button class="bsm bg3" style="font-size:10px;padding:3px 7px" onclick="viewAttendanceHistory('${s.id}')">📊</button>
-        </td>
+          <button class="bsm bo" style="font-size:10px;padding:3px 7px" onclick="openSMSModal('${s.id}')">📱</button>
+        </div></td>
       </tr>`;
     }).join('')}</tbody>
-  </table></div>`:`<div class="empty-state"><div class="ei">👥</div><p>No students yet — <a style="color:var(--cyan);cursor:pointer" onclick="openOv('ov_addSt')">add the first one</a></p></div>`}
+  </table></div>`:`<div class="empty-state"><div class="ei">👥</div><p>No students yet</p></div>`}
 </div>`,
 
 aPayments: () => {
   const totalPaid=allPayments.filter(p=>p.status==='Paid').reduce((s,p)=>s+(p.amtNum||0),0);
-  const totalPending=allStudents.filter(s=>s.status==='Pending').reduce((s,x)=>s+(x.fee||0),0);
   const pendingPays=allPayments.filter(p=>p.status==='Pending');
   return `
 <div class="ph">
@@ -1021,41 +981,33 @@ aPayments: () => {
 </div>
 <div class="sg">
   <div class="sc g"><div class="si">✅</div><div class="sv">₹${totalPaid.toLocaleString()}</div><div class="sl">Total Collected</div></div>
-  <div class="sc a"><div class="si">⏳</div><div class="sv">₹${totalPending.toLocaleString()}</div><div class="sl">Fee Pending</div><div class="sch dn">${allStudents.filter(s=>s.status==='Pending').length} students</div></div>
-  <div class="sc p"><div class="si">🔔</div><div class="sv">${pendingPays.length}</div><div class="sl">Awaiting Confirmation</div></div>
+  <div class="sc a"><div class="si">⏳</div><div class="sv">${pendingPays.length}</div><div class="sl">Awaiting Confirmation</div></div>
 </div>
 ${pendingPays.length?`
 <div class="tc" style="margin-bottom:18px">
-  <div class="th"><div class="tt" style="color:var(--amber)">⏳ Payments Awaiting Confirmation</div></div>
+  <div class="th"><div class="tt" style="color:var(--amber)">⏳ Pending Confirmation</div></div>
   <div style="overflow-x:auto"><table>
-    <thead><tr><th>Txn</th><th>Student</th><th>Class</th><th>Amount</th><th>Date</th><th>Method</th><th>Action</th></tr></thead>
+    <thead><tr><th>Student</th><th>Amount</th><th>Method</th><th>Date</th><th>Action</th></tr></thead>
     <tbody>${pendingPays.map(p=>`<tr>
-      <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)">${(p.txn||p.id||'').slice(-8)}</td>
-      <td><strong>${p.student}</strong></td><td>${cb(p.class||'')}</td>
-      <td><strong>${p.amount}</strong></td><td style="font-size:11px;color:var(--muted2)">${p.date}</td>
-      <td style="font-size:12px">${p.method}</td>
-      <td style="display:flex;gap:5px">
-        <button class="bsm bg3" style="font-size:11px;padding:4px 9px" onclick="openConfirmPayment('${p.id}')">✅ Review</button>
-      </td>
-    </tr>`).join('')}
-    </tbody>
+      <td><strong>${p.student}</strong></td>
+      <td><strong>${p.amount}</strong></td>
+      <td>${p.method}</td><td style="font-size:11px;color:var(--muted2)">${p.date}</td>
+      <td><button class="bsm bg3" style="font-size:11px;padding:4px 9px" onclick="openConfirmPayment('${p.id}')">✅ Review</button></td>
+    </tr>`).join('')}</tbody>
   </table></div>
 </div>`:''}
 <div class="tc">
-  <div class="th"><div class="tt">All Transactions</div>
-    <input class="si-input" placeholder="Search..." oninput="ft(this,'payTb')"/>
-  </div>
+  <div class="th"><div class="tt">All Transactions</div><input class="si-input" placeholder="Search..." oninput="ft(this,'payTb')"/></div>
   ${allPayments.length?`<div style="overflow-x:auto"><table>
-    <thead><tr><th>Txn ID</th><th>Student</th><th>Class</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th><th>Action</th></tr></thead>
+    <thead><tr><th>Txn</th><th>Student</th><th>Class</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th><th>Action</th></tr></thead>
     <tbody id="payTb">${allPayments.map(p=>`<tr>
       <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)">${(p.txn||p.id||'').slice(-8)}</td>
       <td><strong>${p.student}</strong></td><td>${cb(p.class||'')}</td>
       <td><strong>${p.amount}</strong></td><td style="font-size:11px;color:var(--muted2)">${p.date}</td>
       <td style="font-size:12px">${p.method}</td><td>${sb(p.status)}</td>
       <td>
-        ${p.status==='Pending'?`<button class="bsm bg3" style="font-size:10px;padding:3px 7px" onclick="openConfirmPayment('${p.id}')">Review</button>`:''}
+        ${p.status==='Pending'?`<button class="bsm bg3" style="font-size:10px;padding:3px 7px" onclick="openConfirmPayment('${p.id}')">Confirm</button>`:''}
         ${p.status==='Paid'?`<button class="bsm bd" style="font-size:10px;padding:3px 7px" onclick="markPaymentStatus('${p.id}','Refunded')">Refund</button>`:''}
-        ${p.status==='Refunded'?`<button class="bsm bam" style="font-size:10px;padding:3px 7px" onclick="markPaymentStatus('${p.id}','Paid')">Re-confirm</button>`:''}
       </td>
     </tr>`).join('')}</tbody>
   </table></div>`:`<div class="empty-state"><div class="ei">💳</div><p>No transactions yet</p></div>`}
@@ -1081,7 +1033,7 @@ aSchedule: () => `
 <div id="scheduleGrid"><div class="empty-state"><div class="ei">📅</div><p>Loading schedule...</p></div></div>`,
 
 aMessages: () => buildMsgUI(),
-aNotify: () => buildNotifyPage(),
+aSMS: () => buildSMSPage(),
 aSettings: () => buildSettingsUI(),
 
 // TUTOR PAGES
@@ -1149,8 +1101,8 @@ ${CU.teaches?CU.teaches.map(cls=>{
           </div>
         </div>
         <div style="display:flex;gap:6px">
-          <button class="bsm bg3 att-p" id="ap_${cls}_${i}" data-uid="${s.id}" onclick="setAtt('${cls}',${i},'p')">✓ Present</button>
-          <button class="bsm bd att-a" id="aa_${cls}_${i}" data-uid="${s.id}" onclick="setAtt('${cls}',${i},'a')">✕ Absent</button>
+          <button class="bsm bg3" id="ap_${cls}_${i}" data-uid="${s.id}" onclick="setAtt('${cls}',${i},'p')">✓ Present</button>
+          <button class="bsm bd" id="aa_${cls}_${i}" data-uid="${s.id}" onclick="setAtt('${cls}',${i},'a')">✕ Absent</button>
         </div>
       </div>`).join('')}
     </div>
@@ -1174,24 +1126,12 @@ sDash: () => {
   const myPays=allPayments.filter(p=>p.status==='Paid');
   const attPct=CU.attendancePercent!=null?CU.attendancePercent:null;
   const attColor=attPct!=null?(attPct>=80?'var(--green)':attPct>=60?'var(--amber)':'var(--red)'):'var(--muted2)';
-  const notifEnabled=CU.fcmToken?true:false;
   return `
 <div class="ph">
   <div><div class="pt">Good ${new Date().getHours()<12?'Morning':new Date().getHours()<17?'Afternoon':'Evening'}, ${CU.firstName||CU.name}! 👋</div>
   <div class="ps">${CU.class||''} · ${CU.batch||''}</div></div>
   <button class="bsm ba2" onclick="navTo('sPay')">💳 Pay Fees →</button>
 </div>
-${!notifEnabled?`
-<div style="background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.3);border-radius:12px;padding:14px 16px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
-  <div>
-    <div style="font-size:14px;font-weight:700;color:#fff;margin-bottom:3px">🔔 Enable Notifications</div>
-    <div style="font-size:12px;color:var(--muted2)">Get alerts for fee reminders and messages from Fitbeat Studio</div>
-  </div>
-  <button class="bsm ba2" style="padding:9px 18px;white-space:nowrap" onclick="enableStudentNotifications()">Enable Now →</button>
-</div>`:`
-<div style="background:rgba(16,185,129,.06);border:1px solid rgba(16,185,129,.2);border-radius:12px;padding:10px 16px;margin-bottom:18px;font-size:13px;color:var(--green)">
-  ✅ Notifications enabled — you'll receive alerts from Fitbeat Studio
-</div>`}
 <div class="sg">
   <div class="sc g"><div class="si">📊</div><div class="sv" style="color:${attColor}">${attPct!=null?attPct+'%':'—'}</div><div class="sl">Attendance Rate</div><div class="sch" style="color:${attColor}">${attPct!=null?(attPct>=80?'↑ Great!':attPct>=60?'Could be better':'⚠️ Low attendance'):'Not recorded yet'}</div></div>
   <div class="sc c"><div class="si">💰</div><div class="sv">₹${(CLASS_FEES[CU.class]||1999).toLocaleString()}</div><div class="sl">Next Payment Due</div></div>
@@ -1422,12 +1362,7 @@ function buildProfileUI(){
     <div class="dr"><span class="dl">Class</span><span class="dv">${CU.class||'—'}</span></div>
     <div class="dr"><span class="dl">Batch</span><span class="dv" style="font-size:12px">${CU.batch||'—'}</span></div>
     <div class="dr"><span class="dl">Area</span><span class="dv">${CU.area||'—'}</span></div>
-    <div class="dr"><span class="dl">Building</span><span class="dv">${CU.building||'—'}</span></div>
-    <div class="dr"><span class="dl">Notifications</span><span class="dv">
-      ${CU.fcmToken
-        ?`<span style="color:var(--green);font-size:12px">✅ Enabled</span>`
-        :`<button class="bsm ba2" style="font-size:11px;padding:4px 10px" onclick="enableStudentNotifications()">Enable 🔔</button>`}
-    </span></div>`:''}
+    <div class="dr"><span class="dl">Building</span><span class="dv">${CU.building||'—'}</span></div>`:''}
     ${CU.role==='tutor'?`
     <div class="dr"><span class="dl">Teaches</span><span class="dv">${(CU.teaches||[]).join(', ')}</span></div>`:''}
   </div>
@@ -1487,13 +1422,24 @@ function buildSettingsUI(){
       <div><div style="font-size:14px;color:var(--text)">${t}</div><div style="font-size:12px;color:var(--muted2)">${s}</div></div>
       <div class="toggle ${on?'on':''}" onclick="this.classList.toggle('on');showToast('Updated','success')"></div>
     </div>`).join('')}
+  <div class="ss"><div class="stitle">📱 SMS Settings (Fast2SMS)</div>
+    <div class="field"><label>Fast2SMS API Key</label><input id="sms_key_input" value="${FAST2SMS_KEY==='YOUR_FAST2SMS_API_KEY'?'':FAST2SMS_KEY}" placeholder="Get free key at fast2sms.com"/></div>
+    <button class="bsm ba2" onclick="saveSMSKey()">Save API Key</button>
+    <div style="font-size:12px;color:var(--muted2);margin-top:8px">Get a free key at <strong>fast2sms.com</strong> → Sign up → Dashboard → Dev API · ₹50 free credits (~250 SMS)</div>
   </div>
 </div>`;
 }
 
-// ═══════════════════════════════════════════════════
-// INITS (async page data loads)
-// ═══════════════════════════════════════════════════
+function saveSMSKey(){
+  const key=document.getElementById('sms_key_input').value.trim();
+  if(!key){showToast('Please enter a key','error');return;}
+  // Store in Firestore for persistence
+  db.collection('settings').doc('sms').set({fast2smsKey:key,updatedBy:CU.uid}).then(()=>{
+    window.FAST2SMS_KEY=key;
+    showToast('✅ SMS API key saved','success');
+  }).catch(e=>showToast('Error: '+e.message,'error'));
+}
+
 const INITS = {
   aTutors: async () => {
     const snap=await db.collection('users').where('role','==','tutor').get();
@@ -1509,8 +1455,8 @@ const INITS = {
       </div>
       <div class="dr"><span class="dl">Teaches</span><span class="dv">${(t.teaches||[]).join(', ')||'—'}</span></div>
       <div class="dr"><span class="dl">Phone</span><span class="dv">${t.phone||'—'}</span></div>
-      <div class="dr"><span class="dl">Students</span><span class="dv">${allStudents.filter(s=>(t.teaches||[]).includes(s.class)&&s.status==='Active').length} active</span></div>
-      <div style="display:flex;gap:8px;margin-top:12px">
+      <div class="dr"><span class="dl">Active Students</span><span class="dv">${allStudents.filter(s=>(t.teaches||[]).includes(s.class)&&s.status==='Active').length}</span></div>
+      <div style="display:flex;gap:7px;margin-top:12px">
         <button class="bsm bam" style="flex:1" onclick="openEditTutor('${t.id}')">✏️ Edit</button>
         <button class="bsm bo" style="flex:1" onclick="resetTutorPassword('${t.id}','${t.email}')">🔑 Reset PW</button>
         <button class="bsm bd" style="padding:6px 10px" onclick="confirmDeleteTutor('${t.id}','${t.name||t.firstName||''}')">🗑</button>
@@ -1861,308 +1807,107 @@ async function doStudentPayment(){
 }
 
 // ═══════════════════════════════════════════════════
-// STUDENT NOTIFICATION ENABLE
+// ATTENDANCE
 // ═══════════════════════════════════════════════════
-async function enableStudentNotifications(){
-  try {
-    if(!('Notification' in window)){
-      showToast('Your browser does not support notifications','error'); return;
-    }
-    const perm = await Notification.requestPermission();
-    if(perm !== 'granted'){
-      showToast('❌ Blocked. Tap the 🔒 lock icon in address bar → Notifications → Allow, then refresh','error');
-      return;
-    }
-    await initFCM();
-    showToast('✅ Notifications enabled! You will receive alerts from Fitbeat Studio','success');
-    // Refresh student dashboard to show enabled state
-    const pg = document.getElementById('pg_sDash');
-    if(pg){ pg.remove(); builtPages['sDash']=false; buildPage('sDash'); showPage('sDash'); }
-  } catch(e){
-    showToast('Error enabling notifications: '+e.message,'error');
-  }
-}
-
-// ═══════════════════════════════════════════════════
-// NOTIFICATIONS
-// ═══════════════════════════════════════════════════
-function buildNotifyPage(){
-  const withTokens = allStudents.filter(s=>s.fcmToken);
-  const pending = allStudents.filter(s=>s.status==='Pending'&&s.fcmToken);
-  return`
-<div class="ph"><div><div class="pt">Send Notification</div><div class="ps">Push alerts to students' browsers</div></div>
-  <button class="bsm ba2" onclick="openNotifyModal()">🔔 New Notification</button>
-</div>
-<div class="sg" style="grid-template-columns:repeat(3,1fr)">
-  <div class="sc c"><div class="si">👥</div><div class="sv">${allStudents.length}</div><div class="sl">Total Students</div></div>
-  <div class="sc g"><div class="si">🔔</div><div class="sv">${withTokens.length}</div><div class="sl">Notifications Enabled</div><div class="sch up">Have logged in & allowed</div></div>
-  <div class="sc a"><div class="si">⏳</div><div class="sv">${allStudents.length - withTokens.length}</div><div class="sl">Not Yet Enabled</div><div class="sch dn">Haven't logged in yet</div></div>
-</div>
-<div class="tc">
-  <div class="th"><div class="tt">Quick Send</div></div>
-  <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
-    <button class="bsm bam" style="padding:12px;font-size:13px;text-align:left" onclick="quickNotify('pending')">
-      ⏳ Send fee reminder to all ${pending.length} students with pending fees
-    </button>
-    <button class="bsm ba2" style="padding:12px;font-size:13px;text-align:left" onclick="quickNotify('all')">
-      📢 Send announcement to all ${withTokens.length} students with notifications enabled
-    </button>
-    <button class="bsm bo" style="padding:12px;font-size:13px;text-align:left" onclick="openNotifyModal()">
-      👤 Send to a specific student
-    </button>
-  </div>
-</div>
-<div class="tc" style="margin-top:18px">
-  <div class="th"><div class="tt">Students — Notification Status</div></div>
-  <div style="overflow-x:auto"><table>
-    <thead><tr><th>Name</th><th>Class</th><th>Status</th><th>Notifications</th><th>Action</th></tr></thead>
-    <tbody>${allStudents.map(s=>`<tr>
-      <td><strong>${s.fn||s.firstName||''} ${s.ln||s.lastName||''}</strong></td>
-      <td>${cb(s.class)}</td>
-      <td>${sb(s.status)}</td>
-      <td>${s.fcmToken?`<span style="color:var(--green);font-weight:700">✅ Enabled</span>`:`<span style="color:var(--muted2)">—  Not yet</span>`}</td>
-      <td>${s.fcmToken?`<button class="bsm bo" style="font-size:11px;padding:3px 8px" onclick="openNotifyModal('${s.id}')">🔔 Notify</button>`:''}</td>
-    </tr>`).join('')}
-    </tbody>
-  </table></div>
-</div>`;
-}
-
-function openNotifyModal(studentId) {
-  // Populate student dropdown
-  const sel = document.getElementById('notify_student');
-  sel.innerHTML = '<option value="">Select student...</option>' +
-    allStudents.filter(s=>s.fcmToken).map(s=>`<option value="${s.id}">${s.fn||s.firstName||''} ${s.ln||s.lastName||''} — ${s.class}</option>`).join('');
-
-  const toSel = document.getElementById('notify_to');
-  if(studentId){
-    toSel.value = 'one';
-    sel.value = studentId;
-    document.getElementById('notify_student_wrap').style.display = 'block';
-  } else {
-    toSel.value = 'all';
-    document.getElementById('notify_student_wrap').style.display = 'none';
-  }
-  document.getElementById('notify_title').value = '';
-  document.getElementById('notify_body').value = '';
-  setErr('notifyErr','');
-  openOv('ov_notify');
-}
-
-// Show/hide student picker based on selection
-document.addEventListener('DOMContentLoaded', ()=>{
-  const toSel = document.getElementById('notify_to');
-  if(toSel) toSel.addEventListener('change', ()=>{
-    document.getElementById('notify_student_wrap').style.display = toSel.value==='one'?'block':'none';
-  });
-});
-
-async function quickNotify(type) {
-  const titles = {
-    pending: 'Fee Reminder 🔔',
-    all: 'Notice from Fitbeat Studio 📢'
-  };
-  const bodies = {
-    pending: 'Your class fee is due. Please pay via the Fitbeat portal to continue your sessions.',
-    all: ''
-  };
-  document.getElementById('notify_to').value = type==='pending'?'pending':'all';
-  document.getElementById('notify_student_wrap').style.display = 'none';
-  document.getElementById('notify_title').value = titles[type]||'';
-  document.getElementById('notify_body').value = bodies[type]||'';
-  setErr('notifyErr','');
-  openOv('ov_notify');
-}
-
-async function doSendNotification(){
-  const to = document.getElementById('notify_to').value;
-  const title = document.getElementById('notify_title').value.trim();
-  const body = document.getElementById('notify_body').value.trim();
-  setErr('notifyErr','');
-  if(!title||!body){ setErr('notifyErr','Please enter both title and message.'); return; }
-
-  // Gather target tokens
-  let targets = [];
-  if(to === 'all'){
-    targets = allStudents.filter(s=>s.fcmToken).map(s=>({token:s.fcmToken,name:s.fn||s.firstName||''}));
-  } else if(to === 'pending'){
-    targets = allStudents.filter(s=>s.status==='Pending'&&s.fcmToken).map(s=>({token:s.fcmToken,name:s.fn||s.firstName||''}));
-  } else {
-    const sid = document.getElementById('notify_student').value;
-    if(!sid){ setErr('notifyErr','Please select a student.'); return; }
-    const s = allStudents.find(x=>x.id===sid);
-    if(!s||!s.fcmToken){ setErr('notifyErr','This student has not enabled notifications yet.'); return; }
-    targets = [{token:s.fcmToken, name:s.fn||s.firstName||''}];
-  }
-
-  if(!targets.length){ setErr('notifyErr','No students with notifications enabled for this selection.'); return; }
-
-  setBtnLoading('notifyBtn', true);
-
-  // Save notification to Firestore — a Cloud Function or Firebase Extensions
-  // can pick this up and send via FCM. For now we save to 'notifications' collection.
-  try {
-    const batch = db.batch();
-    const notifData = {
-      title, body,
-      sentBy: CU.uid,
-      sentAt: firebase.firestore.FieldValue.serverTimestamp(),
-      targetCount: targets.length,
-      targetType: to,
-      tokens: targets.map(t=>t.token),
-      status: 'queued'
-    };
-    const ref = db.collection('notifications').doc();
-    batch.set(ref, notifData);
-    await batch.commit();
-
-    // Also use Web Push directly via service worker for immediate delivery
-    // This works for users currently online
-    let sent = 0;
-    if('serviceWorker' in navigator && navigator.serviceWorker.controller){
-      targets.forEach(t=>{
-        try {
-          navigator.serviceWorker.controller.postMessage({
-            type:'SHOW_NOTIFICATION', title, body, icon:'https://www.fitbeat26.com/logo.png'
-          });
-          sent++;
-        } catch(e){}
-      });
-    }
-
-    closeOv('ov_notify');
-    setBtnLoading('notifyBtn', false, '🔔 Send Notification →');
-    showToast(`✅ Notification queued for ${targets.length} student${targets.length>1?'s':''}`, 'success');
-
-    // Refresh notify page
-    const pg = document.getElementById('pg_aNotify');
-    if(pg){ pg.remove(); builtPages['aNotify']=false; buildPage('aNotify'); showPage('aNotify'); }
-
-  } catch(e){
-    setBtnLoading('notifyBtn', false, '🔔 Send Notification →');
-    setErr('notifyErr', 'Error: '+e.message);
-  }
-}
-// ═══════════════════════════════════════════════════
-let attendanceMap = {}; // {cls_idx: 'p'|'a'}
+let attendanceMap = {};
 
 function setAtt(cls, idx, val) {
   attendanceMap[cls+'_'+idx] = val;
-  const ap = document.getElementById('ap_'+cls+'_'+idx);
-  const aa = document.getElementById('aa_'+cls+'_'+idx);
-  if(val==='p'){
-    ap.style.background='var(--green)';ap.style.color='#fff';ap.style.borderColor='var(--green)';
-    aa.style.background='';aa.style.color='';aa.style.borderColor='';
-  } else {
-    aa.style.background='var(--red)';aa.style.color='#fff';aa.style.borderColor='var(--red)';
-    ap.style.background='';ap.style.color='';ap.style.borderColor='';
-  }
+  const ap=document.getElementById('ap_'+cls+'_'+idx);
+  const aa=document.getElementById('aa_'+cls+'_'+idx);
+  if(val==='p'){ap.style.background='var(--green)';ap.style.color='#fff';aa.style.background='';aa.style.color='';}
+  else{aa.style.background='var(--red)';aa.style.color='#fff';ap.style.background='';ap.style.color='';}
 }
 
 async function saveAttendance(dateKey) {
-  const myS = allStudents.filter(s=>CU.teaches&&CU.teaches.includes(s.class)&&s.status==='Active');
-  if(!myS.length){ showToast('No students to save attendance for','error'); return; }
-  setBtnLoading? null : null;
+  const myS=allStudents.filter(s=>CU.teaches&&CU.teaches.includes(s.class)&&s.status==='Active');
+  if(!myS.length){showToast('No students to save attendance for','error');return;}
   try {
-    const batch = db.batch();
-    const records = {};
-    // Build attendance records per student
-    CU.teaches.forEach(cls => {
-      const students = myS.filter(s=>s.class===cls);
-      students.forEach((s,i) => {
-        const val = attendanceMap[cls+'_'+i] || 'p'; // default present if not marked
-        if(!records[s.id]) records[s.id] = {uid:s.id, name:s.name||((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim(), class:s.class};
-        records[s.id][dateKey] = val;
+    const batch=db.batch();
+    const records={};
+    CU.teaches.forEach(cls=>{
+      myS.filter(s=>s.class===cls).forEach((s,i)=>{
+        const val=attendanceMap[cls+'_'+i]||'p';
+        records[s.id]={uid:s.id,name:s.name||((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim(),class:s.class,status:val};
       });
     });
-
-    // Save each attendance record + update student attendancePercent
     for(const uid of Object.keys(records)){
-      const rec = records[uid];
-      // Save daily attendance doc
-      const attRef = db.collection('attendance').doc(uid+'_'+dateKey);
-      batch.set(attRef, {
-        studentUid: uid, studentName: rec.name, class: rec.class,
-        date: dateKey, status: rec[dateKey], markedBy: CU.uid,
-        createdAt: firebase.firestore.FieldValue.serverTimestamp()
+      const rec=records[uid];
+      batch.set(db.collection('attendance').doc(uid+'_'+dateKey),{
+        studentUid:uid,studentName:rec.name,class:rec.class,
+        date:dateKey,status:rec.status,markedBy:CU.uid,
+        createdAt:firebase.firestore.FieldValue.serverTimestamp()
       });
     }
     await batch.commit();
-
-    // Recalculate attendance % for each student
+    // Recalculate % for each student
     for(const uid of Object.keys(records)){
-      const allAtt = await db.collection('attendance').where('studentUid','==',uid).get();
-      const total = allAtt.size;
-      const present = allAtt.docs.filter(d=>d.data().status==='p').length;
-      const pct = total>0 ? Math.round((present/total)*100) : 0;
-      await db.collection('students').doc(uid).update({attendancePercent: pct});
-      await db.collection('users').doc(uid).update({attendancePercent: pct});
-      const stIdx = allStudents.findIndex(x=>x.id===uid);
-      if(stIdx>=0) allStudents[stIdx].attendancePercent = pct;
+      const allAtt=await db.collection('attendance').where('studentUid','==',uid).get();
+      const total=allAtt.size;
+      const present=allAtt.docs.filter(d=>d.data().status==='p').length;
+      const pct=total>0?Math.round((present/total)*100):0;
+      await db.collection('students').doc(uid).update({attendancePercent:pct});
+      await db.collection('users').doc(uid).update({attendancePercent:pct}).catch(()=>{});
+      const idx=allStudents.findIndex(x=>x.id===uid);
+      if(idx>=0)allStudents[idx].attendancePercent=pct;
     }
-
-    attendanceMap = {};
+    attendanceMap={};
     showToast(`✅ Attendance saved for ${dateKey} (${Object.keys(records).length} students)`,'success');
-  } catch(e){ showToast('Error saving attendance: '+e.message,'error'); }
+  } catch(e){showToast('Error: '+e.message,'error');}
 }
 
 async function viewAttendanceHistory(studentId) {
-  const s = allStudents.find(x=>x.id===studentId);
-  if(!s) return;
-  const title = document.getElementById('attHist_title');
-  const body = document.getElementById('attHist_body');
-  title.textContent = `📊 ${s.fn||s.firstName||''} ${s.ln||s.lastName||''} — Attendance`;
-  body.innerHTML = '<div style="padding:20px;color:var(--muted2);font-size:13px">Loading...</div>';
+  const s=allStudents.find(x=>x.id===studentId);if(!s)return;
+  document.getElementById('attHist_title').textContent=`📊 ${s.fn||s.firstName||''} ${s.ln||s.lastName||''} — Attendance`;
+  const body=document.getElementById('attHist_body');
+  body.innerHTML='<div style="padding:20px;color:var(--muted2)">Loading...</div>';
   openOv('ov_attHistory');
   try {
-    const snap = await db.collection('attendance').where('studentUid','==',studentId).orderBy('date','desc').limit(60).get();
-    const records = snap.docs.map(d=>d.data());
-    if(!records.length){ body.innerHTML='<div style="padding:20px;color:var(--muted2);font-size:13px">No attendance records yet.</div>'; return; }
-    const present = records.filter(r=>r.status==='p').length;
-    const pct = Math.round((present/records.length)*100);
-    const pctColor = pct>=80?'var(--green)':pct>=60?'var(--amber)':'var(--red)';
-    body.innerHTML = `
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:16px;border-bottom:1px solid var(--border)">
-        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${pctColor}">${pct}%</div><div style="font-size:11px;color:var(--muted2)">Overall Rate</div></div>
-        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--green)">${present}</div><div style="font-size:11px;color:var(--muted2)">Present</div></div>
-        <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--red)">${records.length-present}</div><div style="font-size:11px;color:var(--muted2)">Absent</div></div>
-      </div>
-      <div style="padding:12px 16px">
-        <table style="width:100%;border-collapse:collapse">
-          <thead><tr><th style="text-align:left;padding:7px;font-size:11px;color:var(--muted2);border-bottom:1px solid var(--border)">Date</th><th style="text-align:left;padding:7px;font-size:11px;color:var(--muted2);border-bottom:1px solid var(--border)">Status</th><th style="text-align:left;padding:7px;font-size:11px;color:var(--muted2);border-bottom:1px solid var(--border)">Class</th></tr></thead>
-          <tbody>${records.map(r=>`<tr>
-            <td style="padding:7px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.04)">${r.date}</td>
-            <td style="padding:7px;border-bottom:1px solid rgba(255,255,255,.04)">${r.status==='p'?'<span style="color:var(--green);font-weight:700">✓ Present</span>':'<span style="color:var(--red);font-weight:700">✕ Absent</span>'}</td>
-            <td style="padding:7px;font-size:12px;color:var(--muted2);border-bottom:1px solid rgba(255,255,255,.04)">${r.class||''}</td>
-          </tr>`).join('')}</tbody>
-        </table>
-      </div>`;
-  } catch(e){ body.innerHTML=`<div style="padding:20px;color:var(--red);font-size:13px">Error: ${e.message}</div>`; }
+    const snap=await db.collection('attendance').where('studentUid','==',studentId).orderBy('date','desc').limit(60).get();
+    const records=snap.docs.map(d=>d.data());
+    if(!records.length){body.innerHTML='<div style="padding:20px;color:var(--muted2)">No attendance records yet.</div>';return;}
+    const present=records.filter(r=>r.status==='p').length;
+    const pct=Math.round((present/records.length)*100);
+    const pctColor=pct>=80?'var(--green)':pct>=60?'var(--amber)':'var(--red)';
+    body.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;padding:16px;border-bottom:1px solid var(--border)">
+      <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${pctColor}">${pct}%</div><div style="font-size:11px;color:var(--muted2)">Overall</div></div>
+      <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--green)">${present}</div><div style="font-size:11px;color:var(--muted2)">Present</div></div>
+      <div style="text-align:center"><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--red)">${records.length-present}</div><div style="font-size:11px;color:var(--muted2)">Absent</div></div>
+    </div>
+    <div style="padding:12px"><table style="width:100%;border-collapse:collapse">
+      <thead><tr><th style="text-align:left;padding:7px;font-size:11px;color:var(--muted2);border-bottom:1px solid var(--border)">Date</th><th style="text-align:left;padding:7px;font-size:11px;color:var(--muted2);border-bottom:1px solid var(--border)">Status</th></tr></thead>
+      <tbody>${records.map(r=>`<tr>
+        <td style="padding:7px;font-size:13px;border-bottom:1px solid rgba(255,255,255,.04)">${r.date}</td>
+        <td style="padding:7px;border-bottom:1px solid rgba(255,255,255,.04)">${r.status==='p'?'<span style="color:var(--green);font-weight:700">✓ Present</span>':'<span style="color:var(--red);font-weight:700">✕ Absent</span>'}</td>
+      </tr>`).join('')}</tbody>
+    </table></div>`;
+  } catch(e){body.innerHTML=`<div style="padding:20px;color:var(--red)">Error: ${e.message}</div>`;}
 }
 
 // ═══════════════════════════════════════════════════
 // EDIT STUDENT
 // ═══════════════════════════════════════════════════
-let currentEditStudentId = null;
+let currentEditStudentId=null;
 
-function openEditStudent(id) {
-  currentEditStudentId = id;
-  const s = allStudents.find(x=>x.id===id); if(!s) return;
-  document.getElementById('est_fn').value = s.fn||s.firstName||'';
-  document.getElementById('est_ln').value = s.ln||s.lastName||'';
-  document.getElementById('est_ph').value = s.phone||'';
-  document.getElementById('est_area').value = s.area||'';
-  document.getElementById('est_bldg').value = s.building||'';
-  document.getElementById('est_cl').value = s.class||'Zumba';
-  document.getElementById('est_fee').value = s.fee||'';
-  document.getElementById('est_status').value = s.status||'Active';
+function openEditStudent(id){
+  currentEditStudentId=id;
+  const s=allStudents.find(x=>x.id===id);if(!s)return;
+  document.getElementById('est_fn').value=s.fn||s.firstName||'';
+  document.getElementById('est_ln').value=s.ln||s.lastName||'';
+  document.getElementById('est_ph').value=s.phone||'';
+  document.getElementById('est_area').value=s.area||'';
+  document.getElementById('est_bldg').value=s.building||'';
+  document.getElementById('est_cl').value=s.class||'Zumba';
+  document.getElementById('est_fee').value=s.fee||'';
+  document.getElementById('est_status').value=s.status||'Active';
   updateBatches('est_bt','est_cl',null);
-  setTimeout(()=>{ document.getElementById('est_bt').value = s.batch||''; }, 100);
+  setTimeout(()=>{document.getElementById('est_bt').value=s.batch||'';},100);
   setErr('editStErr','');
   openOv('ov_editSt');
 }
 
-async function doEditStudent() {
+async function doEditStudent(){
   const fn=document.getElementById('est_fn').value.trim();
   const ln=document.getElementById('est_ln').value.trim();
   const ph=document.getElementById('est_ph').value.trim();
@@ -2173,160 +1918,269 @@ async function doEditStudent() {
   const fee=Number(document.getElementById('est_fee').value)||0;
   const status=document.getElementById('est_status').value;
   setErr('editStErr','');
-  if(!fn||!ln||!cl||!bt){setErr('editStErr','First name, last name, class and batch required.');return;}
+  if(!fn||!ln||!cl||!bt){setErr('editStErr','Name, class and batch required.');return;}
   setBtnLoading('editStBtn',true);
   const updates={firstName:fn,lastName:ln,fn,ln,name:fn+' '+ln,phone:ph,area,building:bldg,class:cl,batch:bt,fee,status};
-  try {
+  try{
     await db.collection('students').doc(currentEditStudentId).update(updates);
     await db.collection('users').doc(currentEditStudentId).update(updates);
     const idx=allStudents.findIndex(x=>x.id===currentEditStudentId);
-    if(idx>=0) allStudents[idx]={...allStudents[idx],...updates};
+    if(idx>=0)allStudents[idx]={...allStudents[idx],...updates};
     closeOv('ov_editSt');
     ['aStudents','aDash'].forEach(p=>{const el=document.getElementById('pg_'+p);if(el){el.remove();builtPages[p]=false;}});
     buildPage('aStudents');showPage('aStudents');
-    showToast(`✅ ${fn} ${ln}'s profile updated`,'success');
-  } catch(e){ setErr('editStErr','Error: '+e.message); }
+    showToast(`✅ ${fn} ${ln} updated`,'success');
+  }catch(e){setErr('editStErr','Error: '+e.message);}
   setBtnLoading('editStBtn',false,'Save Changes →');
 }
 
-async function confirmDeleteStudent(id) {
-  const s=allStudents.find(x=>x.id===id); if(!s) return;
+async function confirmDeleteStudent(id){
+  const s=allStudents.find(x=>x.id===id);if(!s)return;
   const name=(s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'');
-  if(!confirm(`⚠️ Delete ${name}? This will remove their profile from Firestore. Their Firebase Auth account stays (use Firebase Console to delete Auth). This cannot be undone.`)) return;
-  try {
+  if(!confirm(`⚠️ Delete ${name}? This removes their Firestore profile. Cannot be undone.`))return;
+  try{
     await db.collection('students').doc(id).delete();
     await db.collection('users').doc(id).delete();
-    allStudents = allStudents.filter(x=>x.id!==id);
+    allStudents=allStudents.filter(x=>x.id!==id);
     ['aStudents','aDash'].forEach(p=>{const el=document.getElementById('pg_'+p);if(el){el.remove();builtPages[p]=false;}});
     buildPage('aStudents');showPage('aStudents');
     showToast(`🗑 ${name} removed`,'success');
-  } catch(e){ showToast('Error: '+e.message,'error'); }
+  }catch(e){showToast('Error: '+e.message,'error');}
 }
 
-async function resetStudentPassword(id) {
-  const s=allStudents.find(x=>x.id===id); if(!s) return;
-  if(!confirm(`Send password reset email to ${s.email}?`)) return;
-  try {
+async function resetStudentPassword(id){
+  const s=allStudents.find(x=>x.id===id);if(!s)return;
+  if(!confirm(`Send password reset email to ${s.email}?`))return;
+  try{
     await auth.sendPasswordResetEmail(s.email);
-    showToast(`📧 Password reset email sent to ${s.email}`,'success');
-  } catch(e){ showToast('Error: '+e.message,'error'); }
+    showToast(`📧 Reset email sent to ${s.email}`,'success');
+  }catch(e){showToast('Error: '+e.message,'error');}
 }
 
 // ═══════════════════════════════════════════════════
 // EDIT TUTOR
 // ═══════════════════════════════════════════════════
-let currentEditTutorId = null;
+let currentEditTutorId=null;
 
-async function openEditTutor(id) {
-  currentEditTutorId = id;
-  try {
-    const doc = await db.collection('users').doc(id).get();
-    if(!doc.exists) return;
-    const t = doc.data();
-    document.getElementById('etr_fn').value = t.firstName||'';
-    document.getElementById('etr_ln').value = t.lastName||'';
-    document.getElementById('etr_ph').value = t.phone||'';
-    // Pre-select teaches options
-    const sel = document.getElementById('etr_cl');
-    Array.from(sel.options).forEach(o => o.selected = (t.teaches||[]).includes(o.value));
+async function openEditTutor(id){
+  currentEditTutorId=id;
+  try{
+    const doc=await db.collection('users').doc(id).get();if(!doc.exists)return;
+    const t=doc.data();
+    document.getElementById('etr_fn').value=t.firstName||'';
+    document.getElementById('etr_ln').value=t.lastName||'';
+    document.getElementById('etr_ph').value=t.phone||'';
+    const sel=document.getElementById('etr_cl');
+    Array.from(sel.options).forEach(o=>o.selected=(t.teaches||[]).includes(o.value));
     setErr('editTutorErr','');
     openOv('ov_editTutor');
-  } catch(e){ showToast('Error: '+e.message,'error'); }
+  }catch(e){showToast('Error: '+e.message,'error');}
 }
 
-async function doEditTutor() {
+async function doEditTutor(){
   const fn=document.getElementById('etr_fn').value.trim();
   const ln=document.getElementById('etr_ln').value.trim();
   const ph=document.getElementById('etr_ph').value.trim();
   const teaches=Array.from(document.getElementById('etr_cl').selectedOptions).map(o=>o.value);
   setErr('editTutorErr','');
-  if(!fn||!ln||!teaches.length){setErr('editTutorErr','All fields required and select at least one class.');return;}
+  if(!fn||!ln||!teaches.length){setErr('editTutorErr','All fields required.');return;}
   setBtnLoading('editTutorBtn',true);
-  const updates={firstName:fn,lastName:ln,name:fn+' '+ln,phone:ph,teaches};
-  try {
-    await db.collection('users').doc(currentEditTutorId).update(updates);
+  try{
+    await db.collection('users').doc(currentEditTutorId).update({firstName:fn,lastName:ln,name:fn+' '+ln,phone:ph,teaches});
     closeOv('ov_editTutor');
     const tp=document.getElementById('pg_aTutors');if(tp){tp.remove();builtPages['aTutors']=false;}
     buildPage('aTutors');showPage('aTutors');
-    showToast(`✅ ${fn} ${ln}'s profile updated`,'success');
-  } catch(e){ setErr('editTutorErr','Error: '+e.message); }
+    showToast(`✅ ${fn} ${ln} updated`,'success');
+  }catch(e){setErr('editTutorErr','Error: '+e.message);}
   setBtnLoading('editTutorBtn',false,'Save Changes →');
 }
 
-async function confirmDeleteTutor(id, name) {
-  if(!confirm(`⚠️ Delete tutor ${name}? Their Firestore profile will be removed. Cannot be undone.`)) return;
-  try {
+async function confirmDeleteTutor(id,name){
+  if(!confirm(`⚠️ Delete tutor ${name}? Cannot be undone.`))return;
+  try{
     await db.collection('users').doc(id).delete();
     const tp=document.getElementById('pg_aTutors');if(tp){tp.remove();builtPages['aTutors']=false;}
     buildPage('aTutors');showPage('aTutors');
     showToast(`🗑 ${name} removed`,'success');
-  } catch(e){ showToast('Error: '+e.message,'error'); }
+  }catch(e){showToast('Error: '+e.message,'error');}
 }
 
-async function resetTutorPassword(id, email) {
-  if(!confirm(`Send password reset email to ${email}?`)) return;
-  try {
+async function resetTutorPassword(id,email){
+  if(!confirm(`Send password reset email to ${email}?`))return;
+  try{
     await auth.sendPasswordResetEmail(email);
-    showToast(`📧 Password reset email sent to ${email}`,'success');
-  } catch(e){ showToast('Error: '+e.message,'error'); }
+    showToast(`📧 Reset email sent to ${email}`,'success');
+  }catch(e){showToast('Error: '+e.message,'error');}
 }
 
 // ═══════════════════════════════════════════════════
-// CONFIRM / REJECT PAYMENT
+// CONFIRM PAYMENT
 // ═══════════════════════════════════════════════════
-let currentPaymentId = null;
+let currentPaymentId=null;
 
-function openConfirmPayment(payId) {
-  currentPaymentId = payId;
-  const p = allPayments.find(x=>x.id===payId); if(!p) return;
-  document.getElementById('cpay_details').innerHTML = `
+function openConfirmPayment(payId){
+  currentPaymentId=payId;
+  const p=allPayments.find(x=>x.id===payId);if(!p)return;
+  document.getElementById('cpay_details').innerHTML=`
     <div class="dr"><span class="dl">Student</span><span class="dv">${p.student}</span></div>
     <div class="dr"><span class="dl">Amount</span><span class="dv" style="color:var(--cyan)">${p.amount}</span></div>
     <div class="dr"><span class="dl">Method</span><span class="dv">${p.method}</span></div>
     <div class="dr"><span class="dl">Date</span><span class="dv">${p.date}</span></div>
     <div class="dr"><span class="dl">Note</span><span class="dv" style="font-size:12px">${p.note||'—'}</span></div>`;
-  document.getElementById('cpay_note').value = '';
+  document.getElementById('cpay_note').value='';
   openOv('ov_confirmPay');
 }
 
-async function doConfirmPayment(newStatus) {
-  const note = document.getElementById('cpay_note').value.trim();
-  const p = allPayments.find(x=>x.id===currentPaymentId); if(!p) return;
-  setBtnLoading(newStatus==='Paid'?'cpay_confirmBtn':'cpay_rejectBtn', true);
-  try {
-    const updates = {status: newStatus, adminNote: note, confirmedBy: CU.uid, confirmedAt: firebase.firestore.FieldValue.serverTimestamp()};
+async function doConfirmPayment(newStatus){
+  const note=document.getElementById('cpay_note').value.trim();
+  const p=allPayments.find(x=>x.id===currentPaymentId);if(!p)return;
+  setBtnLoading(newStatus==='Paid'?'cpay_confirmBtn':'cpay_rejectBtn',true);
+  try{
+    const updates={status:newStatus,adminNote:note,confirmedBy:CU.uid,confirmedAt:firebase.firestore.FieldValue.serverTimestamp()};
     await db.collection('payments').doc(currentPaymentId).update(updates);
-    // If confirming as paid, update student status to Active
-    if(newStatus==='Paid'){
-      const studentUid = p.studentUid;
-      if(studentUid){
-        await db.collection('students').doc(studentUid).update({status:'Active'});
-        await db.collection('users').doc(studentUid).update({status:'Active'});
-        const idx=allStudents.findIndex(x=>x.id===studentUid);
-        if(idx>=0) allStudents[idx].status='Active';
-      }
+    if(newStatus==='Paid'&&p.studentUid){
+      await db.collection('students').doc(p.studentUid).update({status:'Active'});
+      await db.collection('users').doc(p.studentUid).update({status:'Active'}).catch(()=>{});
+      const idx=allStudents.findIndex(x=>x.id===p.studentUid);
+      if(idx>=0)allStudents[idx].status='Active';
     }
     const pidx=allPayments.findIndex(x=>x.id===currentPaymentId);
-    if(pidx>=0) allPayments[pidx]={...allPayments[pidx],...updates};
+    if(pidx>=0)allPayments[pidx]={...allPayments[pidx],...updates};
     closeOv('ov_confirmPay');
     ['aPayments','aDash','aStudents'].forEach(pg=>{const el=document.getElementById('pg_'+pg);if(el){el.remove();builtPages[pg]=false;}});
     buildPage('aPayments');showPage('aPayments');
-    showToast(newStatus==='Paid'?`✅ Payment confirmed as Paid for ${p.student}`:`❌ Payment rejected for ${p.student}`,'success');
-  } catch(e){ showToast('Error: '+e.message,'error'); }
-  setBtnLoading(newStatus==='Paid'?'cpay_confirmBtn':'cpay_rejectBtn', false, newStatus==='Paid'?'✅ Confirm Paid →':'✕ Reject');
+    showToast(newStatus==='Paid'?`✅ Payment confirmed for ${p.student}`:`❌ Payment rejected`,'success');
+  }catch(e){showToast('Error: '+e.message,'error');}
+  setBtnLoading(newStatus==='Paid'?'cpay_confirmBtn':'cpay_rejectBtn',false,newStatus==='Paid'?'✅ Confirm Paid →':'✕ Reject');
 }
 
-async function markPaymentStatus(payId, newStatus) {
-  if(!confirm(`Mark this payment as ${newStatus}?`)) return;
-  try {
-    await db.collection('payments').doc(payId).update({status:newStatus, updatedBy:CU.uid});
+async function markPaymentStatus(payId,newStatus){
+  if(!confirm(`Mark this payment as ${newStatus}?`))return;
+  try{
+    await db.collection('payments').doc(payId).update({status:newStatus,updatedBy:CU.uid});
     const idx=allPayments.findIndex(x=>x.id===payId);
-    if(idx>=0) allPayments[idx].status=newStatus;
+    if(idx>=0)allPayments[idx].status=newStatus;
     ['aPayments','aDash'].forEach(pg=>{const el=document.getElementById('pg_'+pg);if(el){el.remove();builtPages[pg]=false;}});
     buildPage('aPayments');showPage('aPayments');
     showToast(`✅ Payment marked as ${newStatus}`,'success');
-  } catch(e){ showToast('Error: '+e.message,'error'); }
+  }catch(e){showToast('Error: '+e.message,'error');}
 }
-</script>
-</body>
-</html>
+
+// ═══════════════════════════════════════════════════
+// SMS — Fast2SMS
+// ═══════════════════════════════════════════════════
+function buildSMSPage(){
+  const withPhone=allStudents.filter(s=>s.phone);
+  const pending=allStudents.filter(s=>s.status==='Pending'&&s.phone);
+  return`
+<div class="ph"><div><div class="pt">Send SMS</div><div class="ps">Direct SMS to students via Fast2SMS</div></div>
+  <button class="bsm ba2" onclick="openSMSModal()">📱 New SMS</button>
+</div>
+<div class="sg" style="grid-template-columns:repeat(3,1fr)">
+  <div class="sc c"><div class="si">👥</div><div class="sv">${allStudents.length}</div><div class="sl">Total Students</div></div>
+  <div class="sc g"><div class="si">📱</div><div class="sv">${withPhone.length}</div><div class="sl">Have Phone Numbers</div></div>
+  <div class="sc a"><div class="si">⏳</div><div class="sv">${pending.length}</div><div class="sl">Pending Fees (with phone)</div></div>
+</div>
+<div style="background:rgba(245,158,11,.06);border:1px solid rgba(245,158,11,.2);border-radius:11px;padding:13px 16px;margin-bottom:18px;font-size:13px;color:var(--amber)">
+  ⚠️ To use SMS, add your Fast2SMS API key in Settings. Get a free key at <strong>fast2sms.com</strong> (₹50 free credits on signup = ~250 SMS).
+</div>
+<div class="tc">
+  <div class="th"><div class="tt">Quick Send</div></div>
+  <div style="padding:16px;display:flex;flex-direction:column;gap:10px">
+    <button class="bsm bam" style="padding:12px;font-size:13px;text-align:left" onclick="quickSMS('pending')">
+      ⏳ Fee reminder to all ${pending.length} students with pending fees
+    </button>
+    <button class="bsm ba2" style="padding:12px;font-size:13px;text-align:left" onclick="quickSMS('all')">
+      📢 Custom announcement to all ${withPhone.length} students with phone numbers
+    </button>
+    <button class="bsm bo" style="padding:12px;font-size:13px;text-align:left" onclick="openSMSModal()">
+      👤 Send to one specific student
+    </button>
+  </div>
+</div>
+<div class="tc" style="margin-top:18px">
+  <div class="th"><div class="tt">Students — SMS Status</div></div>
+  <div style="overflow-x:auto"><table>
+    <thead><tr><th>Name</th><th>Class</th><th>Phone</th><th>Status</th><th>Action</th></tr></thead>
+    <tbody>${allStudents.map(s=>`<tr>
+      <td><strong>${s.fn||s.firstName||''} ${s.ln||s.lastName||''}</strong></td>
+      <td>${cb(s.class)}</td>
+      <td style="font-family:'JetBrains Mono',monospace;font-size:12px">${s.phone||'<span style="color:var(--red)">No number</span>'}</td>
+      <td>${sb(s.status)}</td>
+      <td>${s.phone?`<button class="bsm bo" style="font-size:11px;padding:3px 8px" onclick="openSMSModal('${s.id}')">📱 SMS</button>`:''}</td>
+    </tr>`).join('')}</tbody>
+  </table></div>
+</div>`;
+}
+
+function toggleSmsStudent(){
+  const v=document.getElementById('sms_to').value;
+  document.getElementById('sms_student_wrap').style.display=v==='one'?'block':'none';
+}
+
+function openSMSModal(studentId){
+  const sel=document.getElementById('sms_student');
+  sel.innerHTML='<option value="">Select student...</option>'+
+    allStudents.filter(s=>s.phone).map(s=>`<option value="${s.id}">${s.fn||s.firstName||''} ${s.ln||s.lastName||''} — ${s.class}</option>`).join('');
+  const toSel=document.getElementById('sms_to');
+  if(studentId){toSel.value='one';sel.value=studentId;document.getElementById('sms_student_wrap').style.display='block';}
+  else{toSel.value='all';document.getElementById('sms_student_wrap').style.display='none';}
+  document.getElementById('sms_body').value='';
+  setErr('smsErr','');
+  openOv('ov_sms');
+}
+
+function quickSMS(type){
+  const bodies={
+    pending:`Hi {name}, your {class} class fee of ₹{fee} is due. Please pay at fitbeat26.com/portal.html — Fitbeat Studio`,
+    all:`Hi {name}, important update from Fitbeat Studio. Please check your portal at fitbeat26.com/portal.html`
+  };
+  document.getElementById('sms_to').value=type==='pending'?'pending':'all';
+  document.getElementById('sms_student_wrap').style.display='none';
+  document.getElementById('sms_body').value=bodies[type]||'';
+  setErr('smsErr','');
+  openOv('ov_sms');
+}
+
+async function doSendSMS(){
+  const to=document.getElementById('sms_to').value;
+  const bodyTpl=document.getElementById('sms_body').value.trim();
+  setErr('smsErr','');
+  if(!bodyTpl){setErr('smsErr','Please enter a message.');return;}
+  if(FAST2SMS_KEY==='YOUR_FAST2SMS_API_KEY'){
+    setErr('smsErr','⚠️ Fast2SMS API key not set. Go to Settings → add your key, or get one free at fast2sms.com');
+    return;
+  }
+  // Gather targets
+  let targets=[];
+  if(to==='all') targets=allStudents.filter(s=>s.phone);
+  else if(to==='pending') targets=allStudents.filter(s=>s.status==='Pending'&&s.phone);
+  else{
+    const sid=document.getElementById('sms_student').value;
+    if(!sid){setErr('smsErr','Please select a student.');return;}
+    const s=allStudents.find(x=>x.id===sid);
+    if(!s||!s.phone){setErr('smsErr','This student has no phone number saved.');return;}
+    targets=[s];
+  }
+  if(!targets.length){setErr('smsErr','No students with phone numbers for this selection.');return;}
+  setBtnLoading('smsBtn',true);
+  let sent=0,failed=0;
+  for(const s of targets){
+    const name=s.fn||s.firstName||'Student';
+    const msg=bodyTpl.replace(/{name}/g,name).replace(/{class}/g,s.class||'').replace(/{fee}/g,(s.fee||1999).toLocaleString());
+    const phone=(s.phone||'').replace(/\D/g,'').slice(-10);
+    if(phone.length!==10){failed++;continue;}
+    try{
+      const res=await fetch(`https://www.fast2sms.com/dev/bulkV2?authorization=${FAST2SMS_KEY}&route=q&message=${encodeURIComponent(msg)}&flash=0&numbers=${phone}`,{method:'GET'});
+      const data=await res.json();
+      if(data.return===true)sent++;else failed++;
+    }catch(e){failed++;}
+  }
+  setBtnLoading('smsBtn',false,'📱 Send SMS →');
+  closeOv('ov_sms');
+  showToast(`📱 SMS sent: ${sent} success${failed>0?`, ${failed} failed`:''}`,sent>0?'success':'error');
+  // Log to Firestore
+  db.collection('sms_logs').add({sentBy:CU.uid,sentAt:firebase.firestore.FieldValue.serverTimestamp(),targetCount:targets.length,sent,failed,message:bodyTpl,targetType:to}).catch(()=>{});
+}
+
+</script></body></html>
