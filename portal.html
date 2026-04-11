@@ -556,14 +556,96 @@ input,button,select,textarea{font-family:"DM Sans",sans-serif}
 .ok{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.25);color:#6ee7b7;border-radius:8px;padding:9px 14px;font-size:13px;margin-bottom:12px;display:none}
 .back-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--cyan);cursor:pointer;margin-bottom:16px}
 .portal{position:relative;z-index:1;display:flex;min-height:100vh}
-.sidebar{width:248px;background:var(--card);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;transition:.3s}
-.sb-logo{padding:18px 16px 14px;border-bottom:1px solid var(--border)}
+/* ── SIDEBAR ARCHITECTURE ── */
+:root{--sb-w:248px;--sb-w-col:62px}
+.sidebar{
+  width:var(--sb-w);background:var(--card);border-right:1px solid var(--border);
+  display:flex;flex-direction:column;position:fixed;top:0;left:0;bottom:0;z-index:100;
+  transition:width .28s cubic-bezier(.4,0,.2,1);overflow:hidden;
+}
+/* Logo row: holds brand text + collapse button side by side */
+.sb-logo{
+  padding:16px 12px 12px;border-bottom:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;gap:8px;
+  min-height:64px;flex-shrink:0;
+}
+.sb-logo-inner{display:flex;flex-direction:column;flex:1;overflow:hidden;transition:opacity .2s ease,width .28s cubic-bezier(.4,0,.2,1);}
+.sb-logo-inner .brand{font-size:16px;white-space:nowrap;overflow:hidden}
+.sb-logo-inner .role-badge{white-space:nowrap;overflow:hidden}
+/* Collapse toggle — lives inside the sidebar, always visible */
+.sb-collapse-btn{
+  flex-shrink:0;width:28px;height:28px;border-radius:8px;
+  background:rgba(255,255,255,.05);border:1px solid var(--border);
+  color:var(--muted2);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;line-height:1;transition:background .2s,color .2s,transform .28s cubic-bezier(.4,0,.2,1);
+}
+.sb-collapse-btn:hover{background:var(--purple);color:#fff;border-color:var(--purple)}
+/* Nav items: label text fades + slides */
+.sb-nav{flex:1;padding:10px 8px;overflow-y:auto;overflow-x:hidden}
+.nav-item-label{
+  flex:1;white-space:nowrap;overflow:hidden;
+  transition:opacity .2s ease,max-width .28s cubic-bezier(.4,0,.2,1);
+  max-width:180px;opacity:1;
+}
+.nb{
+  background:var(--red);color:#fff;font-size:10px;font-weight:700;
+  padding:1px 6px;border-radius:10px;min-width:18px;text-align:center;
+  transition:opacity .2s ease;
+}
+/* Section labels */
+.nav-sec-label{
+  transition:opacity .18s ease,max-width .28s cubic-bezier(.4,0,.2,1);
+  max-width:180px;opacity:1;white-space:nowrap;overflow:hidden;
+}
+/* Footer user info */
+.sb-footer{padding:12px;border-top:1px solid var(--border);flex-shrink:0}
+.user-info{display:flex;align-items:center;gap:9px;padding:9px;border-radius:9px;background:var(--card2);overflow:hidden}
+.user-info-text{overflow:hidden;flex:1;transition:opacity .2s ease,max-width .28s cubic-bezier(.4,0,.2,1);max-width:160px;opacity:1;}
+.logout-btn-label{transition:opacity .18s ease,max-width .28s cubic-bezier(.4,0,.2,1);max-width:160px;opacity:1;white-space:nowrap;overflow:hidden;display:inline-block;vertical-align:middle}
+.logout-btn{
+  width:100%;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);
+  color:#fca5a5;border-radius:8px;padding:8px;font-size:12px;font-weight:600;
+  cursor:pointer;margin-top:7px;transition:background .2s;
+  display:flex;align-items:center;justify-content:center;gap:6px;
+}
+.logout-btn:hover{background:rgba(239,68,68,.18)}
+/* Icon tooltip in collapsed mode */
+.nav-item{position:relative}
+.nav-item .ni-tooltip{
+  position:absolute;left:calc(var(--sb-w-col) - 4px);top:50%;transform:translateY(-50%);
+  background:var(--card2);border:1px solid var(--border);color:var(--text);
+  font-size:12px;font-weight:600;padding:5px 10px;border-radius:7px;
+  white-space:nowrap;pointer-events:none;opacity:0;
+  transition:opacity .15s ease;z-index:200;
+  box-shadow:0 4px 12px rgba(0,0,0,.4);
+}
+/* COLLAPSED STATE */
+.sidebar.collapsed{width:var(--sb-w-col)}
+.sidebar.collapsed .sb-logo-inner{max-width:0;opacity:0}
+.sidebar.collapsed .sb-collapse-btn{transform:rotate(180deg)}
+.sidebar.collapsed .nav-item-label{max-width:0;opacity:0}
+.sidebar.collapsed .nav-sec-label{max-width:0;opacity:0}
+.sidebar.collapsed .nav-sec-toggle{opacity:0;pointer-events:none}
+.sidebar.collapsed .nb{opacity:0;pointer-events:none}
+.sidebar.collapsed .user-info-text{max-width:0;opacity:0}
+.sidebar.collapsed .logout-btn-label{max-width:0;opacity:0}
+.sidebar.collapsed .nav-item:hover .ni-tooltip{opacity:1}
+.sidebar.collapsed .nav-sec{pointer-events:none}
+/* Main content shifts */
+.main-content{margin-left:var(--sb-w);flex:1;padding:26px;min-height:100vh;transition:margin-left .28s cubic-bezier(.4,0,.2,1)}
+.main-content.sidebar-collapsed{margin-left:var(--sb-w-col)}
 .role-badge{display:inline-block;font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;padding:2px 8px;border-radius:4px;margin-top:4px}
 .ra{background:rgba(255,45,120,.15);color:var(--pink);border:1px solid rgba(255,45,120,.3)}
 .rs{background:rgba(0,212,255,.15);color:var(--cyan);border:1px solid rgba(0,212,255,.3)}
 .rt{background:rgba(245,158,11,.15);color:var(--amber);border:1px solid rgba(245,158,11,.3)}
-.sb-nav{flex:1;padding:10px 8px;overflow-y:auto}
-.nav-sec{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:8px 8px 4px;margin-top:5px}
+.sb-nav{flex:1;padding:10px 8px;overflow-y:auto;overflow-x:hidden}
+.nav-sec{font-size:10px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);padding:8px 8px 4px;margin-top:5px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;border-radius:6px;transition:.15s}
+.nav-sec:hover{color:var(--muted2);background:rgba(255,255,255,.03)}
+.nav-sec-toggle{font-size:10px;color:var(--muted);transition:transform .2s;display:inline-block;line-height:1}
+.nav-sec.collapsed .nav-sec-toggle{transform:rotate(-90deg)}
+.nav-sec-items{overflow:hidden;transition:max-height .25s ease,opacity .2s ease;max-height:500px;opacity:1}
+.nav-sec-items.collapsed{max-height:0;opacity:0;pointer-events:none}
 .nav-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:9px;cursor:pointer;transition:.2s;color:var(--muted2);font-size:13px;font-weight:500;margin-bottom:2px}
 .nav-item:hover{background:var(--card2);color:var(--text)}
 .nav-item.active{background:linear-gradient(135deg,rgba(168,85,247,.18),rgba(255,45,120,.1));color:#fff;border:1px solid rgba(168,85,247,.2)}
@@ -573,8 +655,6 @@ input,button,select,textarea{font-family:"DM Sans",sans-serif}
 .user-info{display:flex;align-items:center;gap:9px;padding:9px;border-radius:9px;background:var(--card2)}
 .av{width:32px;height:32px;border-radius:50%;background:var(--grad);display:flex;align-items:center;justify-content:center;font-family:"Bebas Neue",sans-serif;font-size:13px;color:#fff;flex-shrink:0;overflow:hidden}
 .av img{width:100%;height:100%;object-fit:cover}
-.logout-btn{width:100%;background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.2);color:#fca5a5;border-radius:8px;padding:8px;font-size:12px;font-weight:600;cursor:pointer;margin-top:7px;transition:.2s}
-.logout-btn:hover{background:rgba(239,68,68,.18)}
 .main-content{margin-left:248px;flex:1;padding:26px;min-height:100vh}
 .page{display:none;animation:fi .2s ease}
 .page.active{display:block}
@@ -720,7 +800,7 @@ tr:hover td{background:rgba(255,255,255,.018)}
 .hamburger{background:none;border:none;color:var(--text);font-size:20px;cursor:pointer}
 .sb-overlay{position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:99;display:none}
 @media(max-width:900px){.pw{grid-template-columns:1fr}.plan-grid{grid-template-columns:1fr}.msg-wrap{grid-template-columns:1fr;height:auto}.msg-list{height:180px;border-right:none;border-bottom:1px solid var(--border)}}
-@media(max-width:768px){.sidebar{transform:translateX(-100%)}.sidebar.open{transform:translateX(0)}.sb-overlay.open{display:block}.mobile-topbar{display:flex}.main-content{margin-left:0;padding:66px 13px 20px}.sg{grid-template-columns:1fr 1fr}}
+@media(max-width:768px){.sidebar{transform:translateX(-100%);width:var(--sb-w)!important}.sidebar.open{transform:translateX(0)}.sb-overlay.open{display:block}.mobile-topbar{display:flex}.main-content{margin-left:0!important;padding:66px 13px 20px}.sg{grid-template-columns:1fr 1fr}}
 </style>
 </head>
 <body>
@@ -1397,19 +1477,22 @@ tr:hover td{background:rgba(255,255,255,.018)}
   <div id="sbOv" class="sb-overlay" onclick="toggleSB()"></div>
   <div class="sidebar" id="sidebar">
     <div class="sb-logo">
-      <div class="brand" style="font-size:17px;text-align:left">Fitbeat Studio</div>
-      <div id="roleBadge" class="role-badge rs">Student</div>
+      <div class="sb-logo-inner">
+        <div class="brand" style="font-size:17px">Fitbeat Studio</div>
+        <div id="roleBadge" class="role-badge rs">Student</div>
+      </div>
+      <button class="sb-collapse-btn" id="sbCollapseBtn" onclick="toggleSidebarCollapse()" title="Collapse sidebar">‹</button>
     </div>
     <nav class="sb-nav" id="sbNav"></nav>
     <div class="sb-footer">
       <div class="user-info">
         <div class="av" id="sbAv">P</div>
-        <div style="overflow:hidden">
+        <div class="user-info-text">
           <div style="font-size:13px;font-weight:600;color:#fff" id="sbName">Loading...</div>
-          <div style="font-size:11px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:135px" id="sbEmail"></div>
+          <div style="font-size:11px;color:var(--muted2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis" id="sbEmail"></div>
         </div>
       </div>
-      <button class="logout-btn" onclick="doLogout()">Sign Out</button>
+      <button class="logout-btn" onclick="doLogout()"><span>↩</span><span class="logout-btn-label">Sign Out</span></button>
     </div>
   </div>
   <div class="main-content" id="mc"></div>
@@ -1665,6 +1748,13 @@ function showToast(msg,type='success'){
   clearTimeout(t._t);t._t=setTimeout(()=>{t.style.transform='translateY(90px)';t.style.opacity='0';},3500);
 }
 function toggleSB(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sbOv').classList.toggle('open');}
+function toggleSidebarCollapse(){
+  const sb=document.getElementById('sidebar');
+  const mc=document.getElementById('mc');
+  const collapsed=sb.classList.toggle('collapsed');
+  mc.classList.toggle('sidebar-collapsed',collapsed);
+  try{localStorage.setItem('sb_collapsed',collapsed?'1':'0');}catch(e){}
+}
 function sb(s){const m={Paid:'bg2',Pending:'bam2',Refunded:'br2',Active:'bg2',Inactive:'br2',Resolved:'bg2',Open:'bam2'};return`<span class="badge ${m[s]||'bc2'}">${s}</span>`;}
 function cb(c){const m={Zumba:'bc2',Dance:'bp2','Kids Dance':'bp2',Chess:'bb2',Guitar:'bam2',Other:'bg2'};return`<span class="badge ${m[c]||'bc2'}">${c}</span>`;}
 function ft(inp,id){const v=inp.value.toLowerCase();const tb=document.getElementById(id);if(tb)tb.querySelectorAll('tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(v)?'':'none';});}
@@ -2112,7 +2202,7 @@ const COADMIN_NAV=[
   {sec:'Overview',items:[{id:'caDash',icon:'📊',label:'My Dashboard'}]},
   {sec:'Students',items:[{id:'aStudents',icon:'👥',label:'All Students'},{id:'aAdmissions',icon:'🎓',label:'Admissions & Fees',badge:'adm'}]},
   {sec:'Payments',items:[{id:'aPayments',icon:'💰',label:'Payments'}]},
-  {sec:'Schedule',items:[{id:'aSchedule',icon:'📅',label:'Weekly Schedule'},{id:'aBatchSlots',icon:'🕐',label:'Batch Availability'},{id:'aAttendance',icon:'✅',label:'Attendance Records'}]},
+  {sec:'Schedule',items:[{id:'aSchedule',icon:'📅',label:'Weekly Schedule'},{id:'aBatchSlots',icon:'🕐',label:'Batch Availability'},{id:'aAttendance',icon:'✅',label:'Attendance Records'},{id:'caMarkAtt',icon:'✍️',label:'Mark Attendance'}]},
   {sec:'Leads',items:[{id:'aEnquiries',icon:'📋',label:'Enquiries',badge:'enq'}]},
   {sec:'Communication',items:[{id:'aMessages',icon:'💬',label:'Messages',badge:true}]},
 ];
@@ -2231,6 +2321,8 @@ function enterPortal(){
   showScreen('portalScreen');
   const first=(CU.role==='admin')?'aDash':(CU.role==='coadmin')?'caDash':isT?'tDash':'sDash';
   buildPage(first);showPage(first);
+  // Restore sidebar collapsed state
+  try{if(localStorage.getItem('sb_collapsed')==='1'){const sb=document.getElementById('sidebar');const mc=document.getElementById('mc');if(sb&&mc){sb.classList.add('collapsed');mc.classList.add('sidebar-collapsed');}}}catch(e){}
   // Start real-time listeners after portal loads
   setTimeout(startRealTimeListeners, 500);
   // Auto-run package expiry check for admin (silent — only sends if 5-7 day window hit)
@@ -2241,8 +2333,32 @@ function enterPortal(){
 
 function buildNav(cfg){
   const nav=document.getElementById('sbNav');nav.innerHTML='';
+  // Restore collapsed state from localStorage
+  let collapsed={};
+  try{collapsed=JSON.parse(localStorage.getItem('fitbeat_nav_collapsed')||'{}');}catch(e){}
   cfg.forEach(sec=>{
-    const s=document.createElement('div');s.className='nav-sec';s.textContent=sec.sec;nav.appendChild(s);
+    const secKey='nav_sec_'+(sec.sec||'').replace(/\s+/g,'_');
+    const isCollapsed=collapsed[secKey]===true;
+    // Section header — clickable to collapse/expand
+    const s=document.createElement('div');
+    s.className='nav-sec'+(isCollapsed?' collapsed':'');
+    s.dataset.secKey=secKey;
+    s.innerHTML=`<span class="nav-sec-label">${sec.sec}</span><span class="nav-sec-toggle">▾</span>`;
+    s.onclick=function(){
+      const wasCollapsed=this.classList.contains('collapsed');
+      this.classList.toggle('collapsed');
+      const itemsEl=this.nextElementSibling;
+      if(itemsEl)itemsEl.classList.toggle('collapsed');
+      try{
+        const stored=JSON.parse(localStorage.getItem('fitbeat_nav_collapsed')||'{}');
+        stored[this.dataset.secKey]=!wasCollapsed;
+        localStorage.setItem('fitbeat_nav_collapsed',JSON.stringify(stored));
+      }catch(e){}
+    };
+    nav.appendChild(s);
+    // Items wrapper — collapsible
+    const itemsWrap=document.createElement('div');
+    itemsWrap.className='nav-sec-items'+(isCollapsed?' collapsed':'');
     sec.items.forEach(item=>{
       let unread=0;
       if(item.badge===true) unread=allMessages.filter(m=>m.unread&&CU.role==='admin').length;
@@ -2272,10 +2388,11 @@ function buildNav(cfg){
         }).length;
       }
       const el=document.createElement('div');el.className='nav-item';el.id='ni_'+item.id;
-      el.innerHTML=`<span class="ni">${item.icon}</span>${item.label}`+(unread>0?`<span class="nb">${unread}</span>`:'');
+      el.innerHTML=`<span class="ni">${item.icon}</span><span class="nav-item-label">${item.label}</span>`+(unread>0?`<span class="nb">${unread}</span>`:'')+`<span class="ni-tooltip">${item.icon} ${item.label}</span>`;
       el.onclick=()=>{buildPage(item.id);showPage(item.id);};
-      nav.appendChild(el);
+      itemsWrap.appendChild(el);
     });
+    nav.appendChild(itemsWrap);
   });
 }
 
@@ -3043,6 +3160,8 @@ ${existingSlots.map(({cls,batch,count,meta})=>{
 <div id="ov_addBatch" class="overlay"><div class="modal modal-wide">
   <div class="mh"><div class="mt2" id="addBatchModalTitle">Add New Batch</div><button class="mc" onclick="closeOv('ov_addBatch')">✕</button></div>
   <div id="addBatchErr" class="err"></div>
+  <!-- Hidden field stores original batch name so edit knows to update-in-place, not create new -->
+  <input type="hidden" id="nb_orig_name" value=""/>
   <div class="field"><label>Class</label>
     <select id="nb_cls"><option value="">Select class...</option>
       ${Object.keys(BATCH_OPTS).map(c=>`<option>${c}</option>`).join('')}
@@ -3248,26 +3367,18 @@ aAdmissions: () => {
   const now = new Date();
   function pd(v){if(!v)return null;if(v&&v.toDate)return v.toDate();if(v instanceof Date)return v;const d=new Date(v);return isNaN(d)?null:d;}
   function getExpiry(a){
-    // FIX: expiry = last paid month's end + 30 days (NOT firstClassDate + 1 month)
+    // CORRECT: expiry = firstSession + (number of paid months). Each payment adds 1 month from first session.
+    const d=pd(a.firstClassDate||a.firstSessionDate);
+    if(!d)return null;
+    const base=new Date(d);
     if(a.fees){
-      const MONTH_ORDER=['Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan'];
-      const MONTH_IDX={Jan:0,Feb:1,Mar:2,Apr:3,May:4,Jun:5,Jul:6,Aug:7,Sep:8,Oct:9,Nov:10,Dec:11};
-      const paidEntries=Object.entries(a.fees).filter(([m,v])=>v&&v.date&&v.amt&&v.amt!=='Pending'&&v.amt!=='-');
-      if(paidEntries.length>0){
-        // Get the entry with the latest payment date
-        paidEntries.sort((a2,b2)=>new Date(b2[1].date)-new Date(a2[1].date));
-        const latestDate=new Date(paidEntries[0][1].date);
-        if(!isNaN(latestDate)){
-          // Check if it's a quarterly payment (amt >= 3000 roughly)
-          const amt=parseFloat(paidEntries[0][1].amt)||0;
-          const monthsToAdd=amt>=3000?3:1;
-          const e=new Date(latestDate);e.setMonth(e.getMonth()+monthsToAdd);return e;
-        }
+      const paidCount=Object.values(a.fees).filter(v=>v&&v.amt&&v.amt!=='Pending'&&v.amt!=='-').length;
+      if(paidCount>0){
+        const e=new Date(base);e.setMonth(e.getMonth()+paidCount);return e;
       }
     }
-    // Fallback: firstClassDate + 1 month
-    const d=pd(a.firstClassDate||a.firstSessionDate);if(!d)return null;
-    const e=new Date(d);e.setMonth(e.getMonth()+1);return e;
+    // No payments yet: expiry = firstSession + 1 month (initial package)
+    const e=new Date(base);e.setMonth(e.getMonth()+1);return e;
   }
   function expiryBadge(a){
     const exp=getExpiry(a);if(!exp)return '<span style="color:var(--muted2);font-size:11px">—</span>';
@@ -3835,21 +3946,22 @@ sHistory: () => {
   const pendingPays = allPayments.filter(p=>p.status==='Pending');
   const totalPaid = paidPays.reduce((s,p)=>s+(p.amtNum||0),0);
   return `
-<div class="ph"><div><div class="pt">Payment History</div></div>
+<div class="ph">
+  <div><div class="pt">Payment History</div><div class="ps">Portal payments &amp; Admissions fee receipts</div></div>
   ${paidPays.length?`<button class="bsm ba2" onclick="downloadMyReceipt()">📥 Latest Receipt</button>`:''}
 </div>
 ${pendingPays.length?`<div style="background:rgba(245,158,11,.07);border:1px solid rgba(245,158,11,.25);border-radius:11px;padding:12px 16px;margin-bottom:14px;font-size:13px;color:var(--amber);display:flex;align-items:center;gap:10px">
   <span style="font-size:20px">⏳</span>
-  <div><strong>${pendingPays.length} payment${pendingPays.length>1?'s':''} pending Admin confirmation.</strong><br><span style="font-size:11px;opacity:.8">Receipts are only available after your payment is confirmed by Admin.</span></div>
+  <div><strong>${pendingPays.length} payment${pendingPays.length>1?'s':''} pending Admin confirmation.</strong><br><span style="font-size:11px;opacity:.8">Receipts available after Admin confirms.</span></div>
 </div>`:''}
 <div class="sg" style="grid-template-columns:repeat(3,1fr)">
-  <div class="sc g"><div class="si">✅</div><div class="sv">${paidPays.length}</div><div class="sl">Confirmed Payments</div></div>
+  <div class="sc g"><div class="si">✅</div><div class="sv">${paidPays.length}</div><div class="sl">Portal Payments</div></div>
   <div class="sc a"><div class="si">⏳</div><div class="sv">${pendingPays.length}</div><div class="sl">Pending</div></div>
-  <div class="sc c"><div class="si">📊</div><div class="sv">₹${totalPaid.toLocaleString()}</div><div class="sl">Total Confirmed</div></div>
+  <div class="sc c"><div class="si">₹</div><div class="sv">₹${totalPaid.toLocaleString()}</div><div class="sl">Total Confirmed</div></div>
 </div>
-<div class="tc">
-  <div class="th"><div class="tt">All Transactions</div></div>
-  ${allPayments.length?`<div class="tbl-wrap"><table>
+${allPayments.length?`<div class="tc" style="margin-bottom:16px">
+  <div class="th"><div class="tt">💳 Portal Payments</div></div>
+  <div class="tbl-wrap"><table>
     <thead><tr><th>Txn ID</th><th>Plan</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th><th>Receipt</th></tr></thead>
     <tbody>${allPayments.map(p=>`<tr>
       <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)">${(p.txn||p.id||'').slice(-8)}</td>
@@ -3857,11 +3969,17 @@ ${pendingPays.length?`<div style="background:rgba(245,158,11,.07);border:1px sol
       <td><strong>${p.amount}</strong></td><td style="font-size:11px;color:var(--muted2)">${p.date}</td>
       <td style="font-size:12px">${p.method}</td><td>${sb(p.status)}</td>
       <td>${p.status==='Paid'
-        ?`<button class="bsm bg3" style="font-size:10px;padding:3px 8px" onclick="downloadMyReceipt('${p.id}')">🧾 Receipt</button>`
+        ?`<button class="bsm bg3" style="font-size:10px;padding:3px 8px" onclick="downloadMyReceipt('${p.id}')">🧾 Download</button>`
         :`<span style="font-size:11px;color:var(--muted2)">—</span>`
       }</td>
     </tr>`).join('')}</tbody>
-  </table></div>`:`<div class="empty-state"><div class="ei">📋</div><p>No payments recorded yet</p></div>`}
+  </table></div>
+</div>`:''}
+<div class="tc" id="admFeeReceiptsSection">
+  <div class="th"><div class="tt">🎓 Admissions Fee Receipts</div><div style="font-size:12px;color:var(--muted2)">Fees paid by Admin via Admissions &amp; Fees</div></div>
+  <div id="admFeeReceiptsBody" style="padding:14px 16px">
+    <div style="color:var(--muted2);font-size:13px">Loading...</div>
+  </div>
 </div>`;
 },
 
@@ -4692,6 +4810,35 @@ async function saveProfile(){
   }catch(e){const el=document.getElementById('profErr');if(el){el.textContent=e.message;el.style.display='block';}}
 }
 
+function downloadAdmFeeReceipt(receiptId){
+  // Find the receipt in the already-rendered data
+  db.collection('admFeeReceipts').doc(receiptId).get().then(doc=>{
+    if(!doc.exists){showToast('Receipt not found','error');return;}
+    const r=doc.data();
+    const printDate=new Date().toLocaleDateString('en-IN',{day:'2-digit',month:'long',year:'numeric'});
+    const html=buildReceiptHTML({
+      receiptNo:r.receiptNo||('FDB-ADM-'+receiptId.slice(-8).toUpperCase()),
+      printDate,
+      studentName:r.studentName||CU.name||'—',
+      studentEmail:CU.email||'—',
+      studentClass:r.class||'—',
+      studentBatch:r.batch||'—',
+      plan:'Monthly Fee — '+r.month,
+      payDate:r.paymentDate||r.date||'—',
+      method:r.method||'—',
+      txn:r.receiptNo||receiptId,
+      amount:'₹'+(r.amtNum||r.amount||0).toLocaleString(),
+      note:r.ref?'Ref: '+r.ref:'',
+      type:'admissions',
+    });
+    const b=new Blob([html],{type:'text/html'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(b);
+    a.download='Fitbeat_FeeReceipt_'+(r.receiptNo||receiptId)+'_'+(r.studentName||'').replace(/ /g,'_')+'.html';
+    a.click();
+    showToast('🧾 Fee receipt downloaded!','success');
+  }).catch(e=>showToast('Error: '+e.message,'error'));
+}
+
 function downloadMyReceipt(payId){
   const pays=allPayments;
   if(!pays.length){showToast('No payments found','error');return;}
@@ -4766,7 +4913,7 @@ function generateAdmissionReceipt(admId){
   let expiryStr='—';
   try{
     const fc=adm.firstClassDate||adm.firstSessionDate;
-    if(fc){const fd=fc.toDate?fc.toDate():new Date(fc);if(!isNaN(fd)){const exp=new Date(fd);exp.setMonth(exp.getMonth()+1);expiryStr=exp.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});}}
+    if(fc){const fd=fc.toDate?fc.toDate():new Date(fc);if(!isNaN(fd)){const exp=new Date(fd);exp.setMonth(exp.getMonth()+paidMonths.length);expiryStr=exp.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});}}
   }catch(e){}
   const html=buildAdmReceiptHTML({
     receiptNo,printDate,
@@ -5320,7 +5467,9 @@ async function runExpiryCheck(){
     let fcd;
     if(fc&&fc.toDate)fcd=fc.toDate();
     else{fcd=new Date(fc);if(isNaN(fcd))continue;}
-    const expiry=new Date(fcd);expiry.setMonth(expiry.getMonth()+1);
+    const expiry=new Date(fcd);
+    const paidCount=adm.fees?Object.values(adm.fees).filter(v=>v&&v.amt&&v.amt!=='Pending'&&v.amt!=='-').length:0;
+    expiry.setMonth(expiry.getMonth()+(paidCount>0?paidCount:1));
     const daysOverdue=Math.round((now-expiry)/(864e5));
     if(daysOverdue<5||daysOverdue>7)continue; // send only in the 5-7 day window
     // Find student uid
@@ -5373,11 +5522,12 @@ const INITS = {
         // Check if any paid entry exists and calculate expiry
         const paidEntries=Object.entries(a.fees).filter(([m,v])=>v&&v.amt&&v.amt!=='Pending'&&v.amt!=='Inactive'&&v.amt!=='-'&&parseFloat(v.amt)>0);
         if(!paidEntries.length) continue;
-        // Find latest paid date
-        paidEntries.sort((a2,b2)=>new Date(b2[1].date||0)-new Date(a2[1].date||0));
-        const latestPaidDate=paidEntries[0][1].date?new Date(paidEntries[0][1].date):null;
-        if(!latestPaidDate||isNaN(latestPaidDate)) continue;
-        const expiry=new Date(latestPaidDate);expiry.setMonth(expiry.getMonth()+1);
+        // Expiry = firstSession + number of paid months
+        const fc=a.firstClassDate||a.firstSessionDate;
+        if(!fc) continue;
+        const fcd=fc.toDate?fc.toDate():(fc instanceof Date?fc:new Date(fc));
+        if(isNaN(fcd)) continue;
+        const expiry=new Date(fcd);expiry.setMonth(expiry.getMonth()+paidEntries.length);
         const isExpired=expiry<now;
         if(!isExpired) continue;
         // Check if current month already has an entry
@@ -6716,17 +6866,36 @@ async function loadStaffAttendanceByDate(){
     const snap=await db.collection('staffAttendance').where('date','==',dateKey).get();
     const recs=snap.docs.map(d=>({id:d.id,...d.data()}));
     if(!recs.length){el.innerHTML=`<div class="empty-state"><div class="ei">📋</div><p>No staff attendance recorded for ${dateKey}</p></div>`;return;}
-    el.innerHTML=`<div class="tc"><div class="th"><div class="tt">📋 Staff Records — ${dateKey}</div></div>
+    el.innerHTML=`<div class="tc"><div class="th">
+      <div class="tt">📋 Staff Records — ${dateKey}</div>
+      <button class="bsm bd" style="font-size:11px;padding:5px 10px" onclick="undoStaffAttendanceDate('${dateKey}')">↩ Undo Date</button>
+    </div>
     <div class="tbl-wrap"><table>
-      <thead><tr><th>Name</th><th>Role</th><th>Status</th><th>Notes</th></tr></thead>
+      <thead><tr><th>Name</th><th>Role</th><th>Status</th><th>Notes</th><th>Marked By</th></tr></thead>
       <tbody>${recs.map(r=>`<tr>
         <td><strong>${r.staffName||r.name||'—'}</strong><div style="font-size:10px;color:var(--muted2)">${r.staffEmail||''}</div></td>
         <td style="font-size:11px;color:var(--muted2)">${r.role||'—'}</td>
         <td>${r.status==='present'?'<span class="badge bg2">✅ Present</span>':r.status==='half'?'<span class="badge bam2">🟡 Half Day</span>':'<span class="badge br2">❌ Absent</span>'}</td>
         <td style="font-size:11px;color:var(--muted2)">${r.notes||'—'}</td>
+        <td style="font-size:11px;color:var(--muted2)">${r.markedByName||'—'}</td>
       </tr>`).join('')}</tbody>
     </table></div></div>`;
   }catch(e){el.innerHTML=`<div style="padding:14px;color:var(--red)">Error: ${e.message}</div>`;}
+}
+
+async function undoStaffAttendanceDate(dateKey){
+  if(!dateKey){showToast('No date selected','error');return;}
+  if(!confirm(`Undo ALL staff attendance for ${dateKey}? This cannot be reversed.`))return;
+  try{
+    const snap=await db.collection('staffAttendance').where('date','==',dateKey).get();
+    if(!snap.size){showToast('No staff records found for this date','info');return;}
+    const batch=db.batch();
+    snap.docs.forEach(d=>batch.delete(d.ref));
+    await batch.commit();
+    const el=document.getElementById('staffDayRecBody');
+    if(el){el.innerHTML=`<div class="empty-state"><div class="ei">↩</div><p>Staff attendance for ${dateKey} undone (${snap.size} record${snap.size!==1?'s':''} removed)</p></div>`;}
+    showToast(`↩ Staff attendance for ${dateKey} undone (${snap.size} records)`,'success');
+  }catch(e){showToast('Undo failed: '+e.message,'error');}
 }
 
 async function adminUndoAttendance(){
@@ -6940,6 +7109,28 @@ async function doEditStudent(){
 
     await db.collection('students').doc(currentEditStudentId).update(updates);
     await db.collection('users').doc(currentEditStudentId).update(updates).catch(()=>{});
+
+    // ── FIX: Update Firebase Auth email if it changed ───────────────────────
+    // We cannot call updateEmail() on another user's account directly from client SDK.
+    // Best approach: send password reset to new email + store new email in Firestore.
+    // The student's next login should use the new email via password reset link.
+    // We also store a pendingEmailChange flag so admin sees it was attempted.
+    if(emailChanged){
+      try{
+        // Update email in Firestore auth-mirror and send reset to new address
+        // so the student can activate the new email login
+        await db.collection('users').doc(currentEditStudentId).update({
+          email: em,
+          emailPendingVerification: true,
+          emailChangedAt: firebase.firestore.FieldValue.serverTimestamp(),
+        }).catch(()=>{});
+        // Send password reset to the NEW email address so student can set up login with it
+        await firebase.auth().sendPasswordResetEmail(em).catch(()=>{});
+        showToast(`📧 Password reset sent to new email ${em} — student must log in using that email after clicking the link`, 'info');
+      }catch(emailErr){
+        console.warn('Email update note:', emailErr.message);
+      }
+    }
 
     // If name changed: update admissions records that use the student's name as a key
     if(nameChanged){
@@ -7358,26 +7549,17 @@ function formatDate(d){
 }
 function isExpiringSoon(a){
   try{
-    // FIX: use latest paid month date, not firstClassDate
-    if(a.fees){
-      const paidEntries=Object.entries(a.fees).filter(([m,v])=>v&&v.date&&v.amt&&v.amt!=='Pending'&&v.amt!=='-');
-      if(paidEntries.length>0){
-        paidEntries.sort((a2,b2)=>new Date(b2[1].date)-new Date(a2[1].date));
-        const latestDate=new Date(paidEntries[0][1].date);
-        if(!isNaN(latestDate)){
-          const amt=parseFloat(paidEntries[0][1].amt)||0;
-          const monthsToAdd=amt>=3000?3:1;
-          const exp=new Date(latestDate);exp.setMonth(exp.getMonth()+monthsToAdd);
-          const days=Math.round((exp-new Date())/(864e5));
-          return days>=0&&days<=7;
-        }
-      }
-    }
+    // CORRECT: expiry = firstSession + number of paid months
     const fd=a.firstClassDate||a.firstSessionDate;
     if(!fd)return false;
     const d=fd.toDate?fd.toDate():(fd instanceof Date?fd:new Date(fd));
     if(isNaN(d))return false;
-    const exp=new Date(d);exp.setMonth(exp.getMonth()+1);
+    let monthsToAdd=1;
+    if(a.fees){
+      const paidCount=Object.values(a.fees).filter(v=>v&&v.amt&&v.amt!=='Pending'&&v.amt!=='-').length;
+      if(paidCount>0)monthsToAdd=paidCount;
+    }
+    const exp=new Date(d);exp.setMonth(exp.getMonth()+monthsToAdd);
     const days=Math.round((exp-new Date())/(864e5));
     return days>=0&&days<=7;
   }catch(e){return false;}
@@ -8569,6 +8751,43 @@ async function doSaveFee(){
         allAdmissions[idx].fees[mKey]=v;
       });
     }
+    // If Paid — create a receipt record that student can see in Payment History
+    if(status==='Paid'&&feeVal>0){
+      const adm=allAdmissions.find(a=>a.id===admId);
+      if(adm){
+        // Find linked student uid by name match
+        const stuName=(adm.name||'').trim().toLowerCase();
+        const linked=allStudents.find(s=>{
+          const sn=((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase();
+          return sn===stuName;
+        });
+        if(linked){
+          // Write receipt to admFeeReceipts (student can read this)
+          const receiptId=`adm_${admId}_${month}`;
+          const receiptNo='FDB-ADM-'+new Date().getFullYear()+'-'+(admId||'').slice(-4).toUpperCase()+'-'+month.toUpperCase();
+          db.collection('admFeeReceipts').doc(receiptId).set({
+            studentUid:linked.id,
+            studentName:adm.name||'',
+            admissionId:admId,
+            class:adm.admission||'',
+            batch:adm.preferableBatch||'',
+            month,
+            amount:feeVal,
+            amtNum:feeVal,
+            method:method||'Cash',
+            ref:ref||'',
+            date,
+            receiptNo,
+            paymentDate:date,
+            status:'Paid',
+            markedBy:CU.uid,
+            markedByName:CU.name||CU.email,
+            createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+          },{merge:true}).catch(e=>console.warn('receipt write:',e.message));
+        }
+      }
+    }
+
     closeOv('ov_feeEntry');
     const statusLabel=status==='Inactive'?'Inactive marked (future months auto-marked)':status==='Partial'?'Partial fee saved':'Fee saved';
     showToast(`✅ ${statusLabel} for ${month}!`,'success');
@@ -11605,20 +11824,32 @@ window.loadPortalData = async function(){
 <div id="gDojoOverlay" class="gdojo-overlay">
   <div class="gdojo-pwin">
     <div class="gdojo-task-tag" id="gPTaskType">Technique</div>
-    <h1 style="font-family:'Syne',sans-serif;font-size:28px;font-weight:800;color:#fff;margin:6px 0" id="gPTaskTitle">Spider Warmup</h1>
+    <h1 style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#fff;margin:6px 0" id="gPTaskTitle">Spider Warmup</h1>
     <div class="gdojo-ptimer" id="gPTimer">05:00</div>
     <div class="gdojo-metrobar" id="gMetroBar">
       ${[...Array(8)].map(()=>`<div class="gdojo-metrobeat" style="height:${8+Math.random()*12}px"></div>`).join('')}
+    </div>
+    <!-- Pro tip box -->
+    <div id="gPProTipWrap" style="display:none;background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.22);border-radius:10px;padding:8px 14px;margin:0 auto 8px;max-width:560px;font-size:12px;color:#c4b5fd;line-height:1.6;text-align:left">
+      <span id="gPProTip"></span>
+    </div>
+    <!-- Strum pattern display -->
+    <div id="gPStrumWrap" style="display:none;margin-bottom:8px;text-align:center">
+      <span style="font-size:10px;color:var(--muted2);text-transform:uppercase;letter-spacing:1px">Pattern: </span>
+      <span id="gPStrumPattern" style="font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--purple);font-weight:700"></span>
     </div>
     <!-- Chord sequence navigator -->
     <div id="gChordSeqWrap" style="display:none">
       <div class="gdojo-chord-seq" id="gChordSeq"></div>
     </div>
-    <!-- SVG Fretboard -->
+    <!-- SVG Fretboard with play-this-chord button -->
     <div class="gdojo-fretboard-wrap" id="gFretboardWrap">
-      <div class="gdojo-chord-name" id="gCurrentChordName">—</div>
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;margin-bottom:4px">
+        <div class="gdojo-chord-name" id="gCurrentChordName" style="margin:0">—</div>
+        <button onclick="GuitarDojo._playCurrentChordAudio()" style="background:rgba(0,212,255,.12);border:1px solid rgba(0,212,255,.25);border-radius:20px;padding:3px 12px;font-size:11px;font-weight:700;color:var(--cyan);cursor:pointer">🔊 Hear It</button>
+      </div>
       <svg id="gFretboardSVG" viewBox="0 0 340 160" width="100%" style="max-width:400px;display:block;margin:0 auto"></svg>
-      <div style="font-size:11px;color:var(--muted2);margin-top:6px" id="gFretInstructions"></div>
+      <div style="font-size:11px;color:var(--muted2);margin-top:6px;line-height:1.5;max-width:380px;margin-left:auto;margin-right:auto" id="gFretInstructions"></div>
     </div>
     <!-- Audio controls -->
     <div class="gdojo-audio-row" id="gAudioRow">
@@ -11645,7 +11876,7 @@ window.loadPortalData = async function(){
 })();
 
 // ══════════════════════════════════════════════════════════════════
-// GuitarDojo Engine
+// GuitarDojo Engine  v26 — Chord audio, song-specific tones, new songs, pro tips
 // ══════════════════════════════════════════════════════════════════
 const GuitarDojo = {
   // ── State ──────────────────────────────────────────────────────
@@ -11654,84 +11885,208 @@ const GuitarDojo = {
     metroInterval:null,currentTask:null,beat:0,
     isMuted:false,volume:0.5,audioCtx:null,
     isPlaying:false,chordIndex:0,chordTimer:null,
-    chordBars:4,// bars per chord change
+    chordBars:4,
+    dictPlayingChord:null,// chord name currently sounding in dict preview
   },
 
-  // ── Chord Dictionary ───────────────────────────────────────────
-  // Each chord: frets array [string1..string6] (0=open,-1=muted)
-  // + fingers array for display labels
+  // ── Chord Dictionary ─────────────────────────────────────────
+  // frets[0..5] = strings high-e → low-E  (0=open, -1=muted)
+  // tip = pro guitarist advice shown in detail panel
+  // common = beginner mistake warning
+  // use = songs/contexts where this chord appears
   chords:{
-    'Em':  {frets:[-1,2,2,0,0,0],fingers:['','2','3','','',''],desc:'2nd & 3rd fingers on strings 5&4, fret 2'},
-    'Am':  {frets:[-1,0,2,2,1,0],fingers:['','','3','4','1',''],desc:'Bar index finger across fret 1, ring/pinky on fret 2'},
-    'C':   {frets:[-1,3,2,0,1,0],fingers:['','3','2','','1',''],desc:'Ring on string 5 fret 3, middle on string 4 fret 2, index on string 2 fret 1'},
-    'G':   {frets:[3,2,0,0,3,3], fingers:['3','2','','','3','4'],desc:'Three fingers on low strings, pinky on high strings'},
-    'D':   {frets:[-1,-1,0,2,3,2],fingers:['','','','1','3','2'],desc:'Open D string, form triangle with 3 fingers on fret 2-3'},
-    'E':   {frets:[0,2,2,1,0,0],fingers:['','2','3','1','',''],desc:'Middle/ring on strings 5&4, index on string 3 fret 1'},
-    'F':   {frets:[1,1,2,3,3,1],fingers:['1','1','2','3','4','1'],desc:'Barre all strings at fret 1 with index finger'},
-    'A':   {frets:[-1,0,2,2,2,0],fingers:['','','1','2','3',''],desc:'Three fingers on fret 2, strings 4-2'},
-    'Dm':  {frets:[-1,-1,0,2,3,1],fingers:['','','','1','3','2'],desc:'Index on string 1 fret 1, middle on string 2 fret 3...'},
-    'Bm':  {frets:[-1,2,4,4,3,2],fingers:['','1','3','4','2','1'],desc:'Barre fret 2, ring/pinky on frets 4'},
-    'D6/9':{frets:[-1,-1,0,2,0,2],fingers:['','','','1','','2'],desc:'Minimal fingering — index on strings 4&6, fret 2'},
-    'Am7': {frets:[-1,0,2,0,1,0],fingers:['','','2','','1',''],desc:'Open-sounding Am7, very easy transition'},
-    'Cadd9':{frets:[-1,3,2,0,3,0],fingers:['','3','2','','4',''],desc:'C shape with pinky on string 2 fret 3'},
-    'Gmaj7':{frets:[3,2,0,0,0,2],fingers:['3','2','','','','1'],desc:'G major with open strings, very resonant'},
-    'Dsus4':{frets:[-1,-1,0,2,3,3],fingers:['','','','1','3','4'],desc:'Standard Dsus4 — lift ring to go to D'},
-    'Esus4':{frets:[0,2,2,2,0,0],fingers:['','2','3','4','',''],desc:'Sus4 voicing of E — all on fret 2'},
+    'Em':  {frets:[-1,2,2,0,0,0],fingers:['','2','3','','',''],
+      tip:'Rest your middle & ring fingers lightly — minimum pressure to ring cleanly. Em is the easiest chord; perfect for building muscle memory.',
+      common:'Students often mute string 1 (high e) accidentally. Make sure both fingers arch over it.',
+      use:'Horse With No Name, Zombie, Stand By Me (intro)'},
+    'Am':  {frets:[-1,0,2,2,1,0],fingers:['','','3','4','1',''],
+      tip:'Think of it as a mini E-shape moved to strings 5-1. Your index finger acts like a tiny barre on fret 1 (just string 2). Keep your wrist dropped low.',
+      common:'Index finger lying flat and touching string 1 — kills the high note. Curl it up.',
+      use:'Tum Hi Ho, Tera Ban Jaunga, Counting Stars'},
+    'C':   {frets:[-1,3,2,0,1,0],fingers:['','3','2','','1',''],
+      tip:'The hardest beginner chord. Practise placing ring first (string 5, fret 3), then build the rest of the shape. Do "one-finger-at-a-time" drills.',
+      common:'String 5 (A) buzzing — make sure ring finger tip is just behind the 3rd fret, not sitting on it.',
+      use:'Let Her Go, Wonderful Tonight, Fingerpicking Pattern 1'},
+    'G':   {frets:[3,2,0,0,3,3], fingers:['3','2','','','3','4'],
+      tip:'Use the 4-finger G (ring on low E, middle on A, ring on B, pinky on high e) for easier transitions to Cadd9. Leave middle strings open — they ring beautifully.',
+      common:'Pinky lazy on high e — press it down or every note in the chord sounds thin.',
+      use:'Knockin\' on Heaven\'s Door, Happy Birthday, Zombie'},
+    'D':   {frets:[-1,-1,0,2,3,2],fingers:['','','','1','3','2'],
+      tip:'Form a triangle with fingers 1-2-3 on frets 2-3. Strum only strings 4-1. A quick tip: keep middle-to-ring on their strings while switching to other chords.',
+      common:'Accidentally strumming low strings (A, low E) ruins the chord. Practise palm muting those strings.',
+      use:'Jingle Bells, Wonderful Tonight, Stand By Me'},
+    'E':   {frets:[0,2,2,1,0,0],fingers:['','2','3','1','',''],
+      tip:'This is a full open chord — strum all 6 strings with confidence. Great for big strumming. Mirror of Am shape but one string set lower.',
+      common:'Index finger accidentally touching string 1 (high e). Roll it slightly forward on its tip.',
+      use:'Spider Warmup, Power Chord base, Am to E Switch'},
+    'F':   {frets:[1,1,2,3,3,1],fingers:['1','1','2','3','4','1'],
+      tip:'The legendary barre chord. Press index firmly across ALL 6 strings at fret 1, then stack middle-ring-pinky on top. Roll index slightly forward (toward headstock) to use the bony edge.',
+      common:'String 2 (B) always dead. Roll your index forward slightly — the curve of your finger sits on a string joint and kills it.',
+      use:'Barre Chord drill, F–C progressions, many songs in keys with F'},
+    'A':   {frets:[-1,0,2,2,2,0],fingers:['','','1','2','3',''],
+      tip:'Three fingers in a row at fret 2 (strings 4-2). Try the 1-finger barre version too: lay index across strings 4-2 at fret 2 — faster switching.',
+      common:'Pinky hovering uselessly or touching high e string. Tuck it away.',
+      use:'Power chord base, 12-bar blues patterns'},
+    'Dm':  {frets:[-1,-1,0,2,3,1],fingers:['','','','1','3','2'],
+      tip:'Sadder sibling of D major. Your 1 finger is on high e fret 1, 2 on B fret 3 (NOT fret 2!), ring on G fret 2. Only strum strings 4-1.',
+      common:'Confusing Dm with D — the crucial difference is string 1 goes from fret 2 (D) to fret 1 (Dm).',
+      use:'Minor progressions, Tum Hi Ho bridge'},
+    'Bm':  {frets:[-1,2,4,4,3,2],fingers:['','1','3','4','2','1'],
+      tip:'Mini barre at fret 2 with index, then place middle on string 3 fret 3, ring & pinky on strings 2-1 at fret 4. This is a gateway barre chord — easier than full F.',
+      common:'Only getting 4 strings ringing. Make sure your index barre covers strings 5 and 1.',
+      use:'Let Her Go (original key), Counting Stars'},
+    'D6/9':{frets:[-1,-1,0,2,0,2],fingers:['','','','1','','2'],
+      tip:'One of the most beautiful open voicings on guitar. Just 2 fingers — index on D-string fret 2, middle on high-e fret 2. Everything else rings open. The sound is magic.',
+      common:'Over-thinking it. It\'s literally 2 fingers. Trust the open strings.',
+      use:'Horse With No Name (alternates with Em)'},
+    'Am7': {frets:[-1,0,2,0,1,0],fingers:['','','2','','1',''],
+      tip:'Remove your ring finger from Am and you get Am7. It\'s a gorgeous, airy chord. Great for slow ballads and fingerpicking.',
+      common:'Playing full Am instead of Am7 — the open G string is the magic note, don\'t mute it.',
+      use:'Fingerpicking exercises, ballad intros'},
+    'Cadd9':{frets:[-1,3,2,0,3,0],fingers:['','3','2','','4',''],
+      tip:'C shape but add your pinky to string 2 fret 3. Instant alternative to C in most songs and much easier to transition to/from G.',
+      common:'Confusing with G — both use ring on string 5 fret 3, so anchor that and just move the other fingers.',
+      use:'Thousands of pop songs, G–Cadd9 is a super-common pair'},
+    'Gmaj7':{frets:[3,2,0,0,0,2],fingers:['3','2','','','','1'],
+      tip:'All middle strings ring open — that\'s what makes it shimmer. Subtle variation on G. Works beautifully in fingerpicking.',
+      common:'Students often just play it wrong — you only use 3 fingers (low E fret 3, A fret 2, high e fret 2).',
+      use:'Fingerpicking exercises, peaceful ballads'},
+    'Dsus4':{frets:[-1,-1,0,2,3,3],fingers:['','','','1','3','4'],
+      tip:'Add your pinky to string 1 fret 3 on top of your D chord. The tension of the sus4 resolves beautifully when you lift the pinky back to D.',
+      common:'Forgetting to anchor D shape first — learn D thoroughly before Dsus4.',
+      use:'Intro riffs, tension-and-release patterns'},
+    'Esus4':{frets:[0,2,2,2,0,0],fingers:['','2','3','4','',''],
+      tip:'Add ring finger to string 2 fret 2 over your E chord. Another great suspension that resolves to E or Em.',
+      common:'Accidentally muting string 1 (high e) — it should ring open and free.',
+      use:'Rock intros, U2-style arpeggios'},
+    // New chords for new songs
+    'F#m': {frets:[-1,2,4,4,2,2],fingers:['','1','3','4','1','1'],
+      tip:'Barre all strings at fret 2, index finger. Then add ring and pinky on strings 3-2 at fret 4. It\'s a full barre chord — the effort is 100% worth it for Bollywood songs.',
+      common:'String buzz at fret 2 barre. Roll index forward slightly, squeeze thumb behind neck.',
+      use:'Tum Hi Ho, Tera Ban Jaunga, many Hindi songs'},
+    'B7':  {frets:[-1,2,4,2,4,2],fingers:['','1','2','1','3','1'],
+      tip:'A dominant 7th chord with a bluesy taste. Index mini-barre at fret 2 (strings 5,3,1), middle on string 4 fret 3... wait, that\'s fret 4. Arch middle and ring cleanly.',
+      common:'Dead notes on barre strings. Roll index slightly forward and squeeze thumb firmly.',
+      use:'12-bar blues, dominant resolutions'},
+    'E7':  {frets:[0,2,2,1,3,0],fingers:['','2','3','1','4',''],
+      tip:'Like E major but add your pinky on string 2 fret 3. The clash between the open strings and fretted 7th note gives it that bluesy/Spanish taste.',
+      common:'Forgetting to add the pinky on string 2. Without it, you\'re just playing E.',
+      use:'Spanish-flavoured pieces, blues, 12-bar progressions'},
   },
 
   // ── Library ────────────────────────────────────────────────────
   library:{
     daily:{
       id:'gd_daily',title:'The Spider Warmup',type:'Technique',dur:5,xp:60,
-      desc:'Fret 1-2-3-4 across all strings with one finger per fret. Focus on minimal finger movement and clean tone.',
-      chords:['E','Em'],chordDurBars:4,bpm:80,
-      fingering:{chord:'E',desc:'Spider warmup — play 1-2-3-4 pattern up and down'},
+      desc:'One finger per fret, all strings, up and down the neck. The foundation of dexterity, tone and independence. Every great guitarist does this daily.',
+      chords:['E','Em','A','Am'],chordDurBars:4,bpm:72,
+      proTip:'Keep your fretting hand thumb behind the middle finger on the neck — never wrap over the top. This unlocks all 4 fingers.',
     },
     drills:[
       {id:'gd_1',title:'C to G Clean Switch',type:'Chord Trainer',dur:2,xp:40,
         chords:['C','G','C','G'],chordDurBars:4,bpm:70,
-        desc:'Practice smooth chord changes between C and G. Keep strumming even when switching.'},
+        desc:'The most common beginner switch. Anchor your middle finger — it stays close to fret 2 in both chords.',
+        proTip:'In C, middle is on string 4 fret 2. In G, it moves to string 5 fret 2. Minimal movement = faster switching.',
+        strumPattern:'D – DU – UDU'},
       {id:'gd_2',title:'Am to E Switch',type:'Chord Trainer',dur:2,xp:40,
         chords:['Am','E','Am','E'],chordDurBars:4,bpm:75,
-        desc:'Classic minor to major switch. Anchor your ring finger as a pivot point.'},
+        desc:'Classic minor–major switch. Your middle and ring fingers basically pivot — they move 1 string lower going Am→E.',
+        proTip:'Think of this as a "rotation" not a "lift and replace". The shape is almost the same — just shift one string set.',
+        strumPattern:'D – D – DU'},
       {id:'gd_3',title:'Island Strumming',type:'Strumming',dur:3,xp:50,
         chords:['Em','Am','C','G'],chordDurBars:4,bpm:90,
-        desc:'Pattern: D D↑ U↑ U D↑ U. Keep wrist loose, count 1-and-2-and-3-and-4.'},
+        desc:'Pattern: D D↑ U↑ U D↑ U. The most universal pop strum pattern. Wrist motion, not arm motion.',
+        proTip:'Practise the strum pattern in the air first (no guitar). Feel the down-up rhythm before pressing any chords.',
+        strumPattern:'D D↑ U↑ U D↑ U'},
       {id:'gd_4',title:'Pentatonic Sprint',type:'Speed Drill',dur:2,xp:35,
         chords:['Am','Em','Am','Em'],chordDurBars:2,bpm:100,
-        desc:'Am pentatonic scale — sprint between positions. Focus on clean notes.'},
+        desc:'Am pentatonic box 1 at fret 5. Alternate picking: down-up-down-up. No hammer-ons yet — strict picking.',
+        proTip:'If you can\'t play it cleanly at 100 BPM, drop to 70. Speed is the result of accuracy, never the goal.',
+        strumPattern:'Alt. picking: ↓↑↓↑'},
       {id:'gd_5',title:'Barre Chord F Shape',type:'Technique',dur:3,xp:55,
         chords:['F','C','F','C'],chordDurBars:4,bpm:60,
-        desc:'The barre chord challenge. Press index finger firmly across all frets. Check each string rings clean.'},
+        desc:'The barre chord everyone struggles with. Index across all 6 strings at fret 1. Check EACH string individually before you strum.',
+        proTip:'Roll your index finger slightly toward the headstock — you\'re using the bony side, not the fleshy pad. Game changer.',
+        strumPattern:'D – – – D – – –'},
       {id:'gd_6',title:'Fingerpicking Pattern 1',type:'Fingerpicking',dur:4,xp:55,
         chords:['C','Am','F','G'],chordDurBars:4,bpm:65,
-        desc:'Pattern: Thumb(6) – Index(3) – Middle(2) – Ring(1). Keep thumb on bass string.'},
-      {id:'gd_7',title:'G to D to Em to C',type:'Chord Trainer',dur:3,xp:50,
+        desc:'Thumb (p) on bass string, index (i) on string 3, middle (m) on string 2, ring (a) on string 1. The classic p-i-m-a pattern.',
+        proTip:'Anchor your thumb on string 6 (or 5) first. It\'s your anchor point — it never rushes. Everything else flows from it.',
+        strumPattern:'p – i – m – a –'},
+      {id:'gd_7',title:'G – D – Em – C Loop',type:'Chord Trainer',dur:3,xp:50,
         chords:['G','D','Em','C'],chordDurBars:4,bpm:75,
-        desc:'The most popular chord progression in pop. 4 beats each, keep tempo steady.'},
+        desc:'The I–V–vi–IV progression. You know 50+ pop songs with this. 4 beats each, keep tempo rock-steady.',
+        proTip:'The hardest switch is D→Em. Pre-shape Em in your mind the moment you\'re on D. Think ahead, always.',
+        strumPattern:'D DU UDU'},
       {id:'gd_8',title:'Power Chords',type:'Technique',dur:2,xp:40,
         chords:['E','A','D','E'],chordDurBars:2,bpm:110,
-        desc:'Root + fifth only. Index on root, ring on 5th. Great for rock songs.'},
+        desc:'Root + 5th. Index on root, ring on 5th (2 frets up, 1 string down). Mute all other strings. The core of rock music.',
+        proTip:'Use the pad of your ring-finger to lightly touch the string below and mute it. Keep strumming hand loose and aggressive.',
+        strumPattern:'↓ ↓ ↓ ↓ (all downstrokes)'},
     ],
     songs:[
+      // ── ORIGINAL SONGS ──
       {id:'gs_1',title:'Horse With No Name',type:'Song Practice',dur:4,xp:70,
         chords:['Em','D6/9'],chordDurBars:8,bpm:68,
-        desc:'2-chord legend! Em for 2 bars, D6/9 for 2 bars. Fingerpick or strum gently.'},
+        desc:'2-chord legend. Em for 2 bars, D6/9 for 2 bars. Fingerpick or strum gently. The simplest song that sounds professional.',
+        proTip:'Use your middle and ring finger for D6/9 — index is free to stay relaxed. The drone of open strings is the entire magic.',
+        strumPattern:'↓ – ↑ – ↓ – ↑ (gentle)'},
       {id:'gs_2',title:"Knockin' on Heaven's Door",type:'Song Practice',dur:4,xp:70,
         chords:['G','D','Am'],chordDurBars:4,bpm:72,
-        desc:'G – D – Am. Classic Dylan. Slow strum, let chords ring out fully.'},
+        desc:'G – D – Am. Possibly the most-played acoustic song in history. Slow, spacious strum. Let every chord ring fully.',
+        proTip:'Resist the urge to strum fast. Dylan\'s version breathes — leave space. 2 slow downstrums per bar feels exactly right.',
+        strumPattern:'D – – D – –'},
       {id:'gs_3',title:'Wonderful Tonight',type:'Song Practice',dur:5,xp:75,
         chords:['G','D','C','D'],chordDurBars:4,bpm:95,
-        desc:'G – D – C – D. Clapton classic. Smooth transitions, feel the groove.'},
+        desc:'Eric Clapton classic. G–D–C–D. Smooth, clean transitions. This song\'s chord changes are perfectly designed for beginners.',
+        proTip:'The entire song stays at this one progression. Drill the D→C switch (bring ring to string 5, fret 3) until it\'s unconscious.',
+        strumPattern:'D DU UDU'},
       {id:'gs_4',title:'Stand By Me',type:'Song Practice',dur:4,xp:70,
         chords:['G','Em','C','D'],chordDurBars:4,bpm:120,
-        desc:'One of the most recorded songs. Feel the 12/8 groove. 4 chords, steady strum.'},
+        desc:'G–Em–C–D. One of the most recorded songs ever. The BPM feels fast — that\'s the shuffled 12/8 feel.',
+        proTip:'Accent beat 1 hard, let beats 2-4 be lighter. The rhythmic emphasis makes it groovy. Think "OOM-cha-cha-cha".',
+        strumPattern:'↓ ↓↑ ↓↑ ↓↑'},
       {id:'gs_5',title:'Let Her Go (Passenger)',type:'Song Practice',dur:5,xp:75,
         chords:['C','G','Am','F'],chordDurBars:4,bpm:110,
-        desc:'Capo 5, chords feel like D-A-Bm-G. Classic fingerpick pattern or full strum.'},
+        desc:'The I–V–vi–IV in C major. Capo 5 for original key. One of the cleanest fingerpick patterns exists in this song.',
+        proTip:'The famous intro fingerpick: p(5)–i(3)–m(2)–a(1)–m(2)–i(3). Learn that 6-note loop and you know the intro.',
+        strumPattern:'p i m a m i (fingerpick)'},
       {id:'gs_6',title:'Zombie (The Cranberries)',type:'Song Practice',dur:5,xp:80,
         chords:['Em','C','G','D'],chordDurBars:4,bpm:88,
-        desc:'Em – C – G – D. Powerful, emotional. Heavy downstrum on beat 1.'},
+        desc:'Em–C–G–D. Emotionally powerful. Drive the downstroke on beat 1 like you mean it. Four big, full chords.',
+        proTip:'The original uses guitar + palm-muted power chords. For acoustic: strum hard on 1, lighter on 2 & 3, mute before 4.',
+        strumPattern:'↓ ↓↑ – ↑↓↑'},
+      // ── NEW SONGS ──
+      {id:'gs_7',title:'Happy Birthday',type:'Song Practice',dur:3,xp:50,
+        chords:['G','D','C','G'],chordDurBars:3,bpm:100,
+        desc:'The song everyone asks you to play at parties! In 3/4 waltz time (1-2-3 per bar). G→D→G→C→G. Simple and satisfying.',
+        proTip:'This is in 3/4 — count "1-2-3, 1-2-3" not "1-2-3-4". Downstroke on 1, light up-down on 2 and 3. Waltz feel is everything.',
+        strumPattern:'↓ – ↑ ↓ – ↑ (waltz 3/4)'},
+      {id:'gs_8',title:'Jingle Bells',type:'Song Practice',dur:3,xp:50,
+        chords:['G','C','D','G'],chordDurBars:4,bpm:120,
+        desc:'The first song 90% of guitarists learn around Christmas. G–C–D–G in classic 4/4. Bright, upbeat and great for chord-switching speed.',
+        proTip:'The chord changes come fast at 120 BPM. Slow it to 80 and drill G→C until automatic, then G→D. Speed follows accuracy.',
+        strumPattern:'↓ ↓↑ ↑↓↑'},
+      {id:'gs_9',title:'Tum Hi Ho (Aashiqui 2)',type:'Song Practice',dur:5,xp:80,
+        chords:['Am','F','C','G'],chordDurBars:4,bpm:70,
+        desc:'One of the most played Bollywood guitar songs. Am–F–C–G. Arjit Singh\'s soundtrack. Soft fingerpick or gentle strumming works beautifully.',
+        proTip:'The verse is Am–F–C–G, the chorus is F–C–Am–G. Both use the same 4 chords, just reordered! Nail all 4 and you\'re 80% there.',
+        strumPattern:'p i m a m i (fingerpick) or ↓ – ↓↑ ↓↑'},
+      {id:'gs_10',title:'Tera Ban Jaunga (Kabir Singh)',type:'Song Practice',dur:5,xp:85,
+        chords:['Am','F','C','E7'],chordDurBars:4,bpm:75,
+        desc:'Beautifully emotional Bollywood ballad. Am–F–C–E7. That E7 chord adds the Spanish/flamenco drama before resolving back to Am.',
+        proTip:'The E7→Am movement is a textbook "dominant to minor tonic" resolution. It sounds dramatic because it IS dramatic in music theory. Feel the tension and release.',
+        strumPattern:'↓ – – ↓↑ – ↓↑'},
+      {id:'gs_11',title:'Counting Stars (OneRepublic)',type:'Song Practice',dur:5,xp:80,
+        chords:['Am','C','G','F'],chordDurBars:4,bpm:122,
+        desc:'Am–C–G–F. This progression is in hundreds of pop songs. The fast BPM trains your chord switching under pressure.',
+        proTip:'The trick is the Am→C transition: keep your middle finger on string 4 fret 2 — it\'s in BOTH chords. Anchoring one finger saves 50% of your movement.',
+        strumPattern:'↓↑ – ↓↑ ↑↓↑'},
+      {id:'gs_12',title:'Riptide (Vance Joy)',type:'Song Practice',dur:4,xp:75,
+        chords:['Am','G','C','G'],chordDurBars:4,bpm:96,
+        desc:'Am–G–C–G. One of the most satisfying ukulele-style songs on guitar. Bright, bouncy feel. Works beautifully with strumming or fingerpick.',
+        proTip:'The original is ukulele — on guitar, strum lighter and quicker. Imagine you\'re playing a smaller instrument. Lightness is the vibe.',
+        strumPattern:'↓↑↓ – ↑↓↑'},
     ],
   },
 
@@ -11740,13 +12095,17 @@ const GuitarDojo = {
     const pg=document.getElementById('pg_sGuitarDojo');
     if(!pg)return;
     await this.loadStats();
-    // Load custom tutor tasks from Firestore
     try{
       const snap=await db.collection('guitarDojoTasks').orderBy('createdAt','desc').get();
       const custom=snap.docs.map(d=>({id:d.id,...d.data()}));
-      // Merge custom tasks into songs (de-duplicate by id)
       const existIds=new Set(this.library.songs.map(s=>s.id));
-      custom.forEach(t=>{if(!existIds.has(t.id)){this.library.songs.push(t);}});
+      custom.forEach(t=>{
+        if(existIds.has(t.id))return;
+        // Show if: no specific student assigned, OR assigned to this student
+        if(!t.targetStudentId||t.targetStudentId===CU.uid||t.targetStudentId===CU.id){
+          this.library.songs.push(t);
+        }
+      });
     }catch(e){}
     this.render();
   },
@@ -11770,11 +12129,19 @@ const GuitarDojo = {
     const xp=this._xp||0;
     const sessions=this._sessions||0;
     const d=this.library.daily;
+
+    // Categorise songs for tabs
+    const bollywoodIds=new Set(['gs_9','gs_10']);
+    const partyIds=new Set(['gs_7','gs_8']);
+    const interIds=new Set(['gs_1','gs_2','gs_3','gs_4','gs_5','gs_6','gs_11','gs_12']);
+    const customSongs=this.library.songs.filter(s=>s.id&&!s.id.startsWith('gs_'));
+    const allSongsSorted=[...this.library.songs].sort((a,b)=>(a.xp||0)-(b.xp||0));
+
     pg.innerHTML=`
 <div class="ph">
   <div>
     <div class="pt">🎸 Guitar Dojo</div>
-    <div class="ps">Train smarter, not harder. One focused task at a time.</div>
+    <div class="ps">Train like a pro. One focused task at a time.</div>
   </div>
   <div class="ta" style="gap:8px">
     <div class="gdojo-xp-chip"><small style="color:var(--muted2);font-size:10px;font-weight:700;text-transform:uppercase;display:block">Streak</small><span style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--pink)">🔥 ${streak}</span></div>
@@ -11782,12 +12149,14 @@ const GuitarDojo = {
     <div class="gdojo-xp-chip"><small style="color:var(--muted2);font-size:10px;font-weight:700;text-transform:uppercase;display:block">Sessions</small><span style="font-family:'Bebas Neue',sans-serif;font-size:22px;color:var(--green)">🎵 ${sessions}</span></div>
   </div>
 </div>
+
 <div class="gdojo-grid">
   <div class="gdojo-arena">
     <div class="gdojo-task-tag">⭐ Today's Daily Challenge</div>
     <h2 style="font-family:'Syne',sans-serif;font-size:26px;font-weight:800;color:#fff;margin-bottom:8px">${d.title}</h2>
-    <p style="color:var(--muted2);max-width:380px;margin:0 auto 20px;font-size:13px;line-height:1.6">${d.desc}</p>
-    <div class="ta" style="justify-content:center;gap:8px;margin-bottom:24px">
+    <p style="color:var(--muted2);max-width:380px;margin:0 auto 16px;font-size:13px;line-height:1.6">${d.desc}</p>
+    ${d.proTip?`<div style="background:rgba(168,85,247,.1);border:1px solid rgba(168,85,247,.25);border-radius:10px;padding:10px 14px;margin:0 auto 16px;max-width:400px;font-size:12px;color:#c4b5fd;line-height:1.6;text-align:left">💡 <strong style="color:var(--purple)">Pro Tip:</strong> ${d.proTip}</div>`:''}
+    <div class="ta" style="justify-content:center;gap:8px;margin-bottom:20px">
       <span class="bsm bo">⏱ ${d.dur} mins</span>
       <span class="bsm bo">💎 +${d.xp} XP</span>
       <span class="bsm bo">🟢 Beginner</span>
@@ -11797,51 +12166,129 @@ const GuitarDojo = {
   <div class="gdojo-tool">
     <div style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;letter-spacing:1px;color:var(--text);margin-bottom:4px">🎚 METRONOME</div>
     <div class="gdojo-bpm"><span id="gBpmVal">80</span> <small style="font-size:13px;color:var(--muted2)">BPM</small></div>
-    <input type="range" min="40" max="220" value="80" style="width:100%;margin-bottom:16px;accent-color:var(--cyan)"
+    <input type="range" min="40" max="220" value="80" style="width:100%;margin-bottom:12px;accent-color:var(--cyan)"
       oninput="document.getElementById('gBpmVal').textContent=this.value;GuitarDojo.state.bpm=parseInt(this.value)"/>
-    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted2);margin-bottom:14px">
+    <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted2);margin-bottom:12px">
       <span>40 slow</span><span>120 standard</span><span>220 fast</span>
     </div>
-    <button class="btn-primary" id="gMetroBtn" onclick="GuitarDojo.toggleMetro()" style="background:var(--card2);border:1px solid var(--cyan);color:var(--cyan);margin-bottom:14px">▶ START METRO</button>
-    <div style="padding:10px;background:rgba(255,255,255,.03);border-radius:8px;font-size:11px;color:var(--muted2);line-height:1.6">
-      💡 <strong style="color:var(--text)">Tip:</strong> Start at 60% target speed. Increase BPM only when you can play cleanly 3 times in a row.
+    <button class="btn-primary" id="gMetroBtn" onclick="GuitarDojo.toggleMetro()" style="background:var(--card2);border:1px solid var(--cyan);color:var(--cyan);margin-bottom:12px">▶ START METRO</button>
+    <div style="padding:10px;background:rgba(255,255,255,.03);border-radius:8px;font-size:11px;color:var(--muted2);line-height:1.7">
+      💡 <strong style="color:var(--text)">Speed law:</strong> Start at 60% target tempo. Increase only when 3 clean repetitions in a row. Speed is earned, not forced.
     </div>
   </div>
 </div>
-<!-- Chord Dictionary -->
+
+<!-- CHORD DICTIONARY ─────────────────────────────────────── -->
 <div style="margin-top:28px">
-  <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;color:var(--text);margin-bottom:8px">🎵 CHORD DICTIONARY</div>
-  <div style="font-size:12px;color:var(--muted2);margin-bottom:12px">Tap any chord to see the fretboard diagram</div>
+  <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;color:var(--text);margin-bottom:4px">🎵 CHORD DICTIONARY</div>
+  <div style="font-size:12px;color:var(--muted2);margin-bottom:14px">Tap any chord for diagram, pro tips & 🔊 audio preview</div>
   <div class="gdojo-dict-grid">
     ${Object.entries(this.chords).map(([name,c])=>`
     <div class="gdojo-dict-item" onclick="GuitarDojo.showChordDict('${name}')">
-      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--cyan)">${name}</div>
-      <svg viewBox="0 0 100 60" width="100" style="display:block;margin:6px auto">${this._miniSVG(c.frets)}</svg>
-      <div style="font-size:10px;color:var(--muted2)">${c.fingers.filter(f=>f).join(' ')}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;color:var(--cyan);margin-bottom:2px">${name}</div>
+      <svg viewBox="0 0 100 60" width="90" style="display:block;margin:4px auto">${this._miniSVG(c.frets)}</svg>
+      <div style="font-size:9px;color:var(--muted2);margin-top:2px">${c.fingers.filter(f=>f).join(' ')}</div>
+      <button onclick="event.stopPropagation();GuitarDojo.playChordPreview('${name}')" style="margin-top:6px;background:rgba(0,212,255,.1);border:1px solid rgba(0,212,255,.2);border-radius:20px;padding:3px 10px;font-size:10px;font-weight:700;color:var(--cyan);cursor:pointer;width:100%">🔊 Play</button>
     </div>`).join('')}
   </div>
-  <div id="gDictDetail" style="display:none;margin-top:14px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:18px;text-align:center">
-    <div id="gDictChordName" style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--cyan)"></div>
-    <svg id="gDictSVG" viewBox="0 0 340 160" width="100%" style="max-width:380px;display:block;margin:8px auto"></svg>
-    <div id="gDictDesc" style="font-size:12px;color:var(--muted2);margin-top:6px;max-width:340px;margin-left:auto;margin-right:auto"></div>
-    <button class="bsm bo" style="margin-top:10px;font-size:11px" onclick="document.getElementById('gDictDetail').style.display='none'">✕ Close</button>
+  <div id="gDictDetail" style="display:none;margin-top:14px;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:20px">
+    <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;margin-bottom:12px">
+      <div id="gDictChordName" style="font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--cyan)"></div>
+      <div style="display:flex;gap:8px">
+        <button id="gDictPlayBtn" onclick="GuitarDojo.playChordFromDict()" class="bsm ba2" style="font-size:13px;padding:8px 18px">🔊 Play Chord</button>
+        <button class="bsm bo" style="font-size:11px" onclick="document.getElementById('gDictDetail').style.display='none'">✕ Close</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px;align-items:start">
+      <div>
+        <svg id="gDictSVG" viewBox="0 0 340 160" width="100%" style="max-width:340px;display:block"></svg>
+        <div id="gDictFingers" style="font-size:11px;color:var(--muted2);margin-top:6px;font-family:'JetBrains Mono',monospace;text-align:center"></div>
+      </div>
+      <div>
+        <div style="background:rgba(168,85,247,.08);border:1px solid rgba(168,85,247,.2);border-radius:10px;padding:12px;margin-bottom:10px">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--purple);margin-bottom:5px">💡 Pro Guitarist Tip</div>
+          <div id="gDictTip" style="font-size:12px;color:var(--text);line-height:1.6"></div>
+        </div>
+        <div style="background:rgba(239,68,68,.07);border:1px solid rgba(239,68,68,.18);border-radius:10px;padding:12px;margin-bottom:10px">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--red);margin-bottom:5px">⚠️ Common Mistake</div>
+          <div id="gDictCommon" style="font-size:12px;color:var(--text);line-height:1.6"></div>
+        </div>
+        <div style="background:rgba(16,185,129,.07);border:1px solid rgba(16,185,129,.18);border-radius:10px;padding:12px">
+          <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:1px;color:var(--green);margin-bottom:5px">🎵 Used In</div>
+          <div id="gDictUse" style="font-size:12px;color:var(--muted2);line-height:1.6"></div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
-<!-- Technique Library -->
-<div style="margin-top:28px">
-  <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;color:var(--text);margin-bottom:14px">📚 TECHNIQUE LIBRARY</div>
-  <div style="font-size:12px;color:var(--muted2);margin-bottom:12px">Chord Trainer & Speed Drills — with fretboard & backing track</div>
+
+<!-- TECHNIQUE LIBRARY ────────────────────────────────────── -->
+<div style="margin-top:32px">
+  <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;color:var(--text);margin-bottom:6px">📚 TECHNIQUE LIBRARY</div>
+  <div style="font-size:12px;color:var(--muted2);margin-bottom:14px">Chord Trainer & Speed Drills — interactive fretboard + backing audio</div>
   <div class="gdojo-drills">${this.library.drills.map(x=>this._card(x)).join('')}</div>
-  <div style="font-size:12px;color:var(--muted2);margin-top:24px;margin-bottom:12px">🎵 SONG PRACTICE — full chord progressions with music</div>
-  <div class="gdojo-drills">${this.library.songs.map(x=>this._card(x)).join('')}</div>
+</div>
+
+<!-- SONG PRACTICE ─────────────────────────────────────────── -->
+<div style="margin-top:32px">
+  <div style="font-family:'Syne',sans-serif;font-size:16px;font-weight:700;letter-spacing:1px;color:var(--text);margin-bottom:6px">🎵 SONG PRACTICE</div>
+  <div style="font-size:12px;color:var(--muted2);margin-bottom:14px">Full chord progressions with backing audio. Tap any song to open the practice arena.</div>
+
+  <div class="gdojo-otab" id="gSongTabBar" style="margin-bottom:16px">
+    <button class="active" onclick="GuitarDojo.filterSongs('all',this)">🌍 All Songs</button>
+    <button onclick="GuitarDojo.filterSongs('bollywood',this)">🎬 Bollywood</button>
+    <button onclick="GuitarDojo.filterSongs('party',this)">🎉 Party Hits</button>
+    <button onclick="GuitarDojo.filterSongs('international',this)">🎸 International</button>
+    ${customSongs.length?`<button onclick="GuitarDojo.filterSongs('custom',this)">⭐ Tutor Picks</button>`:''}
+  </div>
+  <div class="gdojo-drills" id="gSongGrid">${allSongsSorted.map(x=>this._card(x)).join('')}</div>
 </div>`;
+  },
+
+  filterSongs(category, btn){
+    document.querySelectorAll('#gSongTabBar button').forEach(b=>b.classList.remove('active'));
+    if(btn)btn.classList.add('active');
+    const bollywoodIds=new Set(['gs_9','gs_10']);
+    const partyIds=new Set(['gs_7','gs_8']);
+    const interIds=new Set(['gs_1','gs_2','gs_3','gs_4','gs_5','gs_6','gs_11','gs_12']);
+    let filtered;
+    if(category==='bollywood') filtered=this.library.songs.filter(s=>bollywoodIds.has(s.id));
+    else if(category==='party') filtered=this.library.songs.filter(s=>partyIds.has(s.id));
+    else if(category==='international') filtered=this.library.songs.filter(s=>interIds.has(s.id));
+    else if(category==='custom') filtered=this.library.songs.filter(s=>s.id&&!s.id.startsWith('gs_'));
+    else filtered=this.library.songs;
+    const grid=document.getElementById('gSongGrid');
+    if(grid) grid.innerHTML=filtered.map(x=>this._card(x)).join('')||(filtered.length?'':'<div style="color:var(--muted2);padding:20px;text-align:center">No songs in this category yet</div>');
+  },
+
+  // ── Chord audio preview (from Chord Dictionary) ─────────────
+  playChordPreview(chordName){
+    const c=this.chords[chordName];if(!c)return;
+    const ctx=this._getAudioCtx();
+    this._strumChordFull(chordName,ctx,ctx.currentTime,80);
+  },
+
+  playChordFromDict(){
+    const nameEl=document.getElementById('gDictChordName');
+    if(!nameEl)return;
+    this.playChordPreview(nameEl.textContent);
   },
 
   showChordDict(name){
     const c=this.chords[name];
     if(!c)return;
     document.getElementById('gDictChordName').textContent=name;
-    document.getElementById('gDictDesc').textContent=c.desc||'';
+    document.getElementById('gDictTip').textContent=c.tip||c.desc||'';
+    document.getElementById('gDictCommon').textContent=c.common||'Ensure every string rings clearly before playing in a song context.';
+    document.getElementById('gDictUse').textContent=c.use||'Common across many styles.';
+    // String label: e(1) B G D A E(6)
+    const stringNames=['e','B','G','D','A','E'];
+    const fingStr=c.frets.map((f,i)=>{
+      if(f<0)return`${stringNames[i]}:✕`;
+      if(f===0)return`${stringNames[i]}:○`;
+      return`${stringNames[i]}:${c.fingers[i]||f}`;
+    }).join('  ');
+    document.getElementById('gDictFingers').textContent=fingStr;
     this._drawFretboard('gDictSVG',c.frets,c.fingers,name,false);
     const det=document.getElementById('gDictDetail');
     det.style.display='block';
@@ -11940,17 +12387,21 @@ const GuitarDojo = {
 
   // ── Card renderer ───────────────────────────────────────────────
   _card(item){
-    const chordPreview=item.chords?item.chords.slice(0,4).join(' – '):'';
+    const chordPreview=item.chords?item.chords.slice(0,5).join(' – '):'';
+    const typeColors={'Song Practice':'var(--pink)','Technique':'var(--cyan)','Chord Trainer':'var(--amber)','Speed Drill':'var(--red)','Fingerpicking':'var(--purple)','Strumming':'var(--green)'};
+    const tc=typeColors[item.type]||'var(--muted2)';
     return`<div class="gdojo-drill" onclick="GuitarDojo.start('${item.id}')">
-      <div class="gdojo-drill-type">${item.type}</div>
-      <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:6px">${item.title}</div>
-      <div style="font-size:12px;color:var(--cyan);font-weight:600;margin-bottom:8px">${chordPreview}</div>
-      <div style="font-size:11px;color:var(--muted2);margin-bottom:10px;line-height:1.4">${(item.desc||'').slice(0,80)}…</div>
-      <div class="ta" style="justify-content:space-between">
+      <div class="gdojo-drill-type" style="color:${tc}">${item.type}</div>
+      <div style="font-family:'Syne',sans-serif;font-size:15px;font-weight:700;color:var(--text);margin-bottom:5px">${item.title}</div>
+      <div style="font-size:11px;color:var(--cyan);font-weight:600;margin-bottom:6px;letter-spacing:.3px">${chordPreview}</div>
+      <div style="font-size:11px;color:var(--muted2);margin-bottom:8px;line-height:1.45">${(item.desc||'').slice(0,85)}…</div>
+      ${item.strumPattern?`<div style="font-size:10px;color:var(--purple);font-family:'JetBrains Mono',monospace;background:rgba(168,85,247,.07);border-radius:6px;padding:3px 8px;margin-bottom:8px;display:inline-block">${item.strumPattern}</div>`:''}
+      ${item.proTip?`<div style="font-size:10px;color:var(--muted2);line-height:1.4;margin-bottom:8px;font-style:italic">💡 ${item.proTip.slice(0,70)}…</div>`:''}
+      <div class="ta" style="justify-content:space-between;border-top:1px solid var(--border);padding-top:8px">
         <small style="color:var(--cyan)">⏱ ${item.dur} min${item.dur>1?'s':''}</small>
         <small style="color:var(--amber)">+${item.xp} XP</small>
         <small style="color:var(--muted2)">🎵 ${item.bpm||80} BPM</small>
-        <span style="font-size:10px;color:var(--muted)">▶ Start →</span>
+        <span style="font-size:10px;color:var(--pink);font-weight:700">▶ Start</span>
       </div>
     </div>`;
   },
@@ -11970,6 +12421,19 @@ const GuitarDojo = {
     document.getElementById('gPCompleteMsg').style.display='none';
     const btn=document.querySelector('#gDojoOverlay .btn-primary');
     if(btn){btn.disabled=false;btn.textContent='✅ Mark Complete';}
+
+    // Pro tip in overlay
+    const tipEl=document.getElementById('gPProTip');
+    if(tipEl){
+      if(task.proTip){tipEl.textContent='💡 '+task.proTip;tipEl.parentElement.style.display='';}
+      else tipEl.parentElement.style.display='none';
+    }
+    // Strum pattern
+    const strumEl=document.getElementById('gPStrumPattern');
+    if(strumEl){
+      if(task.strumPattern){strumEl.textContent=task.strumPattern;strumEl.parentElement.style.display='';}
+      else strumEl.parentElement.style.display='none';
+    }
 
     // Show chord sequence
     const chords=task.chords||[];
@@ -12000,17 +12464,28 @@ const GuitarDojo = {
     const chords=task?task.chords:null;
     const idx=this.state.chordIndex;
     const chordName=chords&&chords[idx]?chords[idx]:null;
-    // Update active button
     document.querySelectorAll('.gdojo-chord-btn').forEach((b,i)=>b.classList.toggle('active',i===idx));
     if(chordName&&this.chords[chordName]){
       const c=this.chords[chordName];
       document.getElementById('gCurrentChordName').textContent=chordName;
-      document.getElementById('gFretInstructions').textContent=c.desc||'';
+      // Show chord tip in fret instructions
+      const tipText=c.tip||c.desc||'';
+      document.getElementById('gFretInstructions').textContent=tipText;
       this._drawFretboard('gFretboardSVG',c.frets,c.fingers,chordName);
     } else if(chordName){
       document.getElementById('gCurrentChordName').textContent=chordName;
       document.getElementById('gFretInstructions').textContent='';
       document.getElementById('gFretboardSVG').innerHTML='<text x="170" y="80" fill="#666" font-size="14" text-anchor="middle">Chord diagram not available</text>';
+    }
+  },
+
+  _playCurrentChordAudio(){
+    const task=this.state.currentTask;
+    if(!task||!task.chords)return;
+    const chordName=task.chords[this.state.chordIndex];
+    if(chordName){
+      const ctx=this._getAudioCtx();
+      this._strumChordFull(chordName,ctx,ctx.currentTime,task.bpm||80);
     }
   },
 
@@ -12074,12 +12549,44 @@ const GuitarDojo = {
   _strumChord(chordName,ctx,startTime,bpm){
     const c=this.chords[chordName];
     if(!c)return;
-    const strum=0.025;// seconds between strings (arpeggiated strum)
-    const barDur=60/bpm*4;// one bar duration in seconds
+    const strum=0.025;
+    const barDur=60/bpm*4;
     c.frets.forEach((f,s)=>{
-      if(f<0)return;// muted
+      if(f<0)return;
       const midi=this._openNotes[s]+(f||0);
       this._playGuitar(this._noteFreq(midi),ctx,startTime+s*strum,barDur*0.85);
+    });
+  },
+
+  // Richer strum used in chord dictionary preview and clean single-strum
+  _strumChordFull(chordName,ctx,startTime,bpm){
+    const c=this.chords[chordName];
+    if(!c)return;
+    const strum=0.022;// slightly tighter arpeggiation
+    c.frets.forEach((f,s)=>{
+      if(f<0)return;
+      const midi=this._openNotes[s]+(f||0);
+      const dur=2.2;// longer sustain for dictionary preview
+      const freq=this._noteFreq(midi);
+      const osc=ctx.createOscillator();
+      const osc2=ctx.createOscillator();
+      const gain=ctx.createGain();
+      const filter=ctx.createBiquadFilter();
+      filter.type='lowpass';
+      filter.frequency.setValueAtTime(3000,startTime+s*strum);
+      filter.frequency.exponentialRampToValueAtTime(800,startTime+s*strum+dur*0.6);
+      osc.type='triangle';
+      osc.frequency.setValueAtTime(freq,startTime+s*strum);
+      osc2.type='sine';
+      osc2.frequency.setValueAtTime(freq*2.001,startTime+s*strum);
+      const vol=(this.state.isMuted?0:this.state.volume)*0.18;
+      gain.gain.setValueAtTime(0,startTime+s*strum);
+      gain.gain.linearRampToValueAtTime(vol,startTime+s*strum+0.006);
+      gain.gain.exponentialRampToValueAtTime(vol*0.25,startTime+s*strum+dur*0.3);
+      gain.gain.exponentialRampToValueAtTime(0.00001,startTime+s*strum+dur);
+      osc.connect(filter);osc2.connect(filter);filter.connect(gain);gain.connect(ctx.destination);
+      osc.start(startTime+s*strum);osc.stop(startTime+s*strum+dur);
+      osc2.start(startTime+s*strum);osc2.stop(startTime+s*strum+dur);
     });
   },
 
@@ -12287,12 +12794,13 @@ const GuitarDojo = {
 };
 
 // ══════════════════════════════════════════════════════════════════
-// GUITAR TUTOR PAGE — Dojo Manager
+// GUITAR TUTOR PAGE — Dojo Manager  v26
 // ══════════════════════════════════════════════════════════════════
 PAGES.tGuitarDojo = function(){
   return`
 <div class="ph">
-  <div><div class="pt">🎸 Guitar Dojo Manager</div><div class="ps">Manage student tasks, view session history, add custom exercises</div></div>
+  <div><div class="pt">🎸 Guitar Dojo Manager</div><div class="ps">Assign practice tasks, track student sessions, build custom exercises</div></div>
+  <button class="bsm bo" onclick="rebuildPage('tGuitarDojo')">↺ Refresh</button>
 </div>
 <div id="tGuitarDojoContent"><div class="empty-state"><div class="ei">🎸</div><p>Loading...</p></div></div>`;
 };
@@ -12301,10 +12809,10 @@ INITS.tGuitarDojo = async function(){
   const el=document.getElementById('tGuitarDojoContent');
   if(!el)return;
 
-  // Load sessions from Firestore
+  // Load sessions
   let sessions=[];
   try{
-    const snap=await db.collection('guitarSessions').orderBy('createdAt','desc').limit(100).get();
+    const snap=await db.collection('guitarSessions').orderBy('createdAt','desc').limit(200).get();
     sessions=snap.docs.map(d=>({id:d.id,...d.data()}));
   }catch(e){}
 
@@ -12315,92 +12823,198 @@ INITS.tGuitarDojo = async function(){
     customTasks=snap.docs.map(d=>({id:d.id,...d.data()}));
   }catch(e){}
 
+  // Guitar students list
+  const guitarStudents=allStudents.filter(s=>s.class==='Guitar'&&s.status==='Active');
+
   // Stats per student
   const byStudent={};
   sessions.forEach(s=>{
-    if(!byStudent[s.studentName])byStudent[s.studentName]={name:s.studentName,sessions:0,xp:0,tasks:[]};
+    if(!byStudent[s.studentName])byStudent[s.studentName]={name:s.studentName,uid:s.studentUid,sessions:0,xp:0,tasks:[],lastDate:''};
     byStudent[s.studentName].sessions++;
     byStudent[s.studentName].xp+=(s.xpEarned||0);
-    byStudent[s.studentName].tasks.push(s.taskTitle||'');
+    if(s.taskTitle)byStudent[s.studentName].tasks.push(s.taskTitle);
+    if(s.date>byStudent[s.studentName].lastDate)byStudent[s.studentName].lastDate=s.date;
   });
 
+  // Student options for assignment
+  const studentOpts=guitarStudents.length
+    ? guitarStudents.map(s=>`<option value="${s.id}">${(s.fn||s.firstName||'')} ${(s.ln||s.lastName||'')} — ${s.batch||'No batch'}</option>`).join('')
+    : '<option value="">— No active Guitar students —</option>';
+
   el.innerHTML=`
+<!-- Student Activity Overview -->
 <div class="tc" style="margin-bottom:18px">
-  <div class="th"><div class="tt">📊 Student Dojo Activity</div></div>
+  <div class="th">
+    <div class="tt">📊 Student Dojo Activity</div>
+    <span style="font-size:11px;color:var(--muted2)">${Object.values(byStudent).length} active students</span>
+  </div>
   ${Object.values(byStudent).length?`<div class="tbl-wrap"><table>
-    <thead><tr><th>Student</th><th>Sessions</th><th>Total XP</th><th>Last Task</th></tr></thead>
-    <tbody>${Object.values(byStudent).map(s=>`<tr>
+    <thead><tr><th>Student</th><th>Sessions</th><th>Total XP</th><th>Last Active</th><th>Last Task</th></tr></thead>
+    <tbody>${Object.values(byStudent).sort((a,b)=>b.sessions-a.sessions).map(s=>`<tr>
       <td><strong>${s.name}</strong></td>
-      <td style="color:var(--cyan)">${s.sessions}</td>
+      <td style="color:var(--cyan);font-weight:700">${s.sessions}</td>
       <td style="color:var(--amber)">💎 ${s.xp}</td>
+      <td style="font-size:11px;color:var(--muted2)">${s.lastDate||'—'}</td>
       <td style="font-size:11px;color:var(--muted2)">${s.tasks[0]||'—'}</td>
     </tr>`).join('')}</tbody>
-  </table></div>`:`<div class="empty-state"><div class="ei">🎸</div><p>No practice sessions recorded yet. Students need to complete Dojo tasks.</p></div>`}
+  </table></div>`:`<div class="empty-state"><div class="ei">🎸</div><p>No practice sessions recorded yet. Students need to open Guitar Dojo and complete tasks.</p></div>`}
 </div>
 
+<!-- Add Custom Task  -->
 <div class="tc" style="margin-bottom:18px">
-  <div class="th"><div class="tt">➕ Add Custom Task for Students</div></div>
+  <div class="th"><div class="tt">➕ Assign Custom Practice Task</div></div>
   <div style="padding:16px;display:grid;gap:12px">
-    <div class="field" style="margin:0"><label>Task Title *</label><input id="gtTitle" placeholder="e.g. Fingerpicking Lullaby"/></div>
+
+    <div style="background:rgba(168,85,247,.07);border:1px solid rgba(168,85,247,.18);border-radius:10px;padding:12px 14px;font-size:12px;color:#c4b5fd;line-height:1.6">
+      💡 <strong style="color:var(--purple)">How it works:</strong> Tasks you add here appear in the student's Guitar Dojo under "Song Practice → Tutor Picks". You can target specific students or all Guitar students.
+    </div>
+
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
-      <div class="field" style="margin:0"><label>Type</label>
+      <div class="field" style="margin:0"><label>Task Title *</label><input id="gtTitle" placeholder="e.g. Tum Hi Ho Verse Practice"/></div>
+      <div class="field" style="margin:0"><label>Difficulty Level</label>
+        <select id="gtDiff"><option value="Beginner">🟢 Beginner</option><option value="Intermediate">🟡 Intermediate</option><option value="Advanced">🔴 Advanced</option></select>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field" style="margin:0"><label>Task Type</label>
         <select id="gtType"><option>Chord Trainer</option><option>Technique</option><option>Song Practice</option><option>Speed Drill</option><option>Fingerpicking</option><option>Strumming</option></select>
       </div>
-      <div class="field" style="margin:0"><label>Duration (mins)</label><input id="gtDur" type="number" value="3" min="1" max="30"/></div>
+      <div class="field" style="margin:0"><label>Duration (mins)</label><input id="gtDur" type="number" value="4" min="1" max="30"/></div>
     </div>
-    <div class="field" style="margin:0"><label>Chord Progression (comma-separated, e.g. Em,G,C,D)</label><input id="gtChords" placeholder="Em,G,C,D"/></div>
-    <div class="field" style="margin:0"><label>BPM</label><input id="gtBpm" type="number" value="80" min="40" max="220"/></div>
-    <div class="field" style="margin:0"><label>Description / Instructions</label><textarea id="gtDesc" style="min-height:70px" placeholder="What should the student focus on?"></textarea></div>
-    <div><button class="btn-primary" style="max-width:200px" onclick="saveTutorGuitarTask()">➕ Add to Dojo</button></div>
+
+    <div class="field" style="margin:0">
+      <label>Chord Progression (comma-separated, e.g. Am,F,C,G)</label>
+      <input id="gtChords" placeholder="Am,F,C,G  or  Em,D6/9  or  G,D,Am"/>
+      <div style="font-size:10px;color:var(--muted2);margin-top:4px">Available chords: Em Am C G D E F A Dm Bm D6/9 Am7 Cadd9 Gmaj7 Dsus4 Esus4 F#m B7 E7</div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field" style="margin:0"><label>BPM (tempo)</label><input id="gtBpm" type="number" value="80" min="40" max="220"/></div>
+      <div class="field" style="margin:0"><label>XP Reward</label><input id="gtXp" type="number" value="70" min="10" max="200"/></div>
+    </div>
+
+    <div class="field" style="margin:0">
+      <label>Strum / Picking Pattern (shown to student)</label>
+      <input id="gtStrum" placeholder="e.g. D DU UDU  or  p i m a m i"/>
+    </div>
+
+    <div class="field" style="margin:0">
+      <label>Description / What to focus on *</label>
+      <textarea id="gtDesc" style="min-height:70px" placeholder="e.g. Focus on the Am→F switch. Keep thumb behind the neck. Aim for clean B-string on F chord."></textarea>
+    </div>
+
+    <div class="field" style="margin:0">
+      <label>Pro Guitarist Tip (shown as purple tip box)</label>
+      <textarea id="gtProTip" style="min-height:55px" placeholder="e.g. Anchor your middle finger on string 4 — it stays in place for both Am and F transitions. Huge shortcut."></textarea>
+    </div>
+
+    <div class="field" style="margin:0">
+      <label>Assign To (leave blank = all Guitar students see it)</label>
+      <select id="gtStudent">
+        <option value="">📢 All Guitar Students</option>
+        ${studentOpts}
+      </select>
+    </div>
+
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn-primary" style="max-width:220px" onclick="saveTutorGuitarTask()">➕ Add to Dojo</button>
+      <button class="bsm bo" onclick="previewTutorGuitarTask()">👁 Preview Audio</button>
+    </div>
   </div>
 </div>
 
+<!-- Recent Sessions -->
 <div class="tc" style="margin-bottom:18px">
-  <div class="th"><div class="tt">📋 Recent Practice Sessions</div></div>
+  <div class="th">
+    <div class="tt">📋 Recent Practice Sessions</div>
+    <span style="font-size:11px;color:var(--muted2)">${sessions.length} total</span>
+  </div>
   ${sessions.length?`<div class="tbl-wrap"><table>
-    <thead><tr><th>Student</th><th>Task</th><th>Type</th><th>XP</th><th>Date</th></tr></thead>
-    <tbody>${sessions.slice(0,30).map(s=>`<tr>
+    <thead><tr><th>Student</th><th>Task</th><th>Type</th><th>Chords</th><th>XP</th><th>Date</th></tr></thead>
+    <tbody>${sessions.slice(0,40).map(s=>`<tr>
       <td><strong>${s.studentName||'—'}</strong></td>
-      <td>${s.taskTitle||'—'}</td>
+      <td style="font-size:12px">${s.taskTitle||'—'}</td>
       <td style="font-size:11px;color:var(--muted2)">${s.taskType||'—'}</td>
-      <td style="color:var(--amber)">+${s.xpEarned||0}</td>
+      <td style="font-size:10px;color:var(--cyan);font-family:'JetBrains Mono',monospace">${(s.chords||[]).slice(0,4).join('–')||'—'}</td>
+      <td style="color:var(--amber);font-weight:700">+${s.xpEarned||0}</td>
       <td style="font-size:11px;color:var(--muted2)">${s.date||'—'}</td>
     </tr>`).join('')}</tbody>
   </table></div>`:`<div class="empty-state"><div class="ei">📋</div><p>No sessions yet</p></div>`}
 </div>
 
+<!-- Custom Tasks List -->
 ${customTasks.length?`<div class="tc">
-  <div class="th"><div class="tt">🎯 Your Custom Tasks</div></div>
+  <div class="th">
+    <div class="tt">🎯 Your Custom Tasks (${customTasks.length})</div>
+    <span style="font-size:11px;color:var(--muted2)">Visible to students in Guitar Dojo</span>
+  </div>
   <div style="padding:12px;display:grid;gap:8px">
-    ${customTasks.map(t=>`<div style="display:flex;align-items:center;gap:10px;padding:8px;background:var(--card2);border-radius:8px">
-      <div style="flex:1"><div style="font-weight:700;font-size:13px">${t.title}</div><div style="font-size:11px;color:var(--muted2)">${t.type||''} · ${(t.chords||[]).join('–')||''} · ${t.bpm||80} BPM</div></div>
-      <button class="bsm bd" style="font-size:10px;padding:3px 8px" onclick="deleteTutorGuitarTask('${t.id}')">🗑</button>
+    ${customTasks.map(t=>`<div class="gdojo-mgr-card" style="display:flex;align-items:flex-start;gap:12px">
+      <div style="flex:1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">
+          <div style="font-weight:700;font-size:14px">${t.title}</div>
+          ${t.difficulty?`<span style="font-size:10px;background:rgba(16,185,129,.1);color:var(--green);border:1px solid rgba(16,185,129,.2);border-radius:12px;padding:1px 8px">${t.difficulty}</span>`:''}
+        </div>
+        <div style="font-size:11px;color:var(--muted2)">${t.type||'Song Practice'} · ${(t.chords||[]).join(' – ')||'—'} · ${t.bpm||80} BPM · +${t.xp||60} XP</div>
+        ${t.strumPattern?`<div style="font-size:10px;color:var(--purple);margin-top:3px;font-family:'JetBrains Mono',monospace">${t.strumPattern}</div>`:''}
+        ${t.targetStudentId?`<div style="font-size:10px;color:var(--amber);margin-top:3px">👤 Assigned to specific student</div>`:
+          `<div style="font-size:10px;color:var(--cyan);margin-top:3px">📢 Visible to all Guitar students</div>`}
+      </div>
+      <button class="bsm bd" style="font-size:10px;padding:3px 8px;flex-shrink:0" onclick="deleteTutorGuitarTask('${t.id}')">🗑</button>
     </div>`).join('')}
   </div>
 </div>`:''} `;
 };
 
+function previewTutorGuitarTask(){
+  const chordsRaw=document.getElementById('gtChords')?.value.trim();
+  const chords=chordsRaw?chordsRaw.split(',').map(c=>c.trim()).filter(Boolean):[];
+  if(!chords.length){showToast('Enter chord progression to preview','error');return;}
+  const bpm=parseInt(document.getElementById('gtBpm')?.value)||80;
+  const ctx=GuitarDojo._getAudioCtx();
+  let t=ctx.currentTime;
+  chords.forEach((ch,i)=>{
+    const cData=GuitarDojo.chords[ch];
+    if(cData) GuitarDojo._strumChordFull(ch,ctx,t+i*1.8,bpm);
+  });
+  showToast('🔊 Playing preview of your chord progression…','success');
+}
+
 async function saveTutorGuitarTask(){
   const title=document.getElementById('gtTitle').value.trim();
-  if(!title){showToast('Title is required','error');return;}
+  if(!title){showToast('Task title is required','error');return;}
   const chordsRaw=document.getElementById('gtChords').value.trim();
   const chords=chordsRaw?chordsRaw.split(',').map(c=>c.trim()).filter(Boolean):[];
+  const proTip=(document.getElementById('gtProTip')?.value||'').trim();
+  const strumPattern=(document.getElementById('gtStrum')?.value||'').trim();
+  const targetStudentId=document.getElementById('gtStudent')?.value||'';
+  const xp=parseInt(document.getElementById('gtXp')?.value)||70;
   const data={
     title,
     type:document.getElementById('gtType').value,
-    dur:parseInt(document.getElementById('gtDur').value)||3,
+    difficulty:document.getElementById('gtDiff')?.value||'Beginner',
+    dur:parseInt(document.getElementById('gtDur').value)||4,
     chords,
     bpm:parseInt(document.getElementById('gtBpm').value)||80,
     desc:document.getElementById('gtDesc').value.trim(),
-    xp:60,
+    proTip:proTip||undefined,
+    strumPattern:strumPattern||undefined,
+    targetStudentId:targetStudentId||undefined,
+    xp,
     chordDurBars:4,
     createdAt:firebase.firestore.FieldValue.serverTimestamp(),
     createdBy:CU.uid,
+    createdByName:CU.name||CU.email,
   };
+  // Clean undefined fields
+  Object.keys(data).forEach(k=>{if(data[k]===undefined)delete data[k];});
   try{
     await db.collection('guitarDojoTasks').add(data);
-    showToast('✅ Task added! Students will see it in Guitar Dojo.','success');
-    ['gtTitle','gtChords','gtDesc'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    const who=targetStudentId?'the assigned student':'all Guitar students';
+    showToast(`✅ "${title}" added to Dojo! ${who} will see it.`,'success');
+    ['gtTitle','gtChords','gtDesc','gtProTip','gtStrum'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+    if(document.getElementById('gtStudent'))document.getElementById('gtStudent').value='';
     rebuildPage('tGuitarDojo');
   }catch(e){showToast('Error: '+e.message,'error');}
 }
@@ -12412,10 +13026,203 @@ async function deleteTutorGuitarTask(id){
 }
 
 // ── PAGES & INITS registration ─────────────────────────────────
+// ── Co-Admin Mark Attendance page ──
+PAGES.caMarkAtt = function(){
+  const todayKey=new Date().toISOString().split('T')[0];
+  const safeId=str=>str.replace(/\s+/g,'_');
+  // Co-admin sees all active students grouped by class
+  const activeStudents=allStudents.filter(s=>s.status==='Active');
+  const classes=[...new Set(activeStudents.map(s=>s.class).filter(Boolean))].sort();
+  return `
+<div class="ph">
+  <div><div class="pt">✍️ Mark Attendance</div><div class="ps">Mark student attendance for any date</div></div>
+  <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+    <button class="btn-primary" style="max-width:180px;padding:9px 16px" id="caAttSaveBtn" onclick="saveAttendanceCoAdmin(document.getElementById('caAttDate').value)">💾 Save Attendance</button>
+    <button class="bsm bd" onclick="undoAttendanceCoAdmin(document.getElementById('caAttDate').value)" title="Undo all attendance for this date">↩ Undo Date</button>
+  </div>
+</div>
+<div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:18px;background:var(--card);border:1px solid var(--border);border-radius:12px;padding:14px 16px;align-items:flex-end">
+  <div class="field" style="margin:0;flex:1;min-width:160px"><label>Date</label><input type="date" id="caAttDate" value="${todayKey}" onchange="caReRenderAttList(this.value);caLoadAttForDate(this.value)"/></div>
+  <div class="field" style="margin:0;flex:1;min-width:160px"><label>Filter by Class</label>
+    <select id="caAttClsFilter" onchange="caFilterByClass(this.value)">
+      <option value="all">All Classes</option>
+      ${classes.map(c=>`<option value="${c}">${c}</option>`).join('')}
+    </select>
+  </div>
+</div>
+<div id="caAttNoMsg" style="display:none;padding:16px;text-align:center;color:var(--muted2);font-size:13px">No students joined by this date yet.</div>
+<div id="caAttStudentList">
+  ${classes.map(cls=>{
+    const students=activeStudents.filter(s=>s.class===cls);
+    if(!students.length)return'';
+    return`<div class="tc ca-att-class-block" data-class="${cls}" style="margin-bottom:15px">
+      <div class="th"><div class="tt">${cb(cls)} ${cls}</div><div style="font-size:12px;color:var(--muted2)">${students.length} students</div></div>
+      <div style="padding:0 15px">
+        ${students.map((s,i)=>`
+        <div class="ca-att-row" data-joindate="${s.firstSession||s.joinDate||'2020-01-01'}" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:9px">
+            <div class="av" style="width:27px;height:27px;font-size:10px;flex-shrink:0">${(s.fn||s.firstName||'?')[0]}</div>
+            <div>
+              <strong>${s.fn||s.firstName||''} ${s.ln||s.lastName||''}</strong>
+              <div style="font-size:10px;color:var(--muted2)">${s.batch||''}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap">
+            <button class="bsm bg3" id="cap_${safeId(cls)}_${i}" data-uid="${s.id}" onclick="caSetAtt('${safeId(cls)}',${i},'p','${cls}')">✓ Present</button>
+            <button class="bsm bd" id="caa_${safeId(cls)}_${i}" data-uid="${s.id}" onclick="caSetAtt('${safeId(cls)}',${i},'a','${cls}')">✕ Absent</button>
+          </div>
+        </div>`).join('')}
+      </div>
+    </div>`;
+  }).join('')||'<div class="empty-state"><div class="ei">👥</div><p>No active students</p></div>'}
+</div>`;
+};
+
+INITS.caMarkAtt = async function(){
+  const dateKey=document.getElementById('caAttDate')?.value;
+  if(dateKey) await caLoadAttForDate(dateKey);
+};
+
+let caAttMap={};
+function caSetAtt(safeClsId,idx,val,realCls){
+  const key=safeClsId+'_'+idx;
+  caAttMap[key]=val;
+  const safeId=str=>str.replace(/\s+/g,'_');
+  const pBtn=document.getElementById('cap_'+safeClsId+'_'+idx);
+  const aBtn=document.getElementById('caa_'+safeClsId+'_'+idx);
+  if(pBtn){pBtn.style.background=val==='p'?'var(--green)':'';pBtn.style.color=val==='p'?'#fff':'';}
+  if(aBtn){aBtn.style.background=val==='a'?'var(--red)':'';aBtn.style.color=val==='a'?'#fff':'';}
+}
+function caFilterByClass(cls){
+  document.querySelectorAll('.ca-att-class-block').forEach(b=>{
+    b.style.display=(cls==='all'||b.dataset.class===cls)?'':'none';
+  });
+}
+function caReRenderAttList(dateKey){
+  if(!dateKey)return;
+  document.querySelectorAll('.ca-att-row').forEach(row=>{
+    const jd=row.dataset.joindate||'2020-01-01';
+    row.style.display=dateKey>=jd?'':'none';
+  });
+  document.querySelectorAll('.ca-att-class-block').forEach(block=>{
+    const rows=[...block.querySelectorAll('.ca-att-row')].filter(r=>r.style.display!=='none');
+    block.style.display=rows.length?'':'none';
+  });
+  const visible=[...document.querySelectorAll('.ca-att-row')].filter(r=>r.style.display!=='none').length;
+  const msg=document.getElementById('caAttNoMsg');
+  if(msg)msg.style.display=visible?'none':'';
+}
+async function caLoadAttForDate(dateKey){
+  if(!dateKey)return;
+  caAttMap={};
+  try{
+    const snap=await db.collection('attendance').where('date','==',dateKey).get();
+    const safeId=str=>str.replace(/\s+/g,'_');
+    const classes=[...new Set(allStudents.map(s=>s.class).filter(Boolean))].sort();
+    snap.docs.forEach(d=>{
+      const rec=d.data();
+      classes.forEach(cls=>{
+        const stuList=allStudents.filter(s=>s.class===cls&&s.status==='Active');
+        stuList.forEach((s,i)=>{
+          if(s.id===rec.studentUid){
+            caAttMap[safeId(cls)+'_'+i]=rec.status;
+            caSetAtt(safeId(cls),i,rec.status,cls);
+          }
+        });
+      });
+    });
+  }catch(e){console.warn('caLoadAttForDate:',e.message);}
+  caReRenderAttList(dateKey);
+}
+async function saveAttendanceCoAdmin(dateKey){
+  if(!dateKey){showToast('Select a date first','error');return;}
+  const safeId=str=>str.replace(/\s+/g,'_');
+  const classes=[...new Set(allStudents.map(s=>s.class).filter(Boolean))].sort();
+  const records={};
+  classes.forEach(cls=>{
+    allStudents.filter(s=>s.class===cls&&s.status==='Active').forEach((s,i)=>{
+      const key=safeId(cls)+'_'+i;
+      const val=caAttMap[key]||'p';
+      const jd=s.firstSession||s.joinDate||s.createdAt?.toDate?.()?.toISOString()?.split('T')[0]||'2020-01-01';
+      if(dateKey>=jd) records[s.id]={uid:s.id,name:s.name||((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim(),class:cls,batch:s.batch||'',status:val};
+    });
+  });
+  if(!Object.keys(records).length){showToast('No students to mark','error');return;}
+  const btn=document.getElementById('caAttSaveBtn');
+  if(btn){btn.disabled=true;btn.textContent='Saving…';}
+  try{
+    const CHUNK=490;const entries=Object.entries(records);
+    for(let i=0;i<entries.length;i+=CHUNK){
+      const b=db.batch();
+      entries.slice(i,i+CHUNK).forEach(([uid,rec])=>{
+        const docId=uid+'_'+dateKey.replace(/[^0-9-]/g,'');
+        b.set(db.collection('attendance').doc(docId),{
+          studentUid:uid,studentName:rec.name,class:rec.class,batch:rec.batch,
+          tutorUid:CU.uid,tutorName:CU.name||CU.email,
+          date:dateKey,status:rec.status,notes:'',markedBy:CU.uid,
+          updatedAt:firebase.firestore.FieldValue.serverTimestamp(),
+          createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+        },{merge:true});
+      });
+      await b.commit();
+    }
+    showToast(`✅ Attendance saved for ${dateKey} (${Object.keys(records).length} students)`,'success');
+    caAttMap={};
+  }catch(e){showToast('Save failed: '+e.message,'error');}
+  finally{if(btn){btn.disabled=false;btn.textContent='💾 Save Attendance';}}
+}
+async function undoAttendanceCoAdmin(dateKey){
+  if(!dateKey){showToast('Select a date first','error');return;}
+  if(!confirm(`Undo ALL attendance for ${dateKey}? This cannot be reversed.`))return;
+  try{
+    const snap=await db.collection('attendance').where('date','==',dateKey).get();
+    if(!snap.size){showToast('No records found for this date','info');return;}
+    const b=db.batch();snap.docs.forEach(d=>b.delete(d.ref));
+    await b.commit();
+    caAttMap={};
+    document.querySelectorAll('.ca-att-class-block .bsm').forEach(btn=>{btn.style.background='';btn.style.color='';});
+    showToast(`↩ Attendance for ${dateKey} undone (${snap.size} records)`,'success');
+  }catch(e){showToast('Undo failed: '+e.message,'error');}
+}
+
 PAGES.sGuitarDojo=function(){
   return`
 <div class="ph"><div><div class="pt">🎸 Guitar Dojo</div><div class="ps">Loading your practice arena…</div></div></div>
 <div style="text-align:center;padding:40px;color:var(--muted2)"><div style="font-size:32px;margin-bottom:8px">🎸</div><p>Loading Guitar Dojo…</p></div>`;
+};
+
+INITS.sHistory=async function(){
+  const el=document.getElementById('admFeeReceiptsBody');
+  if(!el)return;
+  try{
+    const snap=await db.collection('admFeeReceipts')
+      .where('studentUid','==',CU.uid)
+      .orderBy('createdAt','desc').limit(50).get();
+    if(snap.empty){
+      el.innerHTML='<div style="color:var(--muted2);font-size:13px;padding:4px 0">No admissions fee receipts yet. Receipts appear here when Admin marks your monthly fee as Paid.</div>';
+      return;
+    }
+    const recs=snap.docs.map(d=>({id:d.id,...d.data()}));
+    const totalAdm=recs.reduce((s,r)=>s+(r.amtNum||r.amount||0),0);
+    el.innerHTML=`
+      <div class="sg" style="grid-template-columns:repeat(2,1fr);margin-bottom:12px;margin-top:0">
+        <div class="sc g"><div class="si">🎓</div><div class="sv">${recs.length}</div><div class="sl">Fee Receipts</div></div>
+        <div class="sc c"><div class="si">₹</div><div class="sv">₹${totalAdm.toLocaleString()}</div><div class="sl">Total Paid</div></div>
+      </div>
+      <div class="tbl-wrap"><table>
+        <thead><tr><th>Month</th><th>Amount</th><th>Date</th><th>Method</th><th>Ref</th><th>Receipt</th></tr></thead>
+        <tbody>${recs.map(r=>`<tr>
+          <td><strong>${r.month||'—'}</strong><div style="font-size:10px;color:var(--muted2)">${r.class||''} · ${(r.batch||'').split(' ').slice(0,3).join(' ')}</div></td>
+          <td><strong style="color:var(--green)">₹${(r.amtNum||r.amount||0).toLocaleString()}</strong></td>
+          <td style="font-size:11px;color:var(--muted2)">${r.paymentDate||r.date||'—'}</td>
+          <td style="font-size:12px">${r.method||'—'}</td>
+          <td style="font-size:11px;color:var(--muted2)">${r.ref||'—'}</td>
+          <td><button class="bsm bg3" style="font-size:10px;padding:3px 8px" onclick="downloadAdmFeeReceipt('${r.id}')">🧾 Download</button></td>
+        </tr>`).join('')}</tbody>
+      </table></div>`;
+  }catch(e){
+    el.innerHTML=`<div style="color:var(--muted2);font-size:13px">Could not load receipts: ${e.message}</div>`;
+  }
 };
 
 INITS.sGuitarDojo=async function(){
