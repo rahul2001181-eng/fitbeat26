@@ -1588,9 +1588,13 @@ function getSessionsPerMonth(cls){ return (CLASS_SESSIONS_PER_WEEK[cls]||2)*4; }
 
 // ── Per-batch tutor assignment ──────────────────────────────────────────────
 // Key: exact batch name string → tutorEmail (used to look up tutor uid in allTutors)
-// Minakshi teaches ONLY her one batch; Sonil teaches all other Zumba batches.
+// Minakshi teaches ONLY her batches; Sonil teaches all other Zumba batches.
 const BATCH_TUTOR_MAP = {
   'Tue–Thu–Sat Evening 6–7 PM': 'minakshimanetutor@gmail.com',
+  'Mon–Wed–Fri Evening 9–10 PM': 'minakshimanetutor@gmail.com',
+  'Mon-Wed-Fri 9-10 PM': 'minakshimanetutor@gmail.com',
+  'Mon–Wed–Fri 9–10 PM': 'minakshimanetutor@gmail.com',
+  'Mon-Wed-Fri Evening 9-10 PM': 'minakshimanetutor@gmail.com',
 };
 // Helper: given a class + batch, return the assigned tutor object (or null)
 function getTutorForBatch(cls, batch) {
@@ -1905,7 +1909,7 @@ async function loadPortalData() {
         db.collection('admissions').orderBy('admissionDate','desc').get(),
       ]);
       allStudents = stuSnap.docs.map(d=>({id:d.id,...d.data()}));
-      allPayments = paySnap.docs.map(d=>({id:d.id,...d.data()}));
+      allPayments = paySnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
       allMessages = msgSnap.docs.map(d=>({id:d.id,...d.data()}));
       allEnquiries = enqSnap.docs.map(d=>({id:d.id,...d.data()}));
       allAdmissions = admSnap.docs.map(d=>({id:d.id,...d.data()}));
@@ -2266,7 +2270,7 @@ function startRealTimeListeners(){
         }
       });
     }
-    allPayments = newPays;
+    allPayments = newPays.sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
     // Refresh dashboard stats if visible
     const dash = CU.role==='admin'?'aDash':CU.role==='coadmin'?'caDash':CU.role==='tutor'?'tDash':'sDash';
     if(document.getElementById('pg_'+dash)?.classList.contains('active')){
@@ -2369,9 +2373,14 @@ function buildNav(cfg){
         unread=allNotifications.filter(n=>{
           // Must not be already read by this user
           if((n.readBy||{})[CU.uid]) return false;
-          // Student-specific notifications
+          // Student-specific
           if(n.targetStudentUid) return item.badge==='snotif' && n.targetStudentUid===CU.uid;
           if(n.studentId && n.type==='feedback') return item.badge==='snotif' && n.studentId===CU.uid;
+          // Tutor-specific (payout/payment alerts)
+          if(n.targetTutorUid||n.recipientUid){
+            const tid=n.targetTutorUid||n.recipientUid;
+            return item.badge==='tnotif' && tid===CU.uid;
+          }
           // Batch-specific
           if(n.targetBatch) return item.badge==='snotif' && n.targetBatch===CU.batch;
           // Class-specific
@@ -2403,8 +2412,16 @@ function showPage(id){
   const ni=document.getElementById('ni_'+id);if(ni)ni.classList.add('active');
   document.getElementById('sidebar').classList.remove('open');
   document.getElementById('sbOv').classList.remove('open');
+  window._curPage=id;
 }
-function navTo(id){buildPage(id);showPage(id);}
+function navTo(id){
+  buildPage(id);showPage(id);
+  history.pushState({portalPage:id},'',location.pathname+location.search+'#'+id);
+}
+window.addEventListener('popstate',function(e){
+  if(e.state&&e.state.portalPage){buildPage(e.state.portalPage);showPage(e.state.portalPage);}
+  else if(window._curPage){history.pushState({portalPage:window._curPage},'',location.href);}
+});
 
 function buildPage(id){
   if(builtPages[id])return;
@@ -2593,10 +2610,14 @@ aStudents: () => {
   const PAGE_SIZE = 15;
   const renderStudentsPage = (page, filter='') => {
     const filtered = filter
-      ? allStudents.filter(s=>(s.fn||s.firstName||'').toLowerCase().includes(filter)||
-          (s.ln||s.lastName||'').toLowerCase().includes(filter)||
-          (s.email||'').toLowerCase().includes(filter)||
-          (s.class||'').toLowerCase().includes(filter))
+      ? allStudents.filter(s=>{ const f=filter.toLowerCase(); return (
+          (s.fn||s.firstName||'').toLowerCase().includes(f)||
+          (s.ln||s.lastName||'').toLowerCase().includes(f)||
+          (s.email||'').toLowerCase().includes(f)||
+          (s.class||'').toLowerCase().includes(f)||
+          (s.phone||'').includes(f)||
+          (s.batch||'').toLowerCase().includes(f)||
+          ((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).toLowerCase().includes(f));})
       : allStudents;
     const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
     const pg = Math.min(page, totalPages);
@@ -2740,8 +2761,9 @@ aStudents: () => {
 },
 
 aPayments: () => {
-  const totalPaid=allPayments.filter(p=>p.status==='Paid').reduce((s,p)=>s+(p.amtNum||0),0);
-  const pendingPays=allPayments.filter(p=>p.status==='Pending');
+  const portalPayments=allPayments.filter(p=>p.source!=='admissions');
+  const totalPaid=portalPayments.filter(p=>p.status==='Paid').reduce((s,p)=>s+(p.amtNum||0),0);
+  const pendingPays=portalPayments.filter(p=>p.status==='Pending');
   // Pull confirmed fees from Admissions & Fees (monthly fee entries)
   const MONTHS=['Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan'];
   const admFees=[];
@@ -2754,13 +2776,23 @@ aPayments: () => {
         if(amt>0)admFees.push({
           id:`adm_${a.id}_${m}`,student:a.name||'—',class:a.admission||'—',
           amount:'₹'+amt.toLocaleString(),amtNum:amt,
-          date:mf.date||m,method:mf.method||'Cash',
+          month:m,
+          date:mf.date||'',method:mf.method||'Cash',
           status:'Paid',note:`${m} fee — via Admissions`,
           source:'admissions'
         });
       }
     });
   });
+  // Sort admFees descending by date
+  admFees.sort((a,b)=>{
+    if(a.date&&b.date) return new Date(b.date)-new Date(a.date);
+    if(a.date&&!b.date) return -1;
+    if(!a.date&&b.date) return 1;
+    return 0;
+  });
+  // Admissions tab shows ONLY admin-marked fees; Portal tab shows ONLY student-initiated payments
+  const combinedAdmFees=admFees;
   const totalAdmFees=admFees.reduce((s,f)=>s+f.amtNum,0);
   // Special Batches fees
   const sbFees=[];
@@ -2796,7 +2828,7 @@ ${(()=>{
   const pCard=`<div class="sc ${pendingPays.length?'a':'g'}" style="cursor:pointer" onclick="switchPayTab('portal')"><div class="si">⏳</div><div class="sv">${pendingPays.length}</div><div class="sl">Pending Confirmations</div><div class="sch" style="color:${pendingPays.length?'var(--amber)':'var(--green)'}">${pendingPays.length?'Tap to review →':'All confirmed'}</div></div>`;
   if(CU.role==='admin') return `<div class="sg" style="grid-template-columns:repeat(4,1fr)">
   <div class="sc g"><div class="si">💰</div><div class="sv">₹${grandTotal.toLocaleString()}</div><div class="sl">Total Revenue</div><div class="sch" style="color:var(--muted2)">All sources</div></div>
-  <div class="sc c"><div class="si">📱</div><div class="sv">₹${totalPaid.toLocaleString()}</div><div class="sl">Portal Payments</div><div class="sch" style="color:var(--muted2)">${allPayments.filter(p=>p.status==='Paid').length} txns</div></div>
+  <div class="sc c"><div class="si">📱</div><div class="sv">₹${totalPaid.toLocaleString()}</div><div class="sl">Portal Payments</div><div class="sch" style="color:var(--muted2)">${portalPayments.filter(p=>p.status==='Paid').length} txns</div></div>
   <div class="sc pu"><div class="si">🎓</div><div class="sv">₹${totalAdmFees.toLocaleString()}</div><div class="sl">Admissions Fees</div><div class="sch" style="color:var(--muted2)">${admFees.length} entries</div></div>
   <div class="sc a"><div class="si">🎭</div><div class="sv">₹${totalSBFees.toLocaleString()}</div><div class="sl">Special Batches</div><div class="sch" style="color:var(--muted2)">${sbFees.length} paid batches</div></div>
 </div><div class="sg" style="grid-template-columns:1fr 1fr;margin-bottom:0">
@@ -2805,7 +2837,7 @@ ${(()=>{
 </div>`;
   return `<div class="sg" style="grid-template-columns:1fr 1fr;margin-bottom:0">
   ${pCard}
-  <div class="sc c"><div class="si">📱</div><div class="sv">${allPayments.filter(p=>p.status==='Paid').length}</div><div class="sl">Portal Payments</div><div class="sch" style="color:var(--muted2)">${allPayments.filter(p=>p.status==='Paid').length} entries</div></div>
+  <div class="sc c"><div class="si">📱</div><div class="sv">${portalPayments.filter(p=>p.status==='Paid').length}</div><div class="sl">Portal Payments</div><div class="sch" style="color:var(--muted2)">${portalPayments.filter(p=>p.status==='Paid').length} entries</div></div>
 </div>`;
 })()}
 ${pendingPays.length?`
@@ -2835,13 +2867,13 @@ ${pendingPays.length?`<div style="background:rgba(245,158,11,.07);border:1px sol
 
 <!-- TABS -->
 <div style="display:flex;gap:8px;margin-bottom:12px">
-  <button class="bsm ba2" id="ptab_portal" onclick="switchPayTab('portal')">📱 Portal Payments</button>
-  <button class="bsm bo" id="ptab_adm" onclick="switchPayTab('adm')">🎓 Admissions Fees</button>
+  <button class="bsm bo" id="ptab_portal" onclick="switchPayTab('portal')">📱 Portal Payments</button>
+  <button class="bsm ba2" id="ptab_adm" onclick="switchPayTab('adm')">🎓 Admissions Fees</button>
   <button class="bsm bo" id="ptab_sb" onclick="switchPayTab('sb')">🎭 Special Batches</button>
 </div>
 
 <!-- Portal Payments Table -->
-<div id="ptab_portal_content" class="tc">
+<div id="ptab_portal_content" class="tc" style="display:none">
   <div class="th"><div class="tt">Portal Transactions</div>
     <div style="display:flex;gap:8px;align-items:center">
       <input class="si-input" placeholder="Search..." oninput="ft(this,'payTb')"/>
@@ -2852,7 +2884,7 @@ ${pendingPays.length?`<div style="background:rgba(245,158,11,.07);border:1px sol
   </div>
   ${allPayments.length?`<div class="tbl-wrap"><table>
     <thead><tr><th>Txn</th><th>Student</th><th>Class</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th><th>Note</th><th>Actions</th></tr></thead>
-    <tbody id="payTb">${allPayments.map(p=>`<tr data-status="${p.status}">
+    <tbody id="payTb">${allPayments.filter(p=>p.source!=='admissions').map(p=>`<tr data-status="${p.status}">
       <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)">${(p.txn||p.id||'').slice(-8)}</td>
       <td><strong>${p.student}</strong></td><td>${cb(p.class||'')}</td>
       <td><strong>${p.amount}</strong></td><td style="font-size:11px;color:var(--muted2)">${p.date}</td>
@@ -2870,22 +2902,26 @@ ${pendingPays.length?`<div style="background:rgba(245,158,11,.07);border:1px sol
 </div>
 
 <!-- Admissions Fees Table (hidden by default) -->
-<div id="ptab_adm_content" class="tc" style="display:none">
+<div id="ptab_adm_content" class="tc">
   <div class="th"><div class="tt">Admissions & Fees Records</div>
-    <div style="font-size:12px;color:var(--muted2)">${admFees.length} fee entries · ₹${totalAdmFees.toLocaleString()} collected</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <div style="font-size:12px;color:var(--muted2)">${combinedAdmFees.length} fee entries · ₹${(totalAdmFees+allPayments.filter(p=>p.status==='Paid').reduce((s,p)=>s+(p.amtNum||0),0)).toLocaleString()} collected</div>
+      <input class="si-input" placeholder="Search student, class, month..." style="max-width:220px" oninput="ft(this,'admFeesTb')"/>
+    </div>
   </div>
-  ${admFees.length?`<div class="tbl-wrap"><table>
-    <thead><tr><th>Student</th><th>Class</th><th>Month/Period</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th></tr></thead>
-    <tbody>${admFees.map(f=>`<tr>
-      <td><strong>${f.student}</strong></td>
-      <td>${cb(f.class)}</td>
-      <td style="font-size:11px;color:var(--muted2)">${f.date}</td>
+  ${combinedAdmFees.length?`<div class="tbl-wrap"><table>
+    <thead><tr><th>Student</th><th>Class</th><th>Month/Period</th><th>Amount</th><th>Date</th><th>Method</th><th>Source</th><th>Status</th></tr></thead>
+    <tbody id="admFeesTb">${combinedAdmFees.map(f=>`<tr>
+      <td><strong>${f.student||f.name||'—'}</strong></td>
+      <td>${cb(f.class||'')}</td>
+      <td style="font-size:12px;font-weight:600;color:var(--cyan)">${f.month||f.payMonth||'—'}</td>
       <td><strong style="color:var(--green)">${f.amount}</strong></td>
-      <td style="font-size:11px;color:var(--muted2)">${f.date}</td>
-      <td style="font-size:12px">${f.method}</td>
+      <td style="font-size:11px;color:var(--muted2)">${f.date||'—'}</td>
+      <td style="font-size:12px">${f.method||'—'}</td>
+      <td style="font-size:10px;color:var(--muted2)">${f.source==='portal'?'<span style="color:var(--cyan)">📱 Portal</span>':'🎓 Admissions'}</td>
       <td>${sb(f.status)}</td>
     </tr>`).join('')}</tbody>
-  </table></div>`:`<div class="empty-state"><div class="ei">🎓</div><p>No fee entries in Admissions yet. Go to <a style="color:var(--cyan);cursor:pointer" onclick="navTo('aAdmissions')">Admissions & Fees</a> to record monthly fees.</p></div>`}
+  </table></div>`:`<div class="empty-state"><div class="ei">🎓</div><p>No fee entries yet. Go to <a style="color:var(--cyan);cursor:pointer" onclick="navTo('aAdmissions')">Admissions & Fees</a> to record monthly fees.</p></div>`}
 </div>
 
 <!-- Special Batches Tab -->
@@ -3832,7 +3868,7 @@ sDash: () => {
     <div style="margin-top:6px">${lastPayStatus}</div>
     <div style="font-size:11px;color:var(--muted2);margin-top:6px">${lastPaid?lastPaid.date:pendingPays.length?'Awaiting confirmation':'No payment recorded'}</div>
   </div>
-  <div class="sc g" id="dashAttCard"><div class="si">📊</div><div class="sv" style="color:${attColor}">${attPct!=null?attPct+'%':'—'}</div><div class="sl">Attendance Rate</div><div class="sch" style="color:${attColor}">${attPct!=null?(attPct>=80?'↑ Great!':attPct>=60?'Could be better':'⚠️ Low'):'Not recorded yet'}</div></div>
+  <div class="sc g" id="dashAttCard" style="cursor:pointer" onclick="viewAttendanceHistory('${CU.uid}')" title="Tap to see day-by-day"><div class="si">📊</div><div class="sv" style="color:${attColor}">${attPct!=null?attPct+'%':'—'}</div><div class="sl">Attendance Rate</div><div class="sch" style="color:${attColor}">${attPct!=null?(attPct>=80?'↑ Great!':attPct>=60?'Could be better':'⚠️ Low'):'Not recorded yet'}<div style="font-size:10px;margin-top:2px;color:var(--muted2)">Tap to view →</div></div></div>
 </div>
 
 <!-- Class Info Card -->
@@ -3854,9 +3890,10 @@ sDash: () => {
 <div class="tc">
   <div class="th"><div class="tt">Recent Payments</div><button class="bsm bo" onclick="navTo('sHistory')">All →</button></div>
   ${allPayments.length?`<div class="tbl-wrap"><table>
-    <thead><tr><th>Txn</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th></tr></thead>
-    <tbody>${allPayments.slice(0,4).map(p=>`<tr>
+    <thead><tr><th>Txn</th><th>Month</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th></tr></thead>
+    <tbody>${[...allPayments].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)).slice(0,4).map(p=>`<tr>
       <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)">${(p.txn||p.id||'').slice(-8)}</td>
+      <td style="font-size:12px;font-weight:600;color:var(--cyan)">${p.payMonth||'—'}</td>
       <td><strong>${p.amount}</strong></td><td style="font-size:11px;color:var(--muted2)">${p.date}</td>
       <td style="font-size:12px">${p.method}</td><td>${sb(p.status)}</td>
     </tr>`).join('')}</tbody>
@@ -3942,8 +3979,10 @@ sPay: () => {
 },
 
 sHistory: () => {
-  const paidPays = allPayments.filter(p=>p.status==='Paid');
-  const pendingPays = allPayments.filter(p=>p.status==='Pending');
+  // Sort all payments descending by date
+  const sortedPays=[...allPayments].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  const paidPays = sortedPays.filter(p=>p.status==='Paid');
+  const pendingPays = sortedPays.filter(p=>p.status==='Pending');
   const totalPaid = paidPays.reduce((s,p)=>s+(p.amtNum||0),0);
   return `
 <div class="ph">
@@ -3959,12 +3998,13 @@ ${pendingPays.length?`<div style="background:rgba(245,158,11,.07);border:1px sol
   <div class="sc a"><div class="si">⏳</div><div class="sv">${pendingPays.length}</div><div class="sl">Pending</div></div>
   <div class="sc c"><div class="si">₹</div><div class="sv">₹${totalPaid.toLocaleString()}</div><div class="sl">Total Confirmed</div></div>
 </div>
-${allPayments.length?`<div class="tc" style="margin-bottom:16px">
+${sortedPays.length?`<div class="tc" style="margin-bottom:16px">
   <div class="th"><div class="tt">💳 Portal Payments</div></div>
   <div class="tbl-wrap"><table>
-    <thead><tr><th>Txn ID</th><th>Plan</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th><th>Receipt</th></tr></thead>
-    <tbody>${allPayments.map(p=>`<tr>
+    <thead><tr><th>Txn ID</th><th>Month/Period</th><th>Plan</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th><th>Receipt</th></tr></thead>
+    <tbody>${sortedPays.map(p=>`<tr>
       <td style="font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--cyan)">${(p.txn||p.id||'').slice(-8)}</td>
+      <td style="font-size:12px;font-weight:600;color:var(--cyan)">${p.payMonth||'—'}</td>
       <td style="font-size:11px;color:var(--muted2)">${p.plan||'Monthly'}</td>
       <td><strong>${p.amount}</strong></td><td style="font-size:11px;color:var(--muted2)">${p.date}</td>
       <td style="font-size:12px">${p.method}</td><td>${sb(p.status)}</td>
@@ -3985,7 +4025,7 @@ ${allPayments.length?`<div class="tc" style="margin-bottom:16px">
 
 aMessages: () => buildMsgUI('aMessages'),
 sMessages: () => buildMsgUI('sMessages'),
-sSchedule: () => `<div class="ph"><div><div class="pt">My Schedule</div></div><button class="bsm bo" onclick="rebuildPage('sSchedule')">↺ Refresh</button></div><div id="sScheduleBody"><div class="empty-state"><div class="ei">⏳</div><p>Loading schedule...</p></div></div>`,
+sSchedule: () => `<div id="sScheduleBody"><div class="empty-state"><div class="ei">⏳</div><p>Loading schedule...</p></div></div>`,
 sNotifications: () => buildNotifPage('student'),
 sProfile: () => buildProfileUI(),
 tNotifications: () => buildNotifPage('tutor'),
@@ -5216,16 +5256,18 @@ ${batchMeta?`
 function buildNotifPage(role){
   const pageId=role==='student'?'sNotifications':'tNotifications';
   let notifs=allNotifications.filter(n=>{
-    // FIX: If notification is explicitly for a specific student, only show to that student
-    if(n.targetStudentUid) {
-      return role==='student' && n.targetStudentUid === CU.uid;
+    // Specific student
+    if(n.targetStudentUid) return role==='student' && n.targetStudentUid===CU.uid;
+    // Feedback to student
+    if(n.studentId && n.type==='feedback') return role==='student' && n.studentId===CU.uid;
+    // Specific tutor (payout alerts, payment alerts)
+    if(n.targetTutorUid||n.recipientUid){
+      const tid=n.targetTutorUid||n.recipientUid;
+      return role==='tutor' && tid===CU.uid;
     }
-    if(n.studentId && n.type==='feedback') {
-      return role==='student' && n.studentId === CU.uid;
-    }
-    // Batch-specific: only match if student's batch matches
+    // Batch-specific
     if(n.targetBatch) return role==='student' && n.targetBatch===CU.batch;
-    // Class-specific: only match if student's class matches
+    // Class-specific
     if(n.targetClass){
       if(role==='student') return n.targetClass===CU.class;
       if(role==='tutor') return CU.teaches&&CU.teaches.includes(n.targetClass);
@@ -6514,6 +6556,10 @@ async function doStudentPayment(){
   const upiRef=document.getElementById('upi_ref')?.value||'';
   const bankRef=document.getElementById('bank_ref')?.value||'';
   const ref=selMethod2==='bank'?bankRef:selMethod2==='upi'?upiRef:'';
+  // Determine month for which payment is being made
+  const MONTHS_SHORT=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const nowD=new Date();
+  const payMonthLabel=MONTHS_SHORT[nowD.getMonth()]+' '+nowD.getFullYear();
   setBtnLoading('payBtn',true);
   try {
     const txn='STU'+Date.now().toString().slice(-8);
@@ -6522,6 +6568,7 @@ async function doStudentPayment(){
       class:CU.class,plan,
       amount:'₹'+price.toLocaleString(),amtNum:price,
       date:nowStr(),method,
+      payMonth:payMonthLabel,
       // Status is always Pending until Admin confirms — no receipt generated for pending payments
       status:'Pending',
       note:ref?'Ref: '+ref:'Student self-reported',
@@ -7017,7 +7064,12 @@ async function loadAdminAttendance(){
 }
 
 async function viewAttendanceHistory(studentId) {
-  const s=allStudents.find(x=>x.id===studentId);if(!s)return;
+  // For student role, allStudents is empty — use CU object instead
+  let s=allStudents.find(x=>x.id===studentId);
+  if(!s && CU && CU.uid===studentId){
+    s={id:CU.uid, fn:CU.firstName||CU.name?.split(' ')[0]||'', firstName:CU.firstName||'', ln:CU.lastName||CU.name?.split(' ').slice(1).join(' ')||'', lastName:CU.lastName||''};
+  }
+  if(!s)return;
   document.getElementById('attHist_title').textContent=`📊 ${s.fn||s.firstName||''} ${s.ln||s.lastName||''} — Attendance`;
   const body=document.getElementById('attHist_body');
   body.innerHTML='<div style="padding:20px;color:var(--muted2)">Loading...</div>';
@@ -8385,16 +8437,23 @@ function calcCyclePayout(students,teaches,cycleMonth,tutorUid){
   let total=0;
   teaches.forEach(cls=>{
     if(cls==='Zumba'){
-      // Get distinct batches: (a) from students in this cycle, (b) from BATCH_TUTOR_MAP for this tutor
-      const zStudentBatches=new Set(students.filter(s=>s.class==='Zumba').map(s=>s.batch).filter(Boolean));
-      // Also include batches from BATCH_TUTOR_MAP that this tutor is assigned to
-      const tutor=allTutors.find(t=>t.id===(tutorUid||CU?.uid));
-      if(tutor){
-        const assignedBatches=getBatchesForTutor(tutor.email)||[];
-        assignedBatches.forEach(b=>zStudentBatches.add(b));
+      // Count distinct physical batches this tutor is responsible for.
+      // Use student batch strings as the canonical source of truth.
+      // Only fall back to BATCH_TUTOR_MAP keys if tutor has NO students at all (empty batch).
+      const zStudents=students.filter(s=>s.class==='Zumba');
+      const zStudentBatches=new Set(zStudents.map(s=>s.batch).filter(Boolean));
+      let batchCount=zStudentBatches.size;
+      // If tutor has NO students, check if they have assigned batches in map (pay 1 batch worth)
+      if(batchCount===0){
+        const tutor=allTutors.find(t=>t.id===(tutorUid||CU?.uid));
+        if(tutor){
+          const assignedBatches=getBatchesForTutor(tutor.email)||[];
+          // Deduplicate aliases: count unique canonical batches (by normalizing the string)
+          const canonical=new Set(assignedBatches.map(b=>b.replace(/[-–]/g,'-').replace(/\s+/g,' ').trim().toLowerCase()));
+          batchCount=canonical.size;
+        }
       }
-      const batchCount=zStudentBatches.size||( students.filter(s=>s.class==='Zumba').length>0?1:0 );
-      total+=batchCount*3000;
+      total+=Math.max(batchCount,zStudents.length>0?1:0)*3000;
       return;
     }
     if(cls==='Dance'||cls==='Kids Dance'){
@@ -8522,11 +8581,17 @@ async function doMarkPayout(){
       tutorId,cycleKey,date,method,ref,status:'Paid',
       paidAt:firebase.firestore.FieldValue.serverTimestamp()
     });
-    // Send notification to tutor
+    // Send notification to specific tutor only
+    const payoutTutor=allTutors.find(t=>t.id===tutorId);
+    const payoutAmt=document.getElementById('markPayoutInfo')?.dataset?.amount||'';
     await db.collection('notifications').add({
-      recipientUid:tutorId,type:'payout',
-      message:`Your payout for cycle ${cycleKey.replace(/-/g,' ')} has been marked as paid (₹ — check earnings).`,
-      createdAt:firebase.firestore.FieldValue.serverTimestamp(),read:false
+      targetTutorUid:tutorId,
+      targetRole:'tutor',
+      type:'payout',
+      title:'💸 Payout Processed!',
+      message:`Hi ${payoutTutor?(payoutTutor.firstName||payoutTutor.fn||''):'Tutor'}, your payout for ${cycleKey.replace(/-/g,' ')} has been marked as paid via ${method}. Check your Earnings tab for details.`,
+      createdAt:firebase.firestore.FieldValue.serverTimestamp(),
+      readBy:{},priority:'high',sentBy:'admin'
     });
     closeOv('ov_markPayout');
     showToast('✅ Payout marked as paid & tutor notified!','success');
@@ -8788,10 +8853,24 @@ async function doSaveFee(){
       }
     }
 
+    // Send thank-you notification to student when admin marks fee paid
+    if(status==='Paid'&&feeVal>0){
+      const adm2=allAdmissions.find(a=>a.id===admId);
+      if(adm2){
+        const adm2name=(adm2.name||'').trim().toLowerCase();
+        const linked2=allStudents.find(s=>((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase()===adm2name);
+        if(linked2){
+          sendPaymentNotifications(linked2.id,adm2.name||'','₹'+feeVal.toLocaleString(),'adm_'+admId+'_'+month).catch(()=>{});
+        }
+      }
+    }
     closeOv('ov_feeEntry');
     const statusLabel=status==='Inactive'?'Inactive marked (future months auto-marked)':status==='Partial'?'Partial fee saved':'Fee saved';
     showToast(`✅ ${statusLabel} for ${month}!`,'success');
     rebuildPage('aAdmissions');
+    // Rebuild payments page so new entry appears immediately
+    const pgPay=document.getElementById('pg_aPayments');
+    if(pgPay){pgPay.remove();builtPages['aPayments']=false;}
   }catch(e){setErr('feeErr',e.message);}
 }
 
