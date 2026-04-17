@@ -680,6 +680,7 @@ input,button,select,textarea{font-family:"DM Sans",sans-serif}
 .bo{background:transparent;border:1px solid var(--border);color:var(--muted2)}.bo:hover{border-color:var(--purple);color:var(--text)}
 .ba2{background:var(--grad);color:#fff}.ba2:hover{opacity:.9}
 .bd{background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);color:#fca5a5}
+.bd2{background:rgba(239,68,68,.08);border:1px solid rgba(239,68,68,.25);}
 .bam{background:rgba(245,158,11,.1);border:1px solid rgba(245,158,11,.3);color:var(--amber)}
 .bg3{background:rgba(16,185,129,.1);border:1px solid rgba(16,185,129,.3);color:#34d399}
 .si-input{background:var(--card2);border:1px solid var(--border);border-radius:8px;padding:6px 11px;color:var(--text);font-size:13px;outline:none;width:180px;transition:.2s}
@@ -1498,6 +1499,68 @@ tr:hover td{background:rgba(255,255,255,.018)}
   <div class="main-content" id="mc"></div>
 </div>
 
+<!-- ═══ ADD/EDIT EXPENSE MODAL ═══ -->
+<div id="ov_addExpense" class="overlay">
+  <div class="modal">
+    <div class="mh">
+      <div class="mt2" id="expModalTitle">Add Expense</div>
+      <button class="mc" onclick="closeOv('ov_addExpense')">✕</button>
+    </div>
+    <div style="padding:18px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field" style="margin:0">
+          <label>Date *</label>
+          <input type="date" id="exp_date"/>
+        </div>
+        <div class="field" style="margin:0">
+          <label>Amount (₹) *</label>
+          <input type="number" id="exp_amt" placeholder="e.g. 1500" min="0" step="1"/>
+        </div>
+      </div>
+      <div class="field" style="margin:0">
+        <label>Category *</label>
+        <select id="exp_cat">
+          <option>Marketing</option>
+          <option>Banner</option>
+          <option>Pamphlet</option>
+          <option>Sound/Music</option>
+          <option>Equipment</option>
+          <option>Utilities</option>
+          <option>Maintenance</option>
+          <option>Rent</option>
+          <option>Staff</option>
+          <option>Traveling</option>
+          <option>Transport</option>
+          <option>Food</option>
+          <option>Printing</option>
+          <option>Decoration</option>
+          <option>Software</option>
+          <option>Other</option>
+        </select>
+      </div>
+      <div class="field" style="margin:0">
+        <label>Description *</label>
+        <input id="exp_desc" placeholder="e.g. Banner printing for April batch, Rickshaw to supplier..."/>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+        <div class="field" style="margin:0">
+          <label>Paid By</label>
+          <input id="exp_paidby" placeholder="Admin name or auto-filled"/>
+        </div>
+        <div class="field" style="margin:0">
+          <label>Receipt / Ref No.</label>
+          <input id="exp_receipt" placeholder="e.g. Bill #102, Photo saved"/>
+        </div>
+      </div>
+      <div class="field" style="margin:0">
+        <label>Notes (optional)</label>
+        <input id="exp_note" placeholder="Any extra details..."/>
+      </div>
+      <button class="btn-primary" id="expSaveBtn" onclick="saveExpense()" style="margin-top:4px">Save Expense →</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════════════
 // FIREBASE INIT
@@ -1711,6 +1774,7 @@ let selPlan = 1, selMethod = 'upi', curFee1 = 1999, curFee2 = 5499;
 let activeMsgId = null;
 let allStudents = [], allPayments = [], allMessages = [], allEnquiries = [], allAdmissions = [], allTutors = [], allNotifications = [];
 let allRentals = [], allSpecialBatches = [];
+let allLogs = [], allExpenses = [];
 
 // ═══════════════════════════════════════════════════
 // UTILS
@@ -2199,7 +2263,7 @@ const ANAV=[
   {sec:'Progress',items:[{id:'aProgress',icon:'🏆',label:'Student Progress'}]},
   {sec:'Studio',items:[{id:'aStudioRental',icon:'🏢',label:'Studio Rental'},{id:'aSpecialBatch',icon:'🎭',label:'Special Batches'}]},
   {sec:'Communication',items:[{id:'aMessages',icon:'💬',label:'Messages',badge:true},{id:'aSMS',icon:'💬',label:'WhatsApp'}]},
-  {sec:'System',items:[{id:'aNotifications',icon:'🔔',label:'Notifications',badge:'anotif'},{id:'aSettings',icon:'⚙️',label:'Settings'}]},
+  {sec:'System',items:[{id:'aNotifications',icon:'🔔',label:'Notifications',badge:'anotif'},{id:'aLogs',icon:'📋',label:'Activity Logs'},{id:'aExpenses',icon:'💸',label:'Expenses'},{id:'aSettings',icon:'⚙️',label:'Settings'}]},
 ];
 // ── Co-admin nav (limited access, no tutor/payout management) ──────────────
 const COADMIN_NAV=[
@@ -2589,10 +2653,10 @@ aDash: () => {
 
 <!-- Recent payments -->
 <div class="tc">
-  <div class="th"><div class="tt">Recent Payments</div><button class="bsm bo" onclick="navTo('aPayments')">All →</button></div>
+  <div class="th"><div class="tt">All Payments <span style="font-size:12px;color:var(--muted2);font-weight:400;margin-left:6px">${allPayments.length} records</span></div><button class="bsm bo" onclick="navTo('aPayments')">Full View →</button></div>
   ${allPayments.length?`<div class="tbl-wrap"><table>
     <thead><tr><th>Student</th><th>Class</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th></tr></thead>
-    <tbody>${allPayments.slice(0,5).map(p=>`<tr>
+    <tbody>${[...allPayments].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)).map(p=>`<tr>
       <td><strong>${p.student}</strong></td>
       <td>${cb(p.class||'')}</td>
       <td><strong style="color:var(--cyan)">${p.amount}</strong></td>
@@ -2609,16 +2673,22 @@ aStudents: () => {
   window._stPage = window._stPage || 1;
   const PAGE_SIZE = 15;
   const renderStudentsPage = (page, filter='') => {
-    const filtered = filter
-      ? allStudents.filter(s=>{ const f=filter.toLowerCase(); return (
-          (s.fn||s.firstName||'').toLowerCase().includes(f)||
-          (s.ln||s.lastName||'').toLowerCase().includes(f)||
-          (s.email||'').toLowerCase().includes(f)||
-          (s.class||'').toLowerCase().includes(f)||
-          (s.phone||'').includes(f)||
-          (s.batch||'').toLowerCase().includes(f)||
-          ((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).toLowerCase().includes(f));})
-      : allStudents;
+    const statusF = window._stFilter||'';
+    const f = filter.toLowerCase();
+    const filtered = allStudents.filter(s=>{
+      const feeStr = (s.fee||0).toString();
+      const nameStr = ((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).toLowerCase();
+      const matchText = !f || (
+        nameStr.includes(f)||
+        (s.email||'').toLowerCase().includes(f)||
+        (s.class||'').toLowerCase().includes(f)||
+        (s.phone||'').includes(f)||
+        (s.batch||'').toLowerCase().includes(f)||
+        feeStr.includes(f)||
+        ('₹'+feeStr).includes(f));
+      const matchStatus = !statusF || (s.status||'Active')===statusF;
+      return matchText && matchStatus;
+    });
     const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
     const pg = Math.min(page, totalPages);
     const slice = filtered.slice((pg-1)*PAGE_SIZE, pg*PAGE_SIZE);
@@ -3004,9 +3074,12 @@ aBatchSlots: () => {
   const classColors={'Zumba':'var(--cyan)','Dance':'var(--purple)','Kids Dance':'var(--pink)','Chess':'var(--blue)','Guitar':'var(--amber)'};
   const classIcons={'Zumba':'🎵','Dance':'💃','Kids Dance':'👧','Chess':'♟️','Guitar':'🎸'};
 
-  // Count enrolled students per batch from admissions
+  // Count ACTIVE enrolled students per batch (exclude Inactive)
   const batchCounts={};
   allAdmissions.forEach(a=>{
+    const aName=(a.name||'').trim().toLowerCase();
+    const linked=allStudents.find(s=>((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase()===aName);
+    if(linked&&(linked.status||'Active')==='Inactive') return; // skip inactive
     const key=(a.admission||'')+'|||'+(a.preferableBatch||'');
     batchCounts[key]=(batchCounts[key]||0)+1;
   });
@@ -3067,7 +3140,12 @@ aBatchSlots: () => {
 <!-- Class summary cards -->
 <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:11px;margin-bottom:20px">
   ${Object.keys(BATCH_OPTS).map(cls=>{
-    const enrolled=allAdmissions.filter(a=>a.admission===cls).length;
+    const enrolled=allAdmissions.filter(a=>{
+      if(a.admission!==cls) return false;
+      const n=(a.name||'').trim().toLowerCase();
+      const linked=allStudents.find(s=>((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase()===n);
+      return !(linked&&(linked.status||'Active')==='Inactive');
+    }).length;
     const cap=CLASS_CAPACITY[cls]||10;
     const totalCap=BATCH_OPTS[cls].length*cap;
     const pct=Math.round((enrolled/Math.max(totalCap,1))*100);
@@ -3417,6 +3495,11 @@ aAdmissions: () => {
     const e=new Date(base);e.setMonth(e.getMonth()+1);return e;
   }
   function expiryBadge(a){
+    // If student is Inactive, show that instead of expiry
+    const linked=allStudents.find(s=>((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase()===(a.name||'').trim().toLowerCase());
+    const hasFeeInactive=a.fees&&Object.values(a.fees).some(v=>v&&v.amt==='Inactive');
+    if((linked&&(linked.status||'Active')==='Inactive')||hasFeeInactive)
+      return `<span style="font-size:9px;color:var(--muted2);background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:4px;padding:2px 7px">Inactive</span>`;
     const exp=getExpiry(a);if(!exp)return '<span style="color:var(--muted2);font-size:11px">—</span>';
     const days=Math.round((exp-now)/(864e5));
     if(days<0)return `<span class="badge br2">Expired ${Math.abs(days)}d ago</span>`;
@@ -3491,9 +3574,11 @@ ${expiringSoon.length>0?`
         const mYear=mIdx>=1?now2.getFullYear():(now2.getFullYear()); // simplified
         const isExpiredMonth=exp&&exp<now2&&!mf; // expired and no fee recorded
         if(!mf){
-          // Check if student is marked Inactive in students collection
-          const linkedStudent=allStudents.find(s=>{const sn=((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase();return sn===( a.name||'').toLowerCase()&&s.status==='Inactive';});
-          if(linkedStudent)return `<td><span style="font-size:9px;color:var(--muted2);background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:4px;padding:1px 5px">Inactive</span></td>`;
+          // Check if student is Inactive (via student record OR any fee entry already marked Inactive)
+          const linkedStudent=allStudents.find(s=>{const sn=((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase();return sn===(a.name||'').trim().toLowerCase();});
+          const isInactive=linkedStudent&&(linkedStudent.status||'Active')==='Inactive';
+          const hasFeeInactive=a.fees&&Object.values(a.fees).some(v=>v&&v.amt==='Inactive');
+          if(isInactive||hasFeeInactive)return `<td><span style="font-size:9px;color:var(--muted2);background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:4px;padding:1px 5px">Inactive</span></td>`;
           return '<td style="font-size:10px;color:var(--muted)">—</td>';
         }
         const ds=mf.date?`<div style="font-size:9px;color:var(--muted2)">${mf.date}</div>`:'';
@@ -3686,7 +3771,7 @@ ${(CU.teaches||[]).map(cls=>{
     <div class="th"><div class="tt">${cb(cls)} ${cls}</div><div style="font-size:12px;color:var(--muted2)">${students.length} student${students.length!==1?'s':''}</div></div>
     <div style="padding:0 15px">
       ${students.map((s,i)=>`
-      <div class="att-row" data-batch="${s.batch||''}" data-joindate="${s.firstSession||s.joinDate||'2020-01-01'}" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div class="att-row" data-batch="${s.batch||''}" data-status="${s.status||'Active'}" data-joindate="${s.firstSession||s.joinDate||'2020-01-01'}" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
         <div style="display:flex;align-items:center;gap:9px">
           <div class="av" style="width:27px;height:27px;font-size:10px;flex-shrink:0">${(s.fn||s.firstName||'?')[0]}</div>
           <div>
@@ -4031,6 +4116,57 @@ sProfile: () => buildProfileUI(),
 tNotifications: () => buildNotifPage('tutor'),
 aNotifications: () => buildANotifications(),
 aSMS: () => buildSMSPage(),
+
+aLogs: () => `<div id="aLogsBody"><div class="empty-state"><div class="ei">⏳</div><p>Loading logs...</p></div></div>`,
+
+aExpenses: () => {
+  const totalExp = allExpenses.reduce((s,e)=>s+(e.amount||0),0);
+  const thisMonth = new Date().toISOString().slice(0,7);
+  const monthExp = allExpenses.filter(e=>(e.date||'').startsWith(thisMonth)).reduce((s,e)=>s+(e.amount||0),0);
+  const catTotals = {};
+  allExpenses.forEach(e=>{ catTotals[e.category||'Other']=(catTotals[e.category||'Other']||0)+(e.amount||0); });
+  const topCats = Object.entries(catTotals).sort((a,b)=>b[1]-a[1]).slice(0,4);
+  const sortedExp = [...allExpenses].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  return `
+<div class="ph">
+  <div><div class="pt">💸 Studio Expenses</div><div class="ps">Track all studio costs — banner, travel, equipment & more</div></div>
+  <button class="bsm ba2" onclick="openAddExpenseModal()">+ Add Expense</button>
+  <button class="bsm bo" onclick="window._expLoading=false;INITS.aExpenses()">↺ Refresh</button>
+</div>
+<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:20px">
+  <div class="sc bd2"><div class="si">💸</div><div class="sv">₹${totalExp.toLocaleString()}</div><div class="sl">All-Time Total</div><div class="sch" style="color:var(--muted2)">${allExpenses.length} records</div></div>
+  <div class="sc a"><div class="si">📅</div><div class="sv">₹${monthExp.toLocaleString()}</div><div class="sl">This Month</div></div>
+  ${topCats.map(([cat,amt])=>`<div class="sc" style="background:var(--card);border:1px solid var(--border);border-radius:14px;padding:14px"><div class="si" style="font-size:20px">${expCatIcon(cat)}</div><div class="sv" style="font-size:17px">₹${amt.toLocaleString()}</div><div class="sl">${cat}</div></div>`).join('')}
+</div>
+<div class="tc">
+  <div class="th">
+    <div class="tt">Expense Records</div>
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <input class="si-input" placeholder="Search..." oninput="ft(this,'expTb')" style="max-width:160px"/>
+      <select class="si-input" style="width:auto" onchange="filterExpenses(this.value)">
+        <option value="all">All Categories</option>
+        ${'Marketing,Equipment,Utilities,Maintenance,Staff,Rent,Traveling,Transport,Food,Printing,Banner,Pamphlet,Sound/Music,Decoration,Software,Other'.split(',').map(c=>`<option>${c}</option>`).join('')}
+      </select>
+    </div>
+  </div>
+  ${sortedExp.length?`<div class="tbl-wrap"><table>
+    <thead><tr><th>Date</th><th>Category</th><th>Description</th><th>Amount</th><th>Paid By</th><th>Receipt/Note</th><th>Actions</th></tr></thead>
+    <tbody id="expTb">${sortedExp.map(e=>`<tr data-cat="${e.category||'Other'}">
+      <td style="font-size:12px;color:var(--muted2);white-space:nowrap">${e.date||'—'}</td>
+      <td><span style="background:rgba(0,212,255,.08);color:var(--cyan);padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700;white-space:nowrap">${expCatIcon(e.category||'Other')} ${e.category||'Other'}</span></td>
+      <td style="max-width:220px"><strong>${e.description||'—'}</strong>${e.note?`<div style="font-size:10px;color:var(--muted2);margin-top:2px">${e.note}</div>`:''}</td>
+      <td><strong style="color:var(--red);font-size:14px">₹${(e.amount||0).toLocaleString()}</strong></td>
+      <td style="font-size:11px;color:var(--muted2)">${e.paidBy||'—'}</td>
+      <td style="font-size:11px">${e.receiptNote?`<span style="color:var(--green)">✓ ${e.receiptNote}</span>`:'<span style="color:var(--muted2)">—</span>'}</td>
+      <td><div style="display:flex;gap:3px">
+        <button class="bsm bam" style="font-size:9px;padding:2px 6px" onclick="openEditExpense('${e.id}')">✏️</button>
+        <button class="bsm bd" style="font-size:9px;padding:2px 6px" onclick="deleteExpense('${e.id}')">🗑</button>
+      </div></td>
+    </tr>`).join('')}</tbody>
+  </table></div>`:`<div class="empty-state"><div class="ei">💸</div><p>No expenses yet. Add your first expense to start tracking.</p></div>`}
+</div>`;
+},
+
 aSettings: () => buildSettingsUI(),
 
 // ─── ADMIN PROGRESS VIEW ─────────────────────────────────
@@ -5651,6 +5787,11 @@ const INITS = {
       el.innerHTML=`<div class="empty-state"><div class="ei">📅</div><p>Error loading schedule: ${e.message}</p></div>`;
     }
   },
+  tAttendance: async () => {
+    const todayKey=new Date().toISOString().split('T')[0];
+    reRenderAttList(todayKey);
+    await loadAttendanceForDate(todayKey);
+  },
   // FIX: Refresh tutor's student attendance from Firestore every time page opens
   tStudents: async () => {
     const myS=allStudents.filter(s=>CU.teaches&&CU.teaches.includes(s.class));
@@ -5715,6 +5856,62 @@ const INITS = {
           <button class="bsm bo" style="font-size:10px;padding:3px 8px;flex-shrink:0" onclick="viewStaffAttendance('${t.id}','${(t.firstName||t.name||'').replace(/'/g,"\\'")} ${(t.lastName||'').replace(/'/g,"\\'")}','${(t.email||'').replace(/'/g,"\\'")}')">📋 View</button>
         </div>`).join('');
     }catch(e){el.innerHTML='<div style="color:var(--red);font-size:12px">Error loading staff: '+e.message+'</div>';}
+  },
+
+  aLogs: async () => {
+    const el = document.getElementById('aLogsBody'); if(!el) return;
+    el.innerHTML='<div style="padding:20px;color:var(--muted2)">Loading...</div>';
+    try {
+      const snap = await db.collection('activityLogs').orderBy('ts','desc').limit(200).get();
+      const logs = snap.docs.map(d=>({id:d.id,...d.data()}));
+      if(!logs.length){ el.innerHTML='<div class="empty-state"><div class="ei">📋</div><p>No activity logged yet.</p></div>'; return; }
+      const actionLabels={'ADD_STUDENT':'👤 Added Student','EDIT_STUDENT':'✏️ Edited Student','DELETE_STUDENT':'🗑 Deleted Student',
+        'CONFIRM_PAYMENT':'✅ Confirmed Payment','REJECT_PAYMENT':'❌ Rejected Payment','MARK_FEE':'💰 Marked Fee','ADD_EXPENSE':'💸 Added Expense',
+        'EDIT_EXPENSE':'✏️ Edited Expense','DELETE_EXPENSE':'🗑 Deleted Expense'};
+      const roleColor={'admin':'var(--cyan)','coadmin':'var(--purple)','tutor':'var(--amber)'};
+      // Group by date
+      const byDate={};
+      logs.forEach(l=>{
+        const d=l.ts?.toDate?l.ts.toDate().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}):'Unknown date';
+        if(!byDate[d])byDate[d]=[];
+        byDate[d].push(l);
+      });
+      el.innerHTML=`
+      <div style="margin-bottom:14px;display:flex;gap:8px;align-items:center">
+        <input class="si-input" placeholder="Search logs..." oninput="ft(this,'logsTb')" style="max-width:220px"/>
+        <span style="font-size:12px;color:var(--muted2)">${logs.length} recent entries (last 90 days shown)</span>
+      </div>
+      <div class="tc">
+        <div class="tbl-wrap"><table>
+          <thead><tr><th>When</th><th>Action</th><th>Detail</th><th>By</th><th>Role</th></tr></thead>
+          <tbody id="logsTb">${logs.map(l=>{
+            const t=l.ts?.toDate?l.ts.toDate().toLocaleString('en-IN',{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'}):'—';
+            const label=actionLabels[l.action]||l.action||'—';
+            const roleBadge=`<span style="font-size:10px;padding:2px 8px;border-radius:12px;background:rgba(0,0,0,.2);color:${roleColor[l.actorRole]||'var(--muted2)'};font-weight:700">${l.actorRole||'—'}</span>`;
+            return `<tr>
+              <td style="font-size:11px;color:var(--muted2);white-space:nowrap">${t}</td>
+              <td style="font-size:12px;font-weight:700;white-space:nowrap">${label}</td>
+              <td style="font-size:12px;max-width:260px">${l.detail||'—'}</td>
+              <td style="font-size:11px;color:var(--cyan)">${l.actorEmail||l.actorName||'—'}</td>
+              <td>${roleBadge}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table></div>
+      </div>`;
+    } catch(e) { el.innerHTML=`<div style="padding:20px;color:var(--red)">Error loading logs: ${e.message}</div>`; }
+  },
+
+  aExpenses: async () => {
+    if(window._expLoading) return; // guard against re-entrant loop
+    window._expLoading = true;
+    try {
+      const snap = await db.collection('expenses').orderBy('date','desc').limit(500).get();
+      allExpenses = snap.docs.map(d=>({id:d.id,...d.data()}));
+      // Update content in-place — never remove/re-add the page (causes infinite INIT loop)
+      const pg = document.getElementById('pg_aExpenses');
+      if(pg) pg.innerHTML = PAGES.aExpenses();
+    } catch(e) { console.warn('Expenses load error:',e.message); }
+    window._expLoading = false;
   },
 
   aProgress: async () => {
@@ -6024,7 +6221,13 @@ const INITS = {
     const classColors={'Zumba':'var(--cyan)','Dance':'var(--purple)','Kids Dance':'var(--pink)','Chess':'var(--blue)','Guitar':'var(--amber)'};
     // Build map: batch key → {cls, batchName, students[], days[], timeStr, tutors[]}
     const batchMap={};
+    // Only include active students in schedule
+    const activeStudentNames=new Set(allStudents.filter(s=>(s.status||'Active')==='Active').map(s=>((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase()));
     allAdmissions.forEach(a=>{
+      // Skip if the linked student is Inactive
+      const aName=(a.name||'').trim().toLowerCase();
+      const linkedStudent=allStudents.find(s=>((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase()===aName);
+      if(linkedStudent&&(linkedStudent.status||'Active')==='Inactive') return;
       const key=(a.admission||'')+'|||'+(a.preferableBatch||'');
       if(!batchMap[key]) batchMap[key]={cls:a.admission||'',batch:a.preferableBatch||'',students:[],admissions:[],meta:BATCH_META[a.admission]?.[a.preferableBatch]||null};
       batchMap[key].students.push(a.name||'—');
@@ -6288,6 +6491,112 @@ const INITS = {
 // ═══════════════════════════════════════════════════
 // ADMIN ACTIONS
 // ═══════════════════════════════════════════════════
+
+// ══════════════════════════════════════════════
+// ACTIVITY LOGS — writes to "activityLogs" Firestore collection
+// ~300 bytes/doc · 50 actions/day = ~5KB/day → negligible quota usage
+// ══════════════════════════════════════════════
+async function writeLog(action, detail, extra={}) {
+  if(!CU) return;
+  try {
+    await db.collection('activityLogs').add({
+      action, detail,
+      actorUid: CU.uid,
+      actorEmail: CU.email||'',
+      actorName: CU.name||((CU.firstName||'')+' '+(CU.lastName||'')).trim(),
+      actorRole: CU.role||'',
+      ts: firebase.firestore.FieldValue.serverTimestamp(),
+      ...extra
+    });
+  } catch(e) { /* silent — never block main action */ }
+}
+
+// ══════════════════════════════════════════════
+// EXPENSE HELPERS
+// ══════════════════════════════════════════════
+function expCatIcon(cat) {
+  const icons = {
+    'Marketing':'📢','Equipment':'🔧','Utilities':'💡','Maintenance':'🛠️',
+    'Staff':'👤','Rent':'🏢','Traveling':'🚗','Transport':'🚌',
+    'Food':'🍽️','Printing':'🖨️','Banner':'🪟','Pamphlet':'📄',
+    'Sound/Music':'🔊','Decoration':'🎨','Software':'💻','Other':'📦'
+  };
+  return icons[cat]||'📦';
+}
+
+function filterExpenses(cat) {
+  document.querySelectorAll('#expTb tr[data-cat]').forEach(r=>{
+    r.style.display=(cat==='all'||r.dataset.cat===cat)?'':'none';
+  });
+}
+
+let _editExpenseId = null;
+function openEditExpense(id) {
+  const e=allExpenses.find(x=>x.id===id); if(!e) return;
+  _editExpenseId=id;
+  document.getElementById('exp_date').value=e.date||'';
+  document.getElementById('exp_cat').value=e.category||'Other';
+  document.getElementById('exp_desc').value=e.description||'';
+  document.getElementById('exp_amt').value=e.amount||'';
+  document.getElementById('exp_paidby').value=e.paidBy||'';
+  document.getElementById('exp_note').value=e.note||'';
+  document.getElementById('exp_receipt').value=e.receiptNote||'';
+  document.getElementById('expModalTitle').textContent='Edit Expense';
+  openOv('ov_addExpense');
+}
+function openAddExpenseModal() {
+  _editExpenseId=null;
+  document.getElementById('exp_date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('exp_cat').value='Other';
+  ['exp_desc','exp_amt','exp_paidby','exp_note','exp_receipt'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('expModalTitle').textContent='Add Expense';
+  openOv('ov_addExpense');
+}
+async function saveExpense() {
+  const date=document.getElementById('exp_date').value;
+  const cat=document.getElementById('exp_cat').value;
+  const desc=document.getElementById('exp_desc').value.trim();
+  const amt=parseFloat(document.getElementById('exp_amt').value)||0;
+  const paidBy=document.getElementById('exp_paidby').value.trim();
+  const note=document.getElementById('exp_note').value.trim();
+  const receipt=document.getElementById('exp_receipt').value.trim();
+  if(!desc||!amt){showToast('Description and amount required','error');return;}
+  const data={date,category:cat,description:desc,amount:amt,paidBy:paidBy||CU.name,note,receiptNote:receipt,
+    createdBy:CU.uid,createdByEmail:CU.email,updatedAt:firebase.firestore.FieldValue.serverTimestamp()};
+  setBtnLoading('expSaveBtn',true);
+  try{
+    if(_editExpenseId){
+      await db.collection('expenses').doc(_editExpenseId).update(data);
+      const i=allExpenses.findIndex(x=>x.id===_editExpenseId);
+      if(i>=0) allExpenses[i]={...allExpenses[i],...data};
+      writeLog('EDIT_EXPENSE','Edited expense: '+desc+' ₹'+amt,{amount:amt,category:cat});
+    } else {
+      const ref=await db.collection('expenses').add({...data,createdAt:firebase.firestore.FieldValue.serverTimestamp()});
+      allExpenses.unshift({id:ref.id,...data});
+      writeLog('ADD_EXPENSE','Added expense: '+desc+' ₹'+amt,{amount:amt,category:cat});
+    }
+    closeOv('ov_addExpense');
+    refreshExpensesInPlace();
+    showToast('✅ Expense saved','success');
+  }catch(e){showToast('Error: '+e.message,'error');}
+  setBtnLoading('expSaveBtn',false,'Save Expense →');
+}
+async function deleteExpense(id){
+  const e=allExpenses.find(x=>x.id===id);
+  if(!confirm('Delete this expense?'))return;
+  try{
+    await db.collection('expenses').doc(id).delete();
+    allExpenses=allExpenses.filter(x=>x.id!==id);
+    writeLog('DELETE_EXPENSE','Deleted expense: '+(e?.description||id));
+    refreshExpensesInPlace();
+    showToast('🗑 Expense deleted','success');
+  }catch(ex){showToast('Error: '+ex.message,'error');}
+}
+function refreshExpensesInPlace(){
+  const pg=document.getElementById('pg_aExpenses');
+  if(pg) pg.innerHTML=PAGES.aExpenses();
+}
+
 async function doAddStudent(){
   const fn=document.getElementById('as_fn').value.trim();
   const ln=document.getElementById('as_ln').value.trim();
@@ -6335,6 +6644,7 @@ async function doAddStudent(){
     btn.disabled=false;btn.textContent='Add Student →';
     ['aStudents','aDash'].forEach(p=>{const el=document.getElementById('pg_'+p);if(el){el.remove();builtPages[p]=false;}});
     buildPage('aStudents');showPage('aStudents');
+    writeLog('ADD_STUDENT','Added student '+fn+' '+ln,{studentName:fn+' '+ln,class:cl,batch:bt});
     showToast('✅ '+fn+' '+ln+' added successfully!','success');
   } catch(e){
     btn.disabled=false;btn.textContent='Add Student →';
@@ -6866,9 +7176,13 @@ function filterAttBatch(batch){
 // FIX: Re-render attendance list when date changes — hide students who hadn't joined yet
 function reRenderAttList(dateKey){
   if(!dateKey) return;
+  const todayKey=new Date().toISOString().split('T')[0];
   document.querySelectorAll('.att-row').forEach(row=>{
     const joinDate=row.dataset.joindate||'2020-01-01';
-    row.style.display=dateKey>=joinDate?'':'none';
+    const isInactive=row.dataset.status==='Inactive';
+    // Hide if: not joined yet, OR inactive and viewing today/future (keep visible for past records)
+    const hide=(dateKey<joinDate)||(isInactive&&dateKey>=todayKey);
+    row.style.display=hide?'none':'';
   });
   // Also hide class blocks that have no visible students
   document.querySelectorAll('.att-class-block').forEach(block=>{
@@ -7048,11 +7362,25 @@ async function loadAdminAttendance(){
           <thead><tr><th>Student</th><th>Batch</th><th>Status</th><th>Tutor</th><th>Marked At</th></tr></thead>
           <tbody>${recs.sort((a,b)=>(a.studentName||'').localeCompare(b.studentName||'')).map(r=>{
             const consAbs=allStudents.find(s=>s.id===r.studentUid)?.consecutiveAbsences||0;
-            return`<tr style="${r.status==='a'?'background:rgba(239,68,68,.04)':''}">
-              <td><strong>${r.studentName||'—'}</strong>${consAbs>=2?` <span class="badge br2" style="font-size:9px">⚠️${consAbs}d abs</span>`:''}  </td>
+            const isPresent=r.status==='p';
+            const absWarning=consAbs>=3?'🔴':consAbs>=2?'🟡':'';
+            return`<tr style="background:${isPresent?'rgba(16,185,129,.03)':'rgba(239,68,68,.05)'};transition:background .15s">
+              <td>
+                <div style="display:flex;align-items:center;gap:8px">
+                  <div style="width:8px;height:8px;border-radius:50%;background:${isPresent?'var(--green)':'var(--red)'}; flex-shrink:0"></div>
+                  <div>
+                    <strong style="font-size:13px">${r.studentName||'—'}</strong>
+                    ${consAbs>=2?`<span style="font-size:10px;color:var(--amber);margin-left:6px">${absWarning} ${consAbs} consec. absent</span>`:''}
+                  </div>
+                </div>
+              </td>
               <td style="font-size:11px;color:var(--muted2)">${r.batch||'—'}</td>
-              <td>${r.status==='p'?'<span class="badge bg2">✓ Present</span>':'<span class="badge br2">✕ Absent</span>'}</td>
-              <td style="font-size:11px;color:var(--muted2)">${r.tutorName||'—'}</td>
+              <td>
+                ${isPresent
+                  ?'<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(16,185,129,.12);color:var(--green);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700">✓ Present</span>'
+                  :'<span style="display:inline-flex;align-items:center;gap:4px;background:rgba(239,68,68,.12);color:var(--red);padding:3px 10px;border-radius:20px;font-size:12px;font-weight:700">✕ Absent</span>'}
+              </td>
+              <td style="font-size:11px;color:var(--cyan)">${r.tutorName||'—'}</td>
               <td style="font-size:10px;color:var(--muted2)">${r.updatedAt?.toDate?r.updatedAt.toDate().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit'}):'—'}</td>
             </tr>`;
           }).join('')}</tbody>
@@ -7211,6 +7539,7 @@ async function doEditStudent(){
     closeOv('ov_editSt');
     ['aStudents','aDash'].forEach(p=>{const el=document.getElementById('pg_'+p);if(el){el.remove();builtPages[p]=false;}});
     buildPage('aStudents');showPage('aStudents');
+    writeLog('EDIT_STUDENT','Edited student '+fn+' '+ln,{studentName:fn+' '+ln,class:updates.class||''});
     let toastMsg=`✅ ${fn} ${ln} updated`;
     if(nameChanged) toastMsg+=` · name synced to ${admRecs?.length||0} admission(s)`;
     if(tutorId) toastMsg+=` · assigned to ${tutorName.trim()}`;
@@ -7230,6 +7559,7 @@ async function confirmDeleteStudent(id){
     allStudents=allStudents.filter(x=>x.id!==id);
     ['aStudents','aDash'].forEach(p=>{const el=document.getElementById('pg_'+p);if(el){el.remove();builtPages[p]=false;}});
     buildPage('aStudents');showPage('aStudents');
+    writeLog('DELETE_STUDENT','Deleted student '+name,{studentName:name});
     showToast(`🗑 ${name} removed`,'success');
   }catch(e){showToast('Error: '+e.message,'error');}
 }
@@ -7341,6 +7671,7 @@ async function doConfirmPayment(newStatus){
     closeOv('ov_confirmPay');
     ['aPayments','aDash','aStudents'].forEach(pg=>{const el=document.getElementById('pg_'+pg);if(el){el.remove();builtPages[pg]=false;}});
     buildPage('aPayments');showPage('aPayments');
+    writeLog(newStatus==='Paid'?'CONFIRM_PAYMENT':'REJECT_PAYMENT',(newStatus==='Paid'?'Confirmed ':'Rejected ')+p.amount+' for '+p.student,{studentName:p.student,amount:p.amtNum||0});
     showToast(newStatus==='Paid'?`✅ Payment confirmed for ${p.student}`:`❌ Payment rejected`,'success');
   }catch(e){showToast('Error: '+e.message,'error');}
   setBtnLoading(newStatus==='Paid'?'cpay_confirmBtn':'cpay_rejectBtn',false,newStatus==='Paid'?'✅ Confirm Paid →':'✕ Reject');
@@ -8261,9 +8592,12 @@ function openDayDetail(dayIdx){
   // Fallback: tutor by class
   const tutorByClass={};
   allTutors.forEach(t=>{(t.teaches||[]).forEach(c=>{if(!tutorByClass[c])tutorByClass[c]=[];tutorByClass[c].push((t.firstName||t.fn||t.name||'?').split(' ')[0]);});});
-  // Collect all batches running on this day
+  // Collect all batches running on this day (skip Inactive students)
   const batchMap={};
   allAdmissions.forEach(a=>{
+    const aName=(a.name||'').trim().toLowerCase();
+    const linked=allStudents.find(s=>((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase()===aName);
+    if(linked&&(linked.status||'Active')==='Inactive') return;
     const key=(a.admission||'')+'|||'+(a.preferableBatch||'');
     if(!batchMap[key])batchMap[key]={cls:a.admission||'',batch:a.preferableBatch||'',students:[],admissions:[],meta:BATCH_META[a.admission]?.[a.preferableBatch]||null};
     batchMap[key].students.push(a.name||'—');
@@ -8866,6 +9200,7 @@ async function doSaveFee(){
     }
     closeOv('ov_feeEntry');
     const statusLabel=status==='Inactive'?'Inactive marked (future months auto-marked)':status==='Partial'?'Partial fee saved':'Fee saved';
+    writeLog('MARK_FEE','Marked '+month+' fee as '+statusLabel+' for '+(allAdmissions.find(a=>a.id===admId)||{}).name,{month,status:statusLabel});
     showToast(`✅ ${statusLabel} for ${month}!`,'success');
     rebuildPage('aAdmissions');
     // Rebuild payments page so new entry appears immediately
@@ -9540,14 +9875,14 @@ ${atRisk.length>0?`<div id="rt_att_warn" style="background:rgba(239,68,68,.08);b
   <div class="th"><div class="tt">📈 Revenue Trend (Last 6 Months)</div>
     <span class="metric-trend trend-${revTrend}">${revTrend==='up'?'↑ Growing':revTrend==='dn'?'↓ Declining':'→ Stable'}</span>
   </div>
-  <div style="padding:16px;display:flex;align-items:flex-end;gap:8px;height:100px">
+  <div style="padding:20px 16px 12px;display:flex;align-items:flex-end;gap:8px;height:120px">
     ${revMonths.map((m,i)=>{
       const maxRev=Math.max(...revMonths.map(x=>x.rev),1);
-      const pct=Math.round((m.rev/maxRev)*100);
+      const barH=Math.max(Math.round((m.rev/maxRev)*80),4);
       const isLast=i===revMonths.length-1;
       return`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:4px">
-        <div style="font-size:10px;color:var(--muted2)">${m.rev?'₹'+(m.rev>=1000?(m.rev/1000).toFixed(1)+'k':m.rev):'—'}</div>
-        <div style="width:100%;border-radius:4px 4px 0 0;background:${isLast?'var(--grad)':'rgba(16,185,129,.3)'};height:${Math.max(pct,4)}%;transition:.5s;min-height:4px"></div>
+        <div style="font-size:10px;color:${isLast?'var(--cyan)':'var(--muted2)'};font-weight:${isLast?700:400}">${m.rev?'₹'+(m.rev>=1000?(m.rev/1000).toFixed(1)+'k':m.rev):'—'}</div>
+        <div style="width:100%;border-radius:4px 4px 0 0;background:${isLast?'var(--grad)':'rgba(16,185,129,.3)'};height:${barH}px;transition:.5s;min-height:4px"></div>
         <div style="font-size:10px;font-weight:700;color:${isLast?'var(--green)':'var(--muted2)'}">${m.label}</div>
       </div>`;
     }).join('')}
@@ -9555,10 +9890,10 @@ ${atRisk.length>0?`<div id="rt_att_warn" style="background:rgba(239,68,68,.08);b
 </div>
 
 <div class="tc">
-  <div class="th"><div class="tt">Recent Payments</div><button class="bsm bo" onclick="navTo('aPayments')">All →</button></div>
+  <div class="th"><div class="tt">All Payments <span style="font-size:12px;color:var(--muted2);font-weight:400;margin-left:6px">${allPayments.length} records</span></div><button class="bsm bo" onclick="navTo('aPayments')">Full View →</button></div>
   ${allPayments.length?`<div class="tbl-wrap"><table>
     <thead><tr><th>Student</th><th>Class</th><th>Amount</th><th>Date</th><th>Method</th><th>Status</th></tr></thead>
-    <tbody>${allPayments.slice(0,5).map(p=>`<tr>
+    <tbody>${[...allPayments].sort((a,b)=>new Date(b.date||0)-new Date(a.date||0)).map(p=>`<tr>
       <td><strong>${p.student}</strong></td>
       <td>${cb(p.class||'')}</td>
       <td><strong style="color:var(--cyan)">${p.amount}</strong></td>
