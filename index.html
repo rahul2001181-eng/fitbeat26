@@ -532,11 +532,9 @@
                 pointer-events: all;
             }
             .mobile-menu.open {
-                display: block !important;
-            }
-
-            .mobile-menu.open {
-                display: flex
+                display: flex !important;
+                flex-direction: column;
+                padding: 16px 24px;
             }
 
             .mobile-menu a {
@@ -5641,9 +5639,6 @@
         if(newPV !== perView){ perView = newPV; buildDots(); goTo(idx); }
     });
 })();
-
-})();
-
 
 
 </script>
