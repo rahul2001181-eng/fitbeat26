@@ -537,6 +537,9 @@ input,button,select,textarea{font-family:"DM Sans",sans-serif}
 .field{margin-bottom:13px}
 .field label{display:block;font-size:11px;font-weight:700;letter-spacing:.5px;color:var(--muted2);text-transform:uppercase;margin-bottom:5px}
 .field input,.field select,.field textarea{width:100%;background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:11px 15px;color:var(--text);font-size:14px;outline:none;transition:.2s}
+.field input[type="date"]{color-scheme:dark;position:relative}
+.field input[type="date"]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:1;cursor:pointer;padding:4px;margin-right:-4px}
+.field input[type="date"]::-webkit-datetime-edit{cursor:pointer}
 .field input:focus,.field select:focus,.field textarea:focus{border-color:var(--purple);background:#1e1e2e}
 .field input::placeholder{color:var(--muted)}
 .field textarea{resize:vertical;min-height:66px}
@@ -847,12 +850,17 @@ tr:hover td{background:rgba(255,255,255,.018)}
       <div class="field"><label>Email</label><input id="as_em" type="email" placeholder="priya@gmail.com"/></div>
       <div class="field"><label>Phone</label><input id="as_ph" placeholder="9876543210"/></div>
       <div class="field"><label>Class</label>
-        <select id="as_cl" onchange="updateBatches('as_bt','as_cl','as_fee')">
+        <select id="as_cl" onchange="updateBatches('as_bt','as_cl','as_fee');updateBatches('as_bt2','as_cl',null)">
           <option value="">Select...</option>
-          <option>Zumba</option><option>Dance</option><option>Kids Dance</option><option>Chess</option><option>Guitar</option><option>Other</option>
+          <option>Zumba</option><option>Dance</option><option>Kids Dance</option><option>Chess</option><option>Guitar</option><option>Drawing - Hobby</option><option>Drawing - Elementary</option><option>Drawing - Intermediate</option><option>Kathak</option><option>Other</option>
         </select>
       </div>
-      <div class="field"><label>Batch</label><select id="as_bt"><option value="">Select class first...</option></select></div>
+      <div class="field"><label>Batch</label>
+        <select id="as_bt"><option value="">Select class first...</option></select>
+      </div>
+      <div class="field"><label>Extra Batch <span style="color:var(--muted2);font-weight:400">(optional — 2nd timing)</span></label>
+        <select id="as_bt2"><option value="">None</option></select>
+      </div>
       <div class="field"><label>Monthly Fee (₹)</label><input id="as_fee" readonly style="color:var(--cyan)"/></div>
       <div class="field"><label>First Session Date</label><input id="as_dt" type="date"/></div>
       <div class="field"><label>Set Password *</label><input type="password" id="as_pw" placeholder="Min 8 characters"/></div>
@@ -917,7 +925,7 @@ tr:hover td{background:rgba(255,255,255,.018)}
     <div class="field"><label>Phone</label><input id="at_ph" placeholder="9988776655"/></div>
     <div class="field"><label>Classes (hold Ctrl for multiple)</label>
       <select id="at_cl" multiple style="height:90px">
-        <option>Dance</option><option>Kids Dance</option><option>Chess</option><option>Guitar</option><option>Zumba</option><option>Other</option>
+        <option>Dance</option><option>Kids Dance</option><option>Chess</option><option>Guitar</option><option>Zumba</option><option>Drawing - Hobby</option><option>Drawing - Elementary</option><option>Drawing - Intermediate</option><option>Kathak</option><option>Other</option>
       </select>
     </div>
     <div class="field"><label>Set Password</label><input id="at_pw" type="password" placeholder="Min 8 characters"/></div>
@@ -1026,10 +1034,13 @@ tr:hover td{background:rgba(255,255,255,.018)}
     </div>
     <div class="field"><label>Class</label>
       <select id="est_cl" onchange="updateBatches('est_bt','est_cl',null)">
-        <option>Zumba</option><option>Dance</option><option>Kids Dance</option><option>Chess</option><option>Guitar</option><option>Other</option>
+        <option>Zumba</option><option>Dance</option><option>Kids Dance</option><option>Chess</option><option>Guitar</option><option>Drawing - Hobby</option><option>Drawing - Elementary</option><option>Drawing - Intermediate</option><option>Kathak</option><option>Other</option>
       </select>
     </div>
     <div class="field"><label>Batch</label><select id="est_bt"></select></div>
+    <div class="field"><label>Extra Batch <span style="color:var(--muted2);font-weight:400">(optional — 2nd timing, same class)</span></label>
+      <select id="est_bt2"><option value="">None</option></select>
+    </div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
       <div class="field"><label>Fee / Month (₹)</label><input id="est_fee" type="number"/></div>
       <div class="field"><label>Status</label>
@@ -1060,7 +1071,7 @@ tr:hover td{background:rgba(255,255,255,.018)}
     </div>
     <div class="field"><label>Classes Taught (Ctrl/⌘ for multiple)</label>
       <select id="etr_cl" multiple style="height:110px">
-        <option>Zumba</option><option>Dance</option><option>Kids Dance</option><option>Chess</option><option>Guitar</option><option>Other</option>
+        <option>Zumba</option><option>Dance</option><option>Kids Dance</option><option>Chess</option><option>Guitar</option><option>Drawing - Hobby</option><option>Drawing - Elementary</option><option>Drawing - Intermediate</option><option>Kathak</option><option>Other</option>
       </select>
     </div>
     <div style="display:flex;gap:10px;margin-top:4px">
@@ -1355,6 +1366,10 @@ tr:hover td{background:rgba(255,255,255,.018)}
             <div class="class-chip" id="chip_Kids" onclick="selectClass('Kids Dance')"><span class="class-chip-icon">👧</span>Kids</div>
             <div class="class-chip" id="chip_Chess" onclick="selectClass('Chess')"><span class="class-chip-icon">♟️</span>Chess</div>
             <div class="class-chip" id="chip_Guitar" onclick="selectClass('Guitar')"><span class="class-chip-icon">🎸</span>Guitar</div>
+            <div class="class-chip" id="chip_Drawing_Hobby" onclick="selectClass('Drawing - Hobby')"><span class="class-chip-icon">🎨</span>Drawing</div>
+            <div class="class-chip" id="chip_Drawing_Elementary" onclick="selectClass('Drawing - Elementary')"><span class="class-chip-icon">🖌️</span>Elementary</div>
+            <div class="class-chip" id="chip_Drawing_Intermediate" onclick="selectClass('Drawing - Intermediate')"><span class="class-chip-icon">🖼️</span>Intermediate</div>
+            <div class="class-chip" id="chip_Kathak" onclick="selectClass('Kathak')"><span class="class-chip-icon">🩰</span>Kathak</div>
             <div class="class-chip" id="chip_Other" onclick="selectClass('Other')"><span class="class-chip-icon">🎯</span>Other</div>
           </div>
           <!-- Hidden selects for compatibility -->
@@ -1605,6 +1620,10 @@ const BATCH_OPTS = {
   'Kids Dance':['Tue–Thu Evening 7–8 PM','Sat–Sun 5–6 PM'],
   'Chess':['Sat–Sun (Sat 7–8 PM / Sun 10–11 AM)'],
   'Guitar':['Wed–Fri 6–7 PM'],
+  'Drawing - Hobby':['Wed–Fri 4:30–5:30 PM'],
+  'Drawing - Elementary':['Wed–Fri 4:30–5:30 PM'],
+  'Drawing - Intermediate':['Wed–Fri 4:30–5:30 PM'],
+  'Kathak':['TBD'],
   'Other':[],
 };
 
@@ -1622,6 +1641,7 @@ const BATCH_META = {
     'Tue–Thu–Sat Evening 6–7 PM':    {days:[1,3,5],start:18,end:19},
     'Tue–Thu–Sat Evening 7–8 PM':    {days:[1,3,5],start:19,end:20},
     'Tue–Thu–Sat Evening 8–9 PM':    {days:[1,3,5],start:20,end:21},
+    'Mon Zumba Minakshi 20 Apr-26':  {days:[0],start:18,end:19},
   },
   'Dance':{
     'Tue–Thu 6–7 PM':   {days:[1,3],start:18,end:19},
@@ -1637,14 +1657,26 @@ const BATCH_META = {
   'Guitar':{
     'Wed–Fri 6–7 PM': {days:[2,4],start:18,end:19},
   },
+  'Drawing - Hobby':{
+    'Wed–Fri 4:30–5:30 PM': {days:[2,4],start:16.5,end:17.5},
+  },
+  'Drawing - Elementary':{
+    'Wed–Fri 4:30–5:30 PM': {days:[2,4],start:16.5,end:17.5},
+  },
+  'Drawing - Intermediate':{
+    'Wed–Fri 4:30–5:30 PM': {days:[2,4],start:16.5,end:17.5},
+  },
+  'Kathak':{
+    'TBD': {days:[],start:0,end:0},
+  },
   'Other':{},
 };
 
 // Max capacity per class per batch
-const CLASS_CAPACITY = {Zumba:5,Dance:7,'Kids Dance':8,Chess:12,Guitar:10,Other:20};
+const CLASS_CAPACITY = {Zumba:5,Dance:7,'Kids Dance':8,Chess:12,Guitar:10,'Drawing - Hobby':10,'Drawing - Elementary':10,'Drawing - Intermediate':10,Kathak:15,Other:20};
 
 // Sessions per week (for package expiry calculation)
-const CLASS_SESSIONS_PER_WEEK = {Zumba:3,Dance:2,'Kids Dance':2,Chess:2,Guitar:2,Other:2};
+const CLASS_SESSIONS_PER_WEEK = {Zumba:3,Dance:2,'Kids Dance':2,Chess:2,Guitar:2,'Drawing - Hobby':2,'Drawing - Elementary':2,'Drawing - Intermediate':2,Kathak:2,Other:2};
 // Sessions per month = sessions/week × ~4 weeks
 function getSessionsPerMonth(cls){ return (CLASS_SESSIONS_PER_WEEK[cls]||2)*4; }
 
@@ -1658,6 +1690,7 @@ const BATCH_TUTOR_MAP = {
   'Mon-Wed-Fri 9-10 PM': 'minakshimanetutor@gmail.com',
   'Mon–Wed–Fri 9–10 PM': 'minakshimanetutor@gmail.com',
   'Mon-Wed-Fri Evening 9-10 PM': 'minakshimanetutor@gmail.com',
+  'Mon Zumba Minakshi 20 Apr-26': 'minakshimanetutor@gmail.com',
 };
 // Helper: given a class + batch, return the assigned tutor object (or null)
 function getTutorForBatch(cls, batch) {
@@ -1687,7 +1720,17 @@ function isZumbaStudentMine(studentBatch, tutorEmail) {
   return !myBatches; // Sonil has no restrictions → true; Minakshi has restrictions → false
 }
 
-// ─── TUTOR STUDENT FILTER ────────────────────────────────────────
+// ─── BATCH DAY FILTER HELPER ─────────────────────────────────────
+// Returns array of weekday indices (0=Mon…6=Sun) for a given class+batch.
+// Returns null if unknown (means: show always).
+function getBatchScheduleDays(cls, batch) {
+  const meta = (BATCH_META[cls] && BATCH_META[cls][batch]) || null;
+  if (!meta || !meta.days) return null;
+  // BATCH_META days: 0=Mon,1=Tue,...,6=Sun (JS Date getDay: 0=Sun,1=Mon,...)
+  // Convert BATCH_META convention (Mon=0) to JS getDay (Sun=0)
+  return meta.days.map(d => d === 6 ? 0 : d + 1); // Mon=1,Tue=2,...,Sun=0
+}
+
 // Returns true if student `s` belongs to the currently logged-in tutor.
 // Used uniformly by tStudents, tProgress, tFeedback, tAttendance, tDash.
 function isMineStudent(s) {
@@ -1719,10 +1762,9 @@ function isMineStudent(s) {
   return true;
 }
 
-const CLASS_FEES = {Zumba:1999,Dance:1499,'Kids Dance':1199,Chess:1499,Guitar:1999,Other:999};
-// Quarterly fees (3 months discount)
-const CLASS_FEES_QUARTERLY = {Zumba:5499,Dance:4199,'Kids Dance':3499,Chess:4199,Guitar:5499,Other:2799};
-
+const CLASS_FEES = {Zumba:1999,Dance:1499,'Kids Dance':1199,Chess:1499,Guitar:1999,'Drawing - Hobby':1200,'Drawing - Elementary':1800,'Drawing - Intermediate':2000,Kathak:0,Other:999}; // Kathak fee TBD;
+// Quarterly fees (3 months discount) — workshops are fixed 3-session fee, no quarterly
+const CLASS_FEES_QUARTERLY = {Zumba:5499,Dance:4199,'Kids Dance':3499,Chess:4199,Guitar:5499,'Drawing - Hobby':3200,'Drawing - Elementary':4800,'Drawing - Intermediate':5400,Other:2799};
 // Age category labels
 const AGE_CATS = ['A (18+)','Minor (10–18)','Under 10','Under 6'];
 
@@ -1752,16 +1794,34 @@ function chessStudentFee(ageCategory){
   const ac=(ageCategory||'').toLowerCase();
   return(ac.includes('under 10')||ac.includes('under10')||ac.includes('u10')||ac==='under 6'||ac.includes('under6'))?1199:1499;
 }
-// Get tutor share for one Chess/Guitar student from their admission fee paid
-function tutorShareOne(cls,admRecord){
+// Get tutor share for one Chess/Guitar/Drawing student.
+// FIX: now takes receivedAmt (actual amount paid that month) instead of
+// computing off the full listed course fee — falls back to listed fee
+// only if receivedAmt is unavailable (0/undefined), so old data doesn't break.
+function tutorShareOne(cls,admRecord,receivedAmt){
   if(cls==='Chess'){
-    const fee=chessStudentFee(admRecord?.ageCategory);
+    const fee=receivedAmt||chessStudentFee(admRecord?.ageCategory);
     return Math.round(fee*0.5);
   }
-  if(cls==='Guitar') return Math.round((admRecord?.feeAmt||CLASS_FEES['Guitar'])*0.5);
+  if(cls==='Guitar'){
+    const fee=receivedAmt||admRecord?.feeAmt||CLASS_FEES['Guitar'];
+    return Math.round(fee*0.5);
+  }
   if(cls==='Dance'||cls==='Kids Dance') return 500;
   if(cls==='Zumba') return 0; // handled at batch level
-  return 0;
+  if(cls==='Drawing - Hobby'){
+    const fee=receivedAmt||admRecord?.feeAmt||CLASS_FEES['Drawing - Hobby'];
+    return Math.round(fee*0.5);
+  }
+  if(cls==='Drawing - Elementary'){
+    const fee=receivedAmt||admRecord?.feeAmt||CLASS_FEES['Drawing - Elementary'];
+    return Math.round(fee*0.6);
+  }
+  if(cls==='Drawing - Intermediate'){
+    const fee=receivedAmt||admRecord?.feeAmt||CLASS_FEES['Drawing - Intermediate'];
+    return Math.round(fee*0.6);
+  }
+  return 0; // Kathak not decided yet
 }
 
 // ═══════════════════════════════════════════════════
@@ -1801,7 +1861,7 @@ function openOv(id){
   document.getElementById(id).classList.add('open');
   if(id==='ov_addSt'){populateTutorDropdown();populateEnquiryDropdowns();}
 }
-function closeOv(id){document.getElementById(id).classList.remove('open');}
+function closeOv(id){const el=document.getElementById(id);if(el)el.classList.remove('open');}
 let _loadTimer=null;
 function showLoading(show){
   document.getElementById('loadingScreen').style.display=show?'flex':'none';
@@ -1824,7 +1884,7 @@ function toggleSidebarCollapse(){
   try{localStorage.setItem('sb_collapsed',collapsed?'1':'0');}catch(e){}
 }
 function sb(s){const m={Paid:'bg2',Pending:'bam2',Refunded:'br2',Active:'bg2',Inactive:'br2',Resolved:'bg2',Open:'bam2'};return`<span class="badge ${m[s]||'bc2'}">${s}</span>`;}
-function cb(c){const m={Zumba:'bc2',Dance:'bp2','Kids Dance':'bp2',Chess:'bb2',Guitar:'bam2',Other:'bg2'};return`<span class="badge ${m[c]||'bc2'}">${c}</span>`;}
+function cb(c){const m={Zumba:'bc2',Dance:'bp2','Kids Dance':'bp2',Chess:'bb2',Guitar:'bam2','Drawing - Hobby':'bam2','Drawing - Elementary':'bam2','Drawing - Intermediate':'bd2',Kathak:'bg2',Other:'bg2'};return`<span class="badge ${m[c]||'bc2'}">${c}</span>`;}
 function ft(inp,id){const v=inp.value.toLowerCase();const tb=document.getElementById(id);if(tb)tb.querySelectorAll('tr').forEach(r=>{r.style.display=r.textContent.toLowerCase().includes(v)?'':'none';});}
 function setErr(id,msg){
   const el=document.getElementById(id);
@@ -1958,19 +2018,24 @@ async function loadPortalData() {
         });
       }
     }catch(e){}
+    // FIX: load persisted BATCH_TUTOR_MAP so batch renames survive reload —
+    // previously this map was hardcoded only and never read back from Firestore.
+    try{
+      const tSnap=await db.collection('settings').doc('batchTutorMap').get();
+      if(tSnap.exists&&tSnap.data().map){
+        Object.assign(BATCH_TUTOR_MAP,tSnap.data().map);
+      }
+    }catch(e){}
     if (CU.role === 'admin' || CU.role === 'coadmin') {
       const [stuSnap, paySnap, msgSnap, enqSnap, admSnap] = await Promise.all([
         db.collection('students').orderBy('createdAt','desc').get(),
         db.collection('payments').orderBy('createdAt','desc').limit(100).get(),
-        // BUG FIX: orderBy createdAt so messages load consistently.
-        // If this throws "index required", go to Firebase Console → Firestore → Indexes and create it,
-        // OR use .get() without orderBy as fallback (we sort in JS in buildMsgUI anyway).
-        db.collection('messages').orderBy('createdAt','desc').get().catch(async () => {
+        db.collection('messages').orderBy('createdAt','desc').limit(150).get().catch(async () => {
           console.warn('messages orderBy failed (index missing?), falling back to unordered get');
-          return db.collection('messages').get();
+          return db.collection('messages').limit(150).get();
         }),
-        db.collection('enquiries').orderBy('createdAt','desc').get(),
-        db.collection('admissions').orderBy('admissionDate','desc').get(),
+        db.collection('enquiries').orderBy('createdAt','desc').limit(200).get(),
+        db.collection('admissions').orderBy('admissionDate','desc').limit(300).get(),
       ]);
       allStudents = stuSnap.docs.map(d=>({id:d.id,...d.data()}));
       allPayments = paySnap.docs.map(d=>({id:d.id,...d.data()})).sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
@@ -1981,19 +2046,20 @@ async function loadPortalData() {
       try{const tSnap=await db.collection('users').where('role','==','tutor').get();allTutors=tSnap.docs.map(d=>({id:d.id,...d.data()}));}catch(e){}
       // Load notifications for admin
       try{const nSnap=await db.collection('notifications').orderBy('createdAt','desc').limit(100).get();allNotifications=nSnap.docs.map(d=>({id:d.id,...d.data()}));}catch(e){}
-      // Load studio rentals
-      try{const rSnap=await db.collection('studioRentals').orderBy('date','desc').limit(200).get();allRentals=rSnap.docs.map(d=>({id:d.id,...d.data()}));}catch(e){}
-      // Load special batches
-      try{const sbSnap=await db.collection('specialBatches').orderBy('createdAt','desc').limit(100).get();allSpecialBatches=sbSnap.docs.map(d=>({id:d.id,...d.data()}));}catch(e){}
+      // rentals + specialBatches loaded lazily on page open (saves ~300 reads on every login)
     } else if (CU.role === 'tutor') {
       const stuSnap = CU.teaches && CU.teaches.length > 0
         ? await db.collection('students').where('class','in',CU.teaches).get()
         : {docs: []};
       allStudents = stuSnap.docs.map(d=>({id:d.id,...d.data()}));
-      // Load admissions so studentPaidInMonth can check fee payments for Chess/Guitar
-      try{const admSnap=await db.collection('admissions').get();allAdmissions=admSnap.docs.map(d=>({id:d.id,...d.data()}));}catch(e){allAdmissions=[];}
-      // Load portal payments too (studentPaidInMonth fallback)
-      try{const paySnap=await db.collection('payments').get();allPayments=paySnap.docs.map(d=>({id:d.id,...d.data()}));}catch(e){allPayments=[];}
+      // Load admissions — skip if already loaded (shared session cache)
+      if(!allAdmissions.length){
+        try{const admSnap=await db.collection('admissions').limit(300).get();allAdmissions=admSnap.docs.map(d=>({id:d.id,...d.data()}));}catch(e){allAdmissions=[];}
+      }
+      // Load portal payments — skip if already loaded
+      if(!allPayments.length){
+        try{const paySnap=await db.collection('payments').limit(200).get();allPayments=paySnap.docs.map(d=>({id:d.id,...d.data()}));}catch(e){allPayments=[];}
+      }
       const [msgSnap, notifSnap] = await Promise.all([
         db.collection('messages').where('fromUid','==',CU.uid).get(),
         db.collection('notifications').orderBy('createdAt','desc').limit(100).get(),
@@ -2115,9 +2181,10 @@ function selectClass(cls){
     sel.value=cls;
     updateBatches('su_bt','su_cl',null);
   }
-  const allClasses=['Zumba','Dance','Kids Dance','Chess','Guitar','Other'];
+  const allClasses=['Zumba','Dance','Kids Dance','Chess','Guitar','Drawing - Hobby','Drawing - Elementary','Drawing - Intermediate','Kathak','Other'];
+  const chipIdMap={'Kids Dance':'Kids','Drawing - Hobby':'Drawing_Hobby','Drawing - Elementary':'Drawing_Elementary','Drawing - Intermediate':'Drawing_Intermediate','Kathak':'Kathak'};
   allClasses.forEach(c=>{
-    const chipId='chip_'+(c==='Kids Dance'?'Kids':c);
+    const chipId='chip_'+(chipIdMap[c]||c);
     const chip=document.getElementById(chipId);
     if(chip)chip.classList.toggle('sel',c===cls);
   });
@@ -2263,7 +2330,8 @@ const ANAV=[
   {sec:'Progress',items:[{id:'aProgress',icon:'🏆',label:'Student Progress'}]},
   {sec:'Studio',items:[{id:'aStudioRental',icon:'🏢',label:'Studio Rental'},{id:'aSpecialBatch',icon:'🎭',label:'Special Batches'}]},
   {sec:'Communication',items:[{id:'aMessages',icon:'💬',label:'Messages',badge:true},{id:'aSMS',icon:'💬',label:'WhatsApp'}]},
-  {sec:'System',items:[{id:'aNotifications',icon:'🔔',label:'Notifications',badge:'anotif'},{id:'aLogs',icon:'📋',label:'Activity Logs'},{id:'aExpenses',icon:'💸',label:'Expenses'},{id:'aSettings',icon:'⚙️',label:'Settings'}]},
+  {sec:'Finance',items:[{id:'aRevenue',icon:'📈',label:'Revenue Engine'},{id:'aExpenses',icon:'💸',label:'Expenses'},{id:'aPayouts',icon:'💸',label:'Tutor Payouts'}]},
+  {sec:'System',items:[{id:'aNotifications',icon:'🔔',label:'Notifications',badge:'anotif'},{id:'aLogs',icon:'📋',label:'Activity Logs'},{id:'aSettings',icon:'⚙️',label:'Settings'}]},
 ];
 // ── Co-admin nav (limited access, no tutor/payout management) ──────────────
 const COADMIN_NAV=[
@@ -2295,18 +2363,14 @@ function startRealTimeListeners(){
   stopRealTimeListeners();
   if(!CU) return;
 
-  // ── Messages listener (Admin + Student/Tutor see their own) ──
+  // ── Messages listener (Admin + Student/Tutor see their own) — kept real-time for unread badge ──
   let msgQuery = CU.role==='admin'
-    ? db.collection('messages').orderBy('createdAt','desc').limit(100)
+    ? db.collection('messages').orderBy('createdAt','desc').limit(150)
     : db.collection('messages').where('fromUid','==',CU.uid);
 
   const unsubMsg = msgQuery.onSnapshot(snap=>{
     allMessages = snap.docs.map(d=>({id:d.id,...d.data()}));
-    // Update unread badge in nav
-    const msgBadgeEl = document.querySelector('#ni_aMessages .nb, #ni_tMessages .nb, #ni_sMessages .nb');
-    const unread = allMessages.filter(m=>m.unread&&CU.role==='admin').length;
     buildNav(CU.role==='admin'?ANAV:CU.role==='coadmin'?COADMIN_NAV:CU.role==='tutor'?getTutorNav():getStudentNav());
-    // If message page is open, refresh it live
     const activeMsgPage = ['aMessages','tMessages','sMessages'].find(p=>document.getElementById('pg_'+p)?.classList.contains('active'));
     if(activeMsgPage){
       const pg=document.getElementById('pg_'+activeMsgPage);
@@ -2315,61 +2379,56 @@ function startRealTimeListeners(){
   }, e=>console.warn('Messages listener error:',e.message));
   _rtListeners.push(unsubMsg);
 
-  // ── Payments listener (Admin sees all; Student sees own) ──
-  let payQuery = CU.role==='admin'
-    ? db.collection('payments').orderBy('createdAt','desc').limit(150)
-    : db.collection('payments').where('studentUid','==',CU.uid);
+  // ── Payments: .get() once on login + refreshed when payment page opens (saves ~150 reads/change) ──
+  async function refreshPayments(){
+    try{
+      const snap = CU.role==='admin'
+        ? await db.collection('payments').orderBy('createdAt','desc').limit(150).get()
+        : await db.collection('payments').where('studentUid','==',CU.uid).get();
+      const newPays = snap.docs.map(d=>({id:d.id,...d.data()}));
+      if(CU.role!=='admin'){
+        newPays.forEach(np=>{
+          const old=allPayments.find(p=>p.id===np.id);
+          if(old&&old.status==='Pending'&&np.status==='Paid'){
+            showToast('🎉 Your payment of '+np.amount+' has been confirmed! Receipt now available.','success');
+            const h=document.getElementById('pg_sHistory');
+            if(h){h.remove();builtPages['sHistory']=false;buildPage('sHistory');showPage('sHistory');}
+          }
+        });
+      }
+      allPayments = newPays.sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+    }catch(e){console.warn('Payments refresh error:',e.message);}
+  }
+  window._refreshPayments = refreshPayments;
+  refreshPayments(); // initial load
 
-  const unsubPay = payQuery.onSnapshot(snap=>{
-    const newPays = snap.docs.map(d=>({id:d.id,...d.data()}));
-    // Detect newly confirmed payments (Pending → Paid) and notify student
-    if(CU.role!=='admin'){
-      newPays.forEach(np=>{
-        const old=allPayments.find(p=>p.id===np.id);
-        if(old&&old.status==='Pending'&&np.status==='Paid'){
-          showToast('🎉 Your payment of '+np.amount+' has been confirmed! Receipt now available.','success');
-          // Refresh sHistory if open
-          const h=document.getElementById('pg_sHistory');
-          if(h){h.remove();builtPages['sHistory']=false;buildPage('sHistory');showPage('sHistory');}
-        }
-      });
-    }
-    allPayments = newPays.sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
-    // Refresh dashboard stats if visible
-    const dash = CU.role==='admin'?'aDash':CU.role==='coadmin'?'caDash':CU.role==='tutor'?'tDash':'sDash';
-    if(document.getElementById('pg_'+dash)?.classList.contains('active')){
-      const pg=document.getElementById('pg_'+dash);
-      if(pg){pg.remove();builtPages[dash]=false;buildPage(dash);showPage(dash);}
-    }
-  }, e=>console.warn('Payments listener error:',e.message));
-  _rtListeners.push(unsubPay);
-
-  // ── Attendance listener (Admin only, last 500 records) ──
+  // ── Attendance: .get() once; refreshed when attendance page opens ──
   if(CU.role==='admin'||CU.role==='tutor'){
-    const attQuery = CU.role==='admin'
-      ? db.collection('attendance').orderBy('date','desc').limit(500)
-      : db.collection('attendance').where('tutorUid','==',CU.uid).orderBy('date','desc').limit(200);
-    const unsubAtt = attQuery.onSnapshot(snap=>{
-      // Update consecutiveAbsences on allStudents in memory
-      const attByStudent = {};
-      snap.docs.forEach(d=>{
-        const r=d.data();
-        if(!attByStudent[r.studentUid]) attByStudent[r.studentUid]=[];
-        attByStudent[r.studentUid].push(r);
-      });
-      Object.entries(attByStudent).forEach(([uid,recs])=>{
-        const sorted=recs.sort((a,b)=>b.date.localeCompare(a.date));
-        let cons=0;
-        for(const r of sorted){ if(r.status==='a') cons++; else break; }
-        const idx=allStudents.findIndex(s=>s.id===uid);
-        if(idx>=0) allStudents[idx].consecutiveAbsences=cons;
-      });
-      // Show ⚠️ dot on dashboard if 2+ consecutive absences found
-      const atRisk=allStudents.filter(s=>(s.consecutiveAbsences||0)>=2);
-      const attWarn=document.getElementById('rt_att_warn');
-      if(attWarn) attWarn.style.display=atRisk.length?'flex':'none';
-    }, e=>console.warn('Attendance listener error:',e.message));
-    _rtListeners.push(unsubAtt);
+    async function refreshAttendance(){
+      try{
+        const snap = CU.role==='admin'
+          ? await db.collection('attendance').orderBy('date','desc').limit(300).get()
+          : await db.collection('attendance').where('tutorUid','==',CU.uid).orderBy('date','desc').limit(200).get();
+        const attByStudent = {};
+        snap.docs.forEach(d=>{
+          const r=d.data();
+          if(!attByStudent[r.studentUid]) attByStudent[r.studentUid]=[];
+          attByStudent[r.studentUid].push(r);
+        });
+        Object.entries(attByStudent).forEach(([uid,recs])=>{
+          const sorted=recs.sort((a,b)=>b.date.localeCompare(a.date));
+          let cons=0;
+          for(const r of sorted){ if(r.status==='a') cons++; else break; }
+          const idx=allStudents.findIndex(s=>s.id===uid);
+          if(idx>=0) allStudents[idx].consecutiveAbsences=cons;
+        });
+        const atRisk=allStudents.filter(s=>(s.consecutiveAbsences||0)>=2);
+        const attWarn=document.getElementById('rt_att_warn');
+        if(attWarn) attWarn.style.display=atRisk.length?'flex':'none';
+      }catch(e){console.warn('Attendance refresh error:',e.message);}
+    }
+    window._refreshAttendance = refreshAttendance;
+    refreshAttendance(); // initial load
   }
 }
 
@@ -2462,7 +2521,11 @@ function buildNav(cfg){
       }
       const el=document.createElement('div');el.className='nav-item';el.id='ni_'+item.id;
       el.innerHTML=`<span class="ni">${item.icon}</span><span class="nav-item-label">${item.label}</span>`+(unread>0?`<span class="nb">${unread}</span>`:'')+`<span class="ni-tooltip">${item.icon} ${item.label}</span>`;
-      el.onclick=()=>{buildPage(item.id);showPage(item.id);};
+      el.onclick=()=>{
+        // Revenue Engine always rebuilds to ensure latest template (simulator, new divs)
+        if(item.id==='aRevenue'){window._revLoading=false;rebuildPage('aRevenue');return;}
+        buildPage(item.id);showPage(item.id);
+      };
       itemsWrap.appendChild(el);
     });
     nav.appendChild(itemsWrap);
@@ -2605,8 +2668,8 @@ aDash: () => {
   const enqNeedFollowUp=allEnquiries.filter(e=>!e.followUpNote&&(e.admissionStatus==='Pending'||!e.admissionStatus)).length;
   const byClass={};
   activeStudents.forEach(s=>{byClass[s.class]=(byClass[s.class]||0)+1;});
-  const classColors={Zumba:'var(--cyan)',Dance:'var(--purple)','Kids Dance':'var(--pink)',Chess:'var(--blue)',Guitar:'var(--amber)',Other:'var(--green)'};
-  const classIcons={Zumba:'🎵',Dance:'💃','Kids Dance':'👧',Chess:'♟️',Guitar:'🎸',Other:'🎯'};
+  const classColors={Zumba:'var(--cyan)',Dance:'var(--purple)','Kids Dance':'var(--pink)',Chess:'var(--blue)',Guitar:'var(--amber)','Drawing - Hobby':'#f97316','Drawing - Elementary':'#fb923c','Drawing - Intermediate':'#ef4444',Kathak:'#10b981',Other:'var(--green)'};
+  const classIcons={Zumba:'🎵',Dance:'💃','Kids Dance':'👧',Chess:'♟️',Guitar:'🎸','Drawing - Hobby':'🎨','Drawing - Elementary':'🖌️','Drawing - Intermediate':'🖼️',Kathak:'🩰',Other:'🎯'};
   return `
 <div class="ph">
   <div><div class="pt">Dashboard</div><div class="ps">${now.toLocaleDateString('en-IN',{weekday:'long',day:'numeric',month:'long',year:'numeric'})}</div></div>
@@ -3071,8 +3134,8 @@ aSchedule: () => `
 
 aBatchSlots: () => {
   const DAY_LABELS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const classColors={'Zumba':'var(--cyan)','Dance':'var(--purple)','Kids Dance':'var(--pink)','Chess':'var(--blue)','Guitar':'var(--amber)'};
-  const classIcons={'Zumba':'🎵','Dance':'💃','Kids Dance':'👧','Chess':'♟️','Guitar':'🎸'};
+  const classColors={'Zumba':'var(--cyan)','Dance':'var(--purple)','Kids Dance':'var(--pink)','Chess':'var(--blue)','Guitar':'var(--amber)','Drawing - Hobby':'#f97316','Drawing - Elementary':'#fb923c','Drawing - Intermediate':'#ef4444',Kathak:'#10b981'};
+  const classIcons={'Zumba':'🎵','Dance':'💃','Kids Dance':'👧','Chess':'♟️','Guitar':'🎸','Drawing - Hobby':'🎨','Drawing - Elementary':'🖌️','Drawing - Intermediate':'🖼️',Kathak:'🩰'};
 
   // Count ACTIVE enrolled students per batch (exclude Inactive)
   const batchCounts={};
@@ -3615,13 +3678,16 @@ ${expiringSoon.length>0?`
     <div class="field"><label>Building Name</label><input id="adm_building" placeholder="Devta Desire"/></div>
     <div class="field"><label>Contact</label><input id="adm_contact" placeholder="919819888383"/></div>
     <div class="field"><label>Class (Admission) *</label>
-      <select id="adm_class" onchange="updateBatches('adm_batch','adm_class',null);updateAdmSessionInfo()">
+      <select id="adm_class" onchange="updateBatches('adm_batch','adm_class',null);updateBatches('adm_batch2','adm_class',null);updateAdmSessionInfo()">
         <option value="">Select class...</option>
         ${Object.keys(BATCH_OPTS).map(c=>`<option>${c}</option>`).join('')}
       </select>
     </div>
     <div class="field"><label>Preferable Batch</label>
       <select id="adm_batch"><option value="">Select class first...</option></select>
+    </div>
+    <div class="field"><label>Extra Batch <span style="color:var(--muted2);font-weight:400">(optional — 2nd timing, same class)</span></label>
+      <select id="adm_batch2"><option value="">None</option></select>
     </div>
     <div class="field"><label>Current Occupation</label>
       <select id="adm_occupation"><option value="">Select...</option>
@@ -3771,7 +3837,7 @@ ${(CU.teaches||[]).map(cls=>{
     <div class="th"><div class="tt">${cb(cls)} ${cls}</div><div style="font-size:12px;color:var(--muted2)">${students.length} student${students.length!==1?'s':''}</div></div>
     <div style="padding:0 15px">
       ${students.map((s,i)=>`
-      <div class="att-row" data-batch="${s.batch||''}" data-status="${s.status||'Active'}" data-joindate="${s.firstSession||s.joinDate||'2020-01-01'}" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div class="att-row" data-batch="${s.batch||''}" data-extrabatch="${s.extraBatch||''}" data-cls="${cls}" data-status="${s.status||'Active'}" data-joindate="${s.firstSession||s.joinDate||'2020-01-01'}" style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)">
         <div style="display:flex;align-items:center;gap:9px">
           <div class="av" style="width:27px;height:27px;font-size:10px;flex-shrink:0">${(s.fn||s.firstName||'?')[0]}</div>
           <div>
@@ -4166,6 +4232,22 @@ aExpenses: () => {
   </table></div>`:`<div class="empty-state"><div class="ei">💸</div><p>No expenses yet. Add your first expense to start tracking.</p></div>`}
 </div>`;
 },
+
+aRevenue: () => `
+<div class="ph">
+  <div><div class="pt">📈 Revenue Engine</div><div class="ps">Financial intelligence — profit, cashflow & class performance</div></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap">
+    <button class="bsm ba2" onclick="openAddFixedCostModal()">+ Fixed Cost</button>
+    <button class="bsm bo" id="simToggleBtn" onclick="toggleSimulatorPanel(this)">🧮 Simulator</button>
+    <button class="bsm bo" onclick="window._sim=null;window._revLoading=false;rebuildPage('aRevenue')">↺ Refresh</button>
+  </div>
+</div>
+<div id="rev-profit-target"><div style="padding:32px;text-align:center;color:var(--muted2);font-size:13px">⏳ Loading revenue data...</div></div>
+<div id="rev-class-section"></div>
+<div id="rev-cashflow-section"></div>
+<div id="rev-fixed-costs-section"></div>
+<div id="rev-simulator-section" style="display:none"></div>
+`,
 
 aSettings: () => buildSettingsUI(),
 
@@ -5901,26 +5983,67 @@ const INITS = {
     } catch(e) { el.innerHTML=`<div style="padding:20px;color:var(--red)">Error loading logs: ${e.message}</div>`; }
   },
 
+  aRevenue: async () => {
+    if(window._revLoading) return;
+    window._revLoading = true;
+    try {
+      const [expSnap, payoutSnap] = await Promise.all([
+        db.collection('expenses').orderBy('date','desc').limit(500).get(),
+        db.collection('tutorPayouts').get(),
+      ]);
+      allExpenses = expSnap.docs.map(d=>({id:d.id,...d.data()}));
+      window._allTutorPayoutsRev = payoutSnap.docs.map(d=>({id:d.id,...d.data()}));
+      // Fixed costs live inside expenses with category 'Rent' or 'Staff'
+      renderRevenueEngine();
+    } catch(e) { console.warn('Revenue load error:',e); }
+    window._revLoading = false;
+  },
+
   aExpenses: async () => {
-    if(window._expLoading) return; // guard against re-entrant loop
+    if(window._expLoading) return;
     window._expLoading = true;
     try {
       const snap = await db.collection('expenses').orderBy('date','desc').limit(500).get();
       allExpenses = snap.docs.map(d=>({id:d.id,...d.data()}));
-      // Update content in-place — never remove/re-add the page (causes infinite INIT loop)
       const pg = document.getElementById('pg_aExpenses');
       if(pg) pg.innerHTML = PAGES.aExpenses();
     } catch(e) { console.warn('Expenses load error:',e.message); }
     window._expLoading = false;
   },
 
+  aStudioRental: async () => {
+    if(window._rentalsLoaded) return;
+    window._rentalsLoaded = true;
+    try {
+      const snap = await db.collection('studioRentals').orderBy('date','desc').limit(200).get();
+      allRentals = snap.docs.map(d=>({id:d.id,...d.data()}));
+      const pg = document.getElementById('pg_aStudioRental');
+      if(pg) pg.innerHTML = PAGES.aStudioRental ? PAGES.aStudioRental() : pg.innerHTML;
+    } catch(e) { console.warn('Rentals load error:',e.message); window._rentalsLoaded=false; }
+  },
+
+  aSpecialBatch: async () => {
+    if(window._spBatchLoaded) return;
+    window._spBatchLoaded = true;
+    try {
+      const snap = await db.collection('specialBatches').orderBy('createdAt','desc').limit(100).get();
+      allSpecialBatches = snap.docs.map(d=>({id:d.id,...d.data()}));
+      const pg = document.getElementById('pg_aSpecialBatch');
+      if(pg) pg.innerHTML = PAGES.aSpecialBatch ? PAGES.aSpecialBatch() : pg.innerHTML;
+    } catch(e) { console.warn('SpecialBatch load error:',e.message); window._spBatchLoaded=false; }
+  },
+
   aProgress: async () => {
     const el = document.getElementById('aProgressBody');
     if(!el) return;
     try {
-      const snap = await db.collection('skillGrades').orderBy('updatedAt','desc').limit(200).get();
-      const gradesMap = {};
-      snap.docs.forEach(d=>{ gradesMap[d.id]=d.data(); });
+      // Use cache if fresh (< 5 min old)
+      if(!window._skillGradesCache || (Date.now()-window._skillGradesCacheTs)>300000){
+        const snap = await db.collection('skillGrades').orderBy('updatedAt','desc').limit(200).get();
+        window._skillGradesCache = {}; snap.docs.forEach(d=>{ window._skillGradesCache[d.id]=d.data(); });
+        window._skillGradesCacheTs = Date.now();
+      }
+      const gradesMap = window._skillGradesCache;
       const studentsWithGrades = allStudents.filter(s=>gradesMap[s.id]);
       if(!studentsWithGrades.length){
         el.innerHTML='<div class="empty-state"><div class="ei">🏆</div><p>No skill ratings yet — ask tutors to grade students via the <strong>Grade Students</strong> page.</p></div>';
@@ -6164,8 +6287,10 @@ const INITS = {
                   return clsStudents.map(s=>{
                     const name=(s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'');
                     const adm=getAdmRecord(name.trim(),cls);
-                    const paid=(cls==='Chess'||cls==='Guitar')?studentPaidInMonth(name.trim(),cls,cyc.month):true;
-                    let earnStr=(cls==='Dance'||cls==='Kids Dance')?'₹500':paid?'₹'+tutorShareOne(cls,adm).toLocaleString():'—unpaid';
+                    const isFlatFee=(cls==='Dance'||cls==='Kids Dance');
+                    const receivedAmt=isFlatFee?0:getReceivedAmountInMonth(name.trim(),cls,cyc.month);
+                    const paid=isFlatFee?true:receivedAmt>0;
+                    let earnStr=isFlatFee?'₹500':paid?'₹'+tutorShareOne(cls,adm,receivedAmt).toLocaleString():'—unpaid';
                     const isAlwaysPaid=(cls==='Dance'||cls==='Kids Dance');
                     const displayPaid=isAlwaysPaid?true:paid;
                     const ageLbl=(cls==='Chess'&&adm)?` · ${chessStudentFee(adm.ageCategory)===1199?'U10':'Std'}`:'';
@@ -6218,7 +6343,7 @@ const INITS = {
     const el=document.getElementById('scheduleGrid');if(!el)return;
     const DAY_LABELS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     const todayIdx=(new Date().getDay()+6)%7;
-    const classColors={'Zumba':'var(--cyan)','Dance':'var(--purple)','Kids Dance':'var(--pink)','Chess':'var(--blue)','Guitar':'var(--amber)'};
+    const classColors={'Zumba':'var(--cyan)','Dance':'var(--purple)','Kids Dance':'var(--pink)','Chess':'var(--blue)','Guitar':'var(--amber)','Drawing - Hobby':'#f97316','Drawing - Elementary':'#fb923c','Drawing - Intermediate':'#ef4444',Kathak:'#10b981'};
     // Build map: batch key → {cls, batchName, students[], days[], timeStr, tutors[]}
     const batchMap={};
     // Only include active students in schedule
@@ -6370,10 +6495,12 @@ const INITS = {
             return clsSts.map(s=>{
               const name=(s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'');
               const adm=getAdmRecord(name.trim(),cls);
-              const paid=(cls==='Chess'||cls==='Guitar')?studentPaidInMonth(name.trim(),cls,cyc.month):true;
-              const earn=(cls==='Chess'||cls==='Guitar')
-                ?(paid?'&#8377;'+tutorShareOne(cls,adm).toLocaleString():'Unpaid')
-                :'&#8377;500';
+              const isFlatFee=(cls==='Dance'||cls==='Kids Dance');
+              const receivedAmt2=isFlatFee?0:getReceivedAmountInMonth(name.trim(),cls,cyc.month);
+              const paid=isFlatFee?true:receivedAmt2>0;
+              const earn=isFlatFee
+                ?'&#8377;500'
+                :(paid?'&#8377;'+tutorShareOne(cls,adm,receivedAmt2).toLocaleString():'Unpaid');
               const ageLbl=(cls==='Chess'&&adm)?(' &middot; '+(chessStudentFee(adm.ageCategory)===1199?'U10':'Std')):'';
               const fs=s.firstSession||s.joinDate||'';
               return`<div style="background:var(--card2);border:1px solid ${paid?'rgba(16,185,129,.2)':'rgba(239,68,68,.2)'};border-radius:8px;padding:6px 10px;font-size:11px;min-width:130px">
@@ -6420,7 +6547,7 @@ const INITS = {
     const DAY_LABELS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
     const todayIdx=(new Date().getDay()+6)%7;
     const teaches=CU.teaches||[];
-    const classColors={'Zumba':'var(--cyan)','Dance':'var(--purple)','Kids Dance':'var(--pink)','Chess':'var(--blue)','Guitar':'var(--amber)'};
+    const classColors={'Zumba':'var(--cyan)','Dance':'var(--purple)','Kids Dance':'var(--pink)','Chess':'var(--blue)','Guitar':'var(--amber)','Drawing - Hobby':'#f97316','Drawing - Elementary':'#fb923c','Drawing - Intermediate':'#ef4444',Kathak:'#10b981'};
     const fmt=h=>h<12?(h===0?'12 AM':h+' AM'):(h===12?'12 PM':(h-12)+' PM');
     // FIX: Filter students by BOTH class AND assigned tutorId
     // If student has tutorId set, only show them to that specific tutor
@@ -6437,6 +6564,12 @@ const INITS = {
       const key=(s.class||'')+'|||'+(s.batch||'');
       if(!batchMap[key])batchMap[key]={cls:s.class,batch:s.batch||'',students:[],meta:BATCH_META[s.class]?.[s.batch]||null};
       batchMap[key].students.push(`${s.fn||s.firstName||''} ${s.ln||s.lastName||''}`.trim());
+      // FIX: also list student under their extraBatch (2nd timing, same class)
+      if(s.extraBatch){
+        const key2=(s.class||'')+'|||'+s.extraBatch;
+        if(!batchMap[key2])batchMap[key2]={cls:s.class,batch:s.extraBatch,students:[],meta:BATCH_META[s.class]?.[s.extraBatch]||null};
+        batchMap[key2].students.push(`${s.fn||s.firstName||''} ${s.ln||s.lastName||''}`.trim());
+      }
     });
     // Only add batches from BATCH_META if the tutor has at least 1 student in them
     // Do NOT show empty batches — tutor should only see active student batches
@@ -6623,7 +6756,7 @@ async function doAddStudent(){
     const tutor=tutorId?allTutors.find(t=>t.id===tutorId):null;
     const profile={
       uid,firstName:fn,lastName:ln,fn,ln,name:fn+' '+ln,email:em,phone:ph,
-      class:cl,batch:bt,fee:CLASS_FEES[cl]||1999,
+      class:cl,batch:bt,extraBatch:document.getElementById('as_bt2')?.value||'',fee:(CLASS_FEES[cl]!=null?CLASS_FEES[cl]:1999),
       role:'student',status:'Active',
       firstSession:dt||new Date().toISOString().split('T')[0],
       joinDate:dt||new Date().toISOString().split('T')[0],  // FIX: store as joinDate too for attendance filtering
@@ -6637,9 +6770,9 @@ async function doAddStudent(){
     ]);
     allStudents.unshift({id:uid,...profile});
     closeOv('ov_addSt');
-    ['as_fn','as_ln','as_em','as_ph','as_nt','as_pw','as_pw2'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
+    ['as_fn','as_ln','as_em','as_ph','as_nt','as_pw','as_pw2','as_dt','as_bt2'].forEach(i=>{const el=document.getElementById(i);if(el)el.value='';});
     document.getElementById('as_cl').value='';
-    document.getElementById('as_bt').innerHTML='<option>Select class first...</option>';
+    document.getElementById('as_bt').innerHTML='<option value="">Select class first...</option>';
     document.getElementById('as_fee').value='';
     btn.disabled=false;btn.textContent='Add Student →';
     ['aStudents','aDash'].forEach(p=>{const el=document.getElementById('pg_'+p);if(el){el.remove();builtPages[p]=false;}});
@@ -7173,16 +7306,41 @@ function filterAttBatch(batch){
   });
 }
 
-// FIX: Re-render attendance list when date changes — hide students who hadn't joined yet
+// FIX: Re-render attendance list when date changes — hide students who hadn't joined yet + wrong batch day
+// BUG FIX: native date inputs on some Android/mobile browsers only open the
+// picker if you tap the tiny calendar icon exactly. Clicking the text/field
+// area did nothing — this is what tutors experienced as "can't select dates".
+// Fix: any click on a date input calls showPicker() to force it open.
+document.addEventListener('click', e => {
+  const t = e.target.closest('input[type="date"]');
+  if (t && typeof t.showPicker === 'function') {
+    try { t.showPicker(); } catch (err) {}
+  }
+});
+
 function reRenderAttList(dateKey){
   if(!dateKey) return;
   const todayKey=new Date().toISOString().split('T')[0];
+  // Get JS weekday of selected date (Sun=0,Mon=1,...,Sat=6)
+  const [yr,mo,dy]=dateKey.split('-').map(Number);
+  const selDow = new Date(yr,mo-1,dy).getDay();
   document.querySelectorAll('.att-row').forEach(row=>{
     const joinDate=row.dataset.joindate||'2020-01-01';
     const isInactive=row.dataset.status==='Inactive';
-    // Hide if: not joined yet, OR inactive and viewing today/future (keep visible for past records)
-    const hide=(dateKey<joinDate)||(isInactive&&dateKey>=todayKey);
-    row.style.display=hide?'none':'';
+    const batch=row.dataset.batch||'';
+    const extraBatch=row.dataset.extrabatch||'';
+    const cls=row.dataset.cls||'';
+    // Hide if not joined yet or inactive future
+    if((dateKey<joinDate)||(isInactive&&dateKey>=todayKey)){row.style.display='none';return;}
+    // FIX (multi-batch): show row if EITHER the primary batch OR the extra
+    // batch runs on this weekday — supports students attending 2 timings
+    // of the same class (e.g. Zumba Mon-Wed-Fri AND Tue-Thu-Sat).
+    const primaryDays=getBatchScheduleDays(cls,batch);
+    const extraDays=extraBatch?getBatchScheduleDays(cls,extraBatch):null;
+    const primaryMatches=!primaryDays||primaryDays.includes(selDow);
+    const extraMatches=extraDays&&extraDays.includes(selDow);
+    if(!primaryMatches && !extraMatches){row.style.display='none';return;}
+    row.style.display='';
   });
   // Also hide class blocks that have no visible students
   document.querySelectorAll('.att-class-block').forEach(block=>{
@@ -7453,7 +7611,15 @@ function openEditStudent(id){
     tutorSel.value=s.tutorId||s.tutorUid||'';
   }
   updateBatches('est_bt','est_cl',null);
-  setTimeout(()=>{document.getElementById('est_bt').value=s.batch||'';},100);
+  updateBatches('est_bt2','est_cl',null);
+  setTimeout(()=>{
+    document.getElementById('est_bt').value=s.batch||'';
+    const bt2=document.getElementById('est_bt2');
+    if(bt2){
+      bt2.innerHTML='<option value="">None</option>'+bt2.innerHTML;
+      bt2.value=s.extraBatch||'';
+    }
+  },100);
   setErr('editStErr','');
   openOv('ov_editSt');
 }
@@ -7467,6 +7633,8 @@ async function doEditStudent(){
   const bldg=document.getElementById('est_bldg').value.trim();
   const cl=document.getElementById('est_cl').value;
   const bt=document.getElementById('est_bt').value;
+  const bt2Raw=document.getElementById('est_bt2')?.value||'';
+  const bt2=(bt2Raw&&bt2Raw!==bt)?bt2Raw:''; // FIX: ignore if same as primary batch (no-op duplicate)
   const fee=Number(document.getElementById('est_fee').value)||0;
   const status=document.getElementById('est_status').value;
   const tutorId=document.getElementById('est_tutor')?.value||'';
@@ -7477,7 +7645,7 @@ async function doEditStudent(){
   // Find tutor name for display
   const tutor=allTutors.find(t=>t.id===tutorId);
   const tutorName=tutor?(tutor.firstName||tutor.fn||'')+ ' '+(tutor.lastName||tutor.ln||''):'';
-  const updates={firstName:fn,lastName:ln,fn,ln,name:fn+' '+ln,email:em,phone:ph,area,building:bldg,class:cl,batch:bt,fee,status,notes};
+  const updates={firstName:fn,lastName:ln,fn,ln,name:fn+' '+ln,email:em,phone:ph,area,building:bldg,class:cl,batch:bt,extraBatch:bt2,fee,status,notes};
   if(tutorId){updates.tutorId=tutorId;updates.tutorUid=tutorId;updates.tutorName=tutorName.trim();}
   else{updates.tutorId='';updates.tutorUid='';updates.tutorName='';}
   try{
@@ -8127,6 +8295,7 @@ async function doSaveEnquiry(){
       allEnquiries.unshift({id:ref.id,...data});
     }
     closeOv('ov_addEnq');showToast('✅ Enquiry saved!','success');
+    populateEnquiryDropdowns(); // refresh autofill dropdowns with new/updated enquiry
     rebuildPage('aEnquiries');
   }catch(e){setErr('addEnqErr',e.message);}
 }
@@ -8524,6 +8693,11 @@ function updateAdmSessionInfo(){
   const infoEl=document.getElementById('admSessionInfo');
   if(!infoEl)return;
   if(!cls||!fd){infoEl.textContent='Select class and 1st session date to see package info.';return;}
+  const meta=BATCH_META[cls]?Object.values(BATCH_META[cls])[0]:null;
+  if(meta&&meta.isWorkshop){
+    infoEl.innerHTML=`🎨 <strong>${cls}</strong> → <strong>Workshop: ${meta.sessions||3} sessions total</strong>. No monthly renewal — one-time fee.`;
+    return;
+  }
   const spw=CLASS_SESSIONS_PER_WEEK[cls]||2;
   const spm=spw*4;
   const first=new Date(fd);
@@ -8573,8 +8747,8 @@ function onSBManualAmt(){
 // ═══════════════════════════════════════════════════
 function openDayDetail(dayIdx){
   const DAY_LABELS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-  const classColors={'Zumba':'var(--cyan)','Dance':'var(--purple)','Kids Dance':'var(--pink)','Chess':'var(--blue)','Guitar':'var(--amber)'};
-  const classIcons={'Zumba':'🎵','Dance':'💃','Kids Dance':'👧','Chess':'♟️','Guitar':'🎸'};
+  const classColors={'Zumba':'var(--cyan)','Dance':'var(--purple)','Kids Dance':'var(--pink)','Chess':'var(--blue)','Guitar':'var(--amber)','Drawing - Hobby':'#f97316','Drawing - Elementary':'#fb923c','Drawing - Intermediate':'#ef4444',Kathak:'#10b981'};
+  const classIcons={'Zumba':'🎵','Dance':'💃','Kids Dance':'👧','Chess':'♟️','Guitar':'🎸','Drawing - Hobby':'🎨','Drawing - Elementary':'🖌️','Drawing - Intermediate':'🖼️',Kathak:'🩰'};
   const fmt=h=>h<12?(h===0?'12 AM':h+' AM'):(h===12?'12 PM':(h-12)+' PM');
   const now=new Date();
   const todayIdx=(now.getDay()+6)%7;
@@ -8602,6 +8776,31 @@ function openDayDetail(dayIdx){
     if(!batchMap[key])batchMap[key]={cls:a.admission||'',batch:a.preferableBatch||'',students:[],admissions:[],meta:BATCH_META[a.admission]?.[a.preferableBatch]||null};
     batchMap[key].students.push(a.name||'—');
     batchMap[key].admissions.push(a);
+    // FIX: also list student under their extraBatch (2nd timing, same class) —
+    // e.g. Saanvi's admission is Wed-Fri but she also attends Harmony Sat.
+    // Previously this popup only read a.preferableBatch, so extraBatch never showed.
+    if(linked&&linked.extraBatch&&linked.extraBatch!==a.preferableBatch){
+      const key2=(a.admission||'')+'|||'+linked.extraBatch;
+      if(!batchMap[key2])batchMap[key2]={cls:a.admission||'',batch:linked.extraBatch,students:[],admissions:[],meta:BATCH_META[a.admission]?.[linked.extraBatch]||null};
+      batchMap[key2].students.push(a.name||'—');
+      batchMap[key2].admissions.push(a);
+    }
+  });
+  // FIX: admissions-only loop above missed students with no matching
+  // admission row for a given class/batch (e.g. Vedant showed in tutor's
+  // schedule — student-driven — but not admin's — admission-driven).
+  // Seed any missing batch/student pairs directly from allStudents too.
+  allStudents.forEach(s=>{
+    if((s.status||'Active')==='Inactive') return;
+    const sName=`${s.fn||s.firstName||''} ${s.ln||s.lastName||''}`.trim();
+    [s.batch,s.extraBatch].filter(Boolean).forEach(bt=>{
+      const key=(s.class||'')+'|||'+bt;
+      if(!batchMap[key])batchMap[key]={cls:s.class||'',batch:bt,students:[],admissions:[],meta:BATCH_META[s.class]?.[bt]||null};
+      if(!batchMap[key].students.includes(sName)){
+        batchMap[key].students.push(sName);
+        batchMap[key].admissions.push({name:sName,buildingName:s.building||s.area||'',ageCategory:'',fees:null});
+      }
+    });
   });
   const dayBatches=Object.values(batchMap).filter(b=>b.meta&&(b.meta.days.includes(dayIdx)||(b.meta.start2!=null&&b.cls==='Chess'&&dayIdx===6)));
   dayBatches.sort((a,b)=>((a.cls==='Chess'&&dayIdx===6&&a.meta.start2!=null)?a.meta.start2:a.meta.start)-((b.cls==='Chess'&&dayIdx===6&&b.meta.start2!=null)?b.meta.start2:b.meta.start));
@@ -8763,6 +8962,42 @@ function studentPaidInMonth(studentName,cls,month){
   return false;
 }
 
+// FIX: Returns the ACTUAL amount received for a student in a given month —
+// not just a yes/no. Checks admissions fees[] first (source of truth for
+// monthly fee tracking), then falls back to summing portal payments in
+// that month. Used so tutor payout is a % of what was actually collected,
+// not the full listed course fee (handles partial/discounted payments).
+function getReceivedAmountInMonth(studentName,cls,month){
+  const mName=monthShort(month);
+  const adm=allAdmissions.find(a=>a.name&&a.name.trim().toLowerCase()===studentName.trim().toLowerCase()&&a.admission===cls);
+  if(adm&&adm.fees){
+    const exactFee=adm.fees[mName];
+    if(exactFee&&exactFee.amt&&exactFee.amt!=='Pending'&&parseFloat(exactFee.amt)>0) return parseFloat(exactFee.amt);
+    const feeEntry=Object.entries(adm.fees).find(([k])=>k.toLowerCase()===mName.toLowerCase());
+    if(feeEntry){const mf=feeEntry[1];if(mf&&mf.amt&&mf.amt!=='Pending'&&parseFloat(mf.amt)>0) return parseFloat(mf.amt);}
+  }
+  // Fallback: sum portal payments made in that month
+  const s=allStudents.find(st=>{
+    const sn=((st.fn||st.firstName||'')+' '+(st.ln||st.lastName||'')).trim().toLowerCase();
+    return sn===studentName.trim().toLowerCase()&&st.class===cls;
+  });
+  if(s){
+    const d=new Date();
+    const monthStart=new Date(d.getFullYear(),month,1);
+    const monthEnd=new Date(d.getFullYear(),month+1,0);
+    const total=allPayments.filter(p=>{
+      if(p.studentUid!==s.uid&&p.studentUid!==s.id) return false;
+      if(p.status!=='Paid') return false;
+      try{
+        const pd=p.createdAt?.toDate?p.createdAt.toDate():(p.date?new Date(p.date):null);
+        return pd&&pd>=monthStart&&pd<=monthEnd;
+      }catch{return false;}
+    }).reduce((sum,p)=>sum+(parseFloat(p.amount)||0),0);
+    if(total>0) return total;
+  }
+  return 0;
+}
+
 // FIXED: Monthly payout calculation
 // Zumba: ₹3000 per distinct batch the tutor is responsible for (regardless of student count)
 // Dance/Kids: ₹500 per enrolled student
@@ -8794,12 +9029,13 @@ function calcCyclePayout(students,teaches,cycleMonth,tutorUid){
       total+=students.filter(s=>s.class===cls).length*500;
       return;
     }
-    // Chess / Guitar: 50% only when student has paid their fee that month
+    // Chess / Guitar / Drawing: payout is a % of the ACTUAL amount received that month
     students.filter(s=>s.class===cls).forEach(s=>{
       const name=((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim();
-      if(!studentPaidInMonth(name,cls,cycleMonth))return;
+      const receivedAmt=getReceivedAmountInMonth(name,cls,cycleMonth);
+      if(!receivedAmt)return; // nothing received this month → no payout
       const adm=getAdmRecord(name,cls);
-      total+=tutorShareOne(cls,adm);
+      total+=tutorShareOne(cls,adm,receivedAmt);
     });
   });
   return total;
@@ -8808,8 +9044,8 @@ function calcCyclePayout(students,teaches,cycleMonth,tutorUid){
 // Tutor-specific day detail popout — shows only this tutor's students
 function openTutorDayDetail(dayIdx){
   const DAY_LABELS=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
-  const classColors={'Zumba':'var(--cyan)','Dance':'var(--purple)','Kids Dance':'var(--pink)','Chess':'var(--blue)','Guitar':'var(--amber)'};
-  const classIcons={'Zumba':'🎵','Dance':'💃','Kids Dance':'👧','Chess':'♟️','Guitar':'🎸'};
+  const classColors={'Zumba':'var(--cyan)','Dance':'var(--purple)','Kids Dance':'var(--pink)','Chess':'var(--blue)','Guitar':'var(--amber)','Drawing - Hobby':'#f97316','Drawing - Elementary':'#fb923c','Drawing - Intermediate':'#ef4444',Kathak:'#10b981'};
+  const classIcons={'Zumba':'🎵','Dance':'💃','Kids Dance':'👧','Chess':'♟️','Guitar':'🎸','Drawing - Hobby':'🎨','Drawing - Elementary':'🖌️','Drawing - Intermediate':'🖼️',Kathak:'🩰'};
   const fmt=h=>h<12?(h===0?'12 AM':h+' AM'):(h===12?'12 PM':(h-12)+' PM');
   const todayIdx=(new Date().getDay()+6)%7;
   const isToday=dayIdx===todayIdx;
@@ -8827,6 +9063,12 @@ function openTutorDayDetail(dayIdx){
     const key=(s.class||'')+'|||'+(s.batch||'');
     if(!batchMap[key])batchMap[key]={cls:s.class,batch:s.batch||'',students:[],meta:BATCH_META[s.class]?.[s.batch]||null};
     batchMap[key].students.push({name:`${s.fn||s.firstName||''} ${s.ln||s.lastName||''}`.trim(),id:s.id,class:s.class,batch:s.batch});
+    // FIX: also list under extraBatch (2nd timing, same class)
+    if(s.extraBatch){
+      const key2=(s.class||'')+'|||'+s.extraBatch;
+      if(!batchMap[key2])batchMap[key2]={cls:s.class,batch:s.extraBatch,students:[],meta:BATCH_META[s.class]?.[s.extraBatch]||null};
+      batchMap[key2].students.push({name:`${s.fn||s.firstName||''} ${s.ln||s.lastName||''}`.trim(),id:s.id,class:s.class,batch:s.extraBatch});
+    }
   });
   // Only show batches where this tutor has actual students enrolled
   // Skip empty batch slots from BATCH_META
@@ -9015,6 +9257,8 @@ function openEditAdmission(admId){
   setV('adm_firstdate',toDateStr(a.firstClassDate||a.firstSessionDate));
   if(a.admission)updateBatches('adm_batch','adm_class',null);
   setV('adm_batch',a.preferableBatch);
+  updateBatches('adm_batch2','adm_class',null);
+  setTimeout(()=>setV('adm_batch2',a.extraBatch||''),100);
   updateAdmSessionInfo();
   setErr('addAdmErr','');openOv('ov_addAdm');
 }
@@ -9030,6 +9274,7 @@ async function doSaveAdmission(){
     contact:gv('adm_contact'),
     admission:cls,
     preferableBatch:gv('adm_batch'),
+    extraBatch:gv('adm_batch2'),
     occupation:gv('adm_occupation'),
     ageCategory:gv('adm_age'),
     admissionDate:gv('adm_admdate'),
@@ -9347,7 +9592,7 @@ async function doAddBatch(){
       await fb.commit().catch(e=>console.warn('admissions batch rename:',e.message));
       admToUpdate.forEach(a=>{const i=allAdmissions.findIndex(x=>x.id===a.id);if(i>=0)allAdmissions[i].preferableBatch=name;});
     }
-    // Migrate students: update batch field
+    // Migrate students: update batch field (primary)
     const stToUpdate=allStudents.filter(s=>s.class===cls&&s.batch===origName);
     if(stToUpdate.length){
       const fb=db.batch();
@@ -9355,7 +9600,24 @@ async function doAddBatch(){
       await fb.commit().catch(e=>console.warn('students batch rename:',e.message));
       stToUpdate.forEach(s=>{const i=allStudents.findIndex(x=>x.id===s.id);if(i>=0)allStudents[i].batch=name;});
     }
-    showToast(`✅ Batch renamed "${origName}" → "${name}" · ${admToUpdate.length} admissions + ${stToUpdate.length} students migrated`,'success');
+    // FIX: also migrate students whose EXTRA batch (2nd timing) was renamed —
+    // previously missed, which would silently drop the multi-batch link.
+    const stExtraToUpdate=allStudents.filter(s=>s.class===cls&&s.extraBatch===origName);
+    if(stExtraToUpdate.length){
+      const fb2=db.batch();
+      stExtraToUpdate.forEach(s=>{fb2.update(db.collection('students').doc(s.id),{extraBatch:name});});
+      await fb2.commit().catch(e=>console.warn('students extraBatch rename:',e.message));
+      stExtraToUpdate.forEach(s=>{const i=allStudents.findIndex(x=>x.id===s.id);if(i>=0)allStudents[i].extraBatch=name;});
+    }
+    // FIX: BATCH_TUTOR_MAP keys are exact batch-name strings (used for Zumba
+    // tutor assignment). A rename without this would silently un-assign the
+    // batch from its tutor. Migrate the key in-memory + persist to settings.
+    if(BATCH_TUTOR_MAP[origName]!==undefined){
+      BATCH_TUTOR_MAP[name]=BATCH_TUTOR_MAP[origName];
+      delete BATCH_TUTOR_MAP[origName];
+      try{await db.collection('settings').doc('batchTutorMap').set({map:BATCH_TUTOR_MAP},{merge:true});}catch(e){}
+    }
+    showToast(`✅ Batch renamed "${origName}" → "${name}" · ${admToUpdate.length} admissions + ${stToUpdate.length} students + ${stExtraToUpdate.length} extra-batch links migrated`,'success');
   } else {
     if(!BATCH_OPTS[cls].includes(name)) BATCH_OPTS[cls].push(name);
   }
@@ -9526,6 +9788,7 @@ async function saveAllGrades(){
   if(!count){showToast('Rate at least one skill before saving','error');return;}
   try{
     await batch.commit();
+    window._skillGradesCache = null; // invalidate cache so next open re-fetches
     showToast(`✅ Grades saved for ${count} student${count!==1?'s':''}!`,'success');
   }catch(e){showToast('Error saving grades: '+e.message,'error');}
 }
@@ -10050,6 +10313,12 @@ const COURSE_SKILLS = {
   Dance: ['Rhythm','Flexibility','Technique','Stamina','Expression'],
   'Kids Dance': ['Rhythm','Flexibility','Technique','Stamina','Expression'],
   Zumba: ['Rhythm','Flexibility','Technique','Stamina','Expression'],
+  // FIX: Drawing previously fell back to Dance/Other params (Rhythm, Flexibility,
+  // Stamina) which made no sense for an art class. Added proper drawing-specific
+  // skill parameters, shared across all 3 Drawing levels (Hobby/Elementary/Intermediate).
+  'Drawing - Hobby': ['Line Control','Shading & Shadow','Color Application','Composition & Layout','Creativity & Ideas','Consistency & Practice'],
+  'Drawing - Elementary': ['Line Control','Shading & Shadow','Color Application','Composition & Layout','Creativity & Ideas','Consistency & Practice'],
+  'Drawing - Intermediate': ['Line Control','Shading & Shadow','Color Application','Composition & Layout','Creativity & Ideas','Consistency & Practice'],
   Other: ['Rhythm','Flexibility','Technique','Stamina','Expression'],
 };
 
@@ -10059,6 +10328,9 @@ const COURSE_SKILL_COLORS = {
   Dance:   ['var(--cyan)','var(--purple)','var(--pink)','var(--green)','var(--amber)'],
   'Kids Dance':['var(--cyan)','var(--purple)','var(--pink)','var(--green)','var(--amber)'],
   Zumba:   ['var(--cyan)','var(--purple)','var(--pink)','var(--green)','var(--amber)'],
+  'Drawing - Hobby':['#f97316','var(--purple)','var(--pink)','var(--green)','var(--amber)','var(--cyan)'],
+  'Drawing - Elementary':['#fb923c','var(--purple)','var(--pink)','var(--green)','var(--amber)','var(--cyan)'],
+  'Drawing - Intermediate':['#ef4444','var(--purple)','var(--pink)','var(--green)','var(--amber)','var(--cyan)'],
   Other:   ['var(--cyan)','var(--purple)','var(--pink)','var(--green)','var(--amber)'],
 };
 
@@ -10069,14 +10341,13 @@ function getSkillColorsForClass(cls){
   return COURSE_SKILL_COLORS[cls] || COURSE_SKILL_COLORS.Other;
 }
 function getCourseColor(cls){
-  const m={Chess:'var(--blue)',Guitar:'var(--amber)',Dance:'var(--purple)','Kids Dance':'var(--pink)',Zumba:'var(--cyan)',Other:'var(--green)'};
+  const m={Chess:'var(--blue)',Guitar:'var(--amber)',Dance:'var(--purple)','Kids Dance':'var(--pink)',Zumba:'var(--cyan)','Drawing - Hobby':'#f97316','Drawing - Elementary':'#fb923c','Drawing - Intermediate':'#ef4444',Kathak:'#10b981',Other:'var(--green)'};
   return m[cls]||'var(--cyan)';
 }
 function getCourseIcon(cls){
-  const m={Chess:'♟️',Guitar:'🎸',Dance:'💃','Kids Dance':'👧',Zumba:'🎵',Other:'🎯'};
+  const m={Chess:'♟️',Guitar:'🎸',Dance:'💃','Kids Dance':'👧',Zumba:'🎵','Drawing - Hobby':'🎨','Drawing - Elementary':'🖌️','Drawing - Intermediate':'🖼️',Kathak:'🩰',Other:'🎯'};
   return m[cls]||'🎯';
 }
-
 // ── ACHIEVEMENTS CONFIG ───────────────────────────────────────────
 const ACHIEVEMENTS = {
   Chess: [
@@ -10479,9 +10750,12 @@ INITS.aProgress = async function(){
   const el = document.getElementById('aProgressBody');
   if(!el) return;
   try{
-    const snap = await db.collection('skillGrades').orderBy('updatedAt','desc').limit(200).get();
-    const gradesMap = {};
-    snap.docs.forEach(d=>{ gradesMap[d.id]=d.data(); });
+    if(!window._skillGradesCache || (Date.now()-window._skillGradesCacheTs)>300000){
+      const snap = await db.collection('skillGrades').orderBy('updatedAt','desc').limit(200).get();
+      window._skillGradesCache = {}; snap.docs.forEach(d=>{ window._skillGradesCache[d.id]=d.data(); });
+      window._skillGradesCacheTs = Date.now();
+    }
+    const gradesMap = window._skillGradesCache;
     const studentsWithGrades = allStudents.filter(s=>gradesMap[s.id]);
     if(!studentsWithGrades.length){
       el.innerHTML='<div class="empty-state"><div class="ei">🏆</div><p>No skill ratings yet — ask tutors to grade students.</p></div>';
@@ -11356,27 +11630,31 @@ INITS.sChessDojo = async function() { await dojoLoadData(); };
 
 async function dojoLoadData() {
   try {
-    // Fast first paint: show seed puzzles immediately with local IDs
-    // Then merge with Firestore for persistence
+    // Use session cache for puzzles to avoid re-fetching on every page open
+    async function fetchPuzzles() {
+      if(window._puzzleCache && window._puzzleCache.length) return {docs: window._puzzleCache.map(p=>({id:p.id,data:()=>p,exists:true})), _fromCache:true};
+      const snap = await db.collection('chessPuzzles').orderBy('order','asc').get();
+      window._puzzleCache = snap.docs.map(d=>({id:d.id,...d.data()}));
+      return snap;
+    }
     const [pSnap, aSnap, userSnap] = await Promise.all([
-      db.collection('chessPuzzles').orderBy('order','asc').get(),
+      fetchPuzzles(),
       db.collection('chessAttempts').where('studentUid','==',CU.uid).get(),
       db.collection('users').doc(CU.uid).get(),
     ]);
 
-    const dbPuzzles = pSnap.docs.map(d=>({id:d.id,...d.data()}));
+    const dbPuzzles = window._puzzleCache && pSnap._fromCache ? window._puzzleCache : pSnap.docs.map(d=>({id:d.id,...d.data()}));
     if (dbPuzzles.length === 0) {
-      // First run: use seed puzzles with local IDs for immediate display
       _dojoPuzzles = SEED_PUZZLES.map(p=>({...p, id: p.id||String(p.order)}));
       dojoUpdateStats();
       dojoUpdateStreakChip();
       dojoRenderPuzzleList('all');
       const firstUnsolved = _dojoPuzzles[0];
       if(firstUnsolved) dojoActivatePuzzle(firstUnsolved);
-      // Seed Firestore in background
       dojoSeedPuzzles().then(async ()=>{
         const fresh = await db.collection('chessPuzzles').orderBy('order','asc').get();
-        _dojoPuzzles = fresh.docs.map(d=>({id:d.id,...d.data()}));
+        window._puzzleCache = fresh.docs.map(d=>({id:d.id,...d.data()}));
+        _dojoPuzzles = window._puzzleCache;
         dojoRenderPuzzleList(_dojoFilterMode);
         dojoUpdateNavBadge();
       }).catch(e=>console.warn('Seed error:',e));
@@ -11984,8 +12262,11 @@ async function renderTPuzzles(tab) {
   body.innerHTML='<div class="empty-state"><div class="ei">⏳</div><p>Loading…</p></div>';
   try {
     if(tab==='puzzles') {
-      const snap=await db.collection('chessPuzzles').orderBy('order','asc').get();
-      const puzzles=snap.docs.map(d=>({id:d.id,...d.data()}));
+      if(!window._puzzleCache || !window._puzzleCache.length){
+        const snap=await db.collection('chessPuzzles').orderBy('order','asc').get();
+        window._puzzleCache=snap.docs.map(d=>({id:d.id,...d.data()}));
+      }
+      const puzzles=window._puzzleCache;
       if(!puzzles.length){body.innerHTML='<div class="empty-state"><div class="ei">♟️</div><p>No puzzles yet.</p></div>';return;}
       body.innerHTML=`<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px">
         ${puzzles.map(p=>`<div class="puzzle-card">
@@ -12009,8 +12290,11 @@ async function renderTPuzzles(tab) {
           </div>
         </div>`).join('')}</div>`;
     } else {
-      const pSnap=await db.collection('chessPuzzles').orderBy('order','asc').get();
-      const puzzles=pSnap.docs.map(d=>({id:d.id,...d.data()}));
+      if(!window._puzzleCache || !window._puzzleCache.length){
+        const pSnap=await db.collection('chessPuzzles').orderBy('order','asc').get();
+        window._puzzleCache=pSnap.docs.map(d=>({id:d.id,...d.data()}));
+      }
+      const puzzles=window._puzzleCache;
       if(!puzzles.length){body.innerHTML='<div class="empty-state"><div class="ei">📊</div><p>No puzzles yet.</p></div>';return;}
       const pIds=puzzles.map(p=>p.id);
       const chunks=[]; for(let i=0;i<pIds.length;i+=10) chunks.push(pIds.slice(i,i+10));
@@ -12084,9 +12368,13 @@ async function openEditPuzzle(puzzleId) {
   document.getElementById('cpModalTitle').textContent='Edit Puzzle';
   document.getElementById('cp_err').style.display='none';
   try {
-    const snap=await db.collection('chessPuzzles').doc(puzzleId).get();
-    if(!snap.exists) return;
-    const p=snap.data();
+    // Try cache first, fall back to Firestore
+    let p = window._puzzleCache && window._puzzleCache.find(x=>x.id===puzzleId);
+    if(!p){
+      const snap=await db.collection('chessPuzzles').doc(puzzleId).get();
+      if(!snap.exists) return;
+      p=snap.data();
+    }
     document.getElementById('cp_editId').value=puzzleId;
     document.getElementById('cp_title').value=p.title||'';
     document.getElementById('cp_fen').value=p.fen||'';
@@ -12129,6 +12417,7 @@ async function savePuzzle() {
   try {
     if(editId){await db.collection('chessPuzzles').doc(editId).update(data);showToast('Puzzle updated!','success');}
     else{data.createdAt=firebase.firestore.FieldValue.serverTimestamp();await db.collection('chessPuzzles').add(data);showToast('Puzzle published!','success');}
+    window._puzzleCache=null; // invalidate cache
     closeOv('ov_createPuzzle');
     const pg=document.getElementById('pg_tPuzzles');if(pg){pg.remove();builtPages['tPuzzles']=false;}
     buildPage('tPuzzles');showPage('tPuzzles');
@@ -12138,7 +12427,7 @@ async function savePuzzle() {
 
 async function confirmDeletePuzzle(id,title) {
   if(!confirm(`Delete puzzle "${title}"?`)) return;
-  try{await db.collection('chessPuzzles').doc(id).delete();showToast('Deleted','success');renderTPuzzles('puzzles');}
+  try{await db.collection('chessPuzzles').doc(id).delete();window._puzzleCache=null;showToast('Deleted','success');renderTPuzzles('puzzles');}
   catch(e){showToast('Error: '+e.message,'error');}
 }
 
@@ -12149,12 +12438,14 @@ window.loadPortalData = async function(){
   if(CU?.class==='Chess') {
     setTimeout(async()=>{
       try {
-        const [pSnap,aSnap]=await Promise.all([
-          db.collection('chessPuzzles').get(),
-          db.collection('chessAttempts').where('studentUid','==',CU.uid).get()
-        ]);
+        // Use puzzle cache; only fetch attempts (small, user-specific)
+        if(!window._puzzleCache || !window._puzzleCache.length){
+          const snap=await db.collection('chessPuzzles').get();
+          window._puzzleCache=snap.docs.map(d=>({id:d.id,...d.data()}));
+        }
+        const aSnap=await db.collection('chessAttempts').where('studentUid','==',CU.uid).get();
         const solved=new Set(aSnap.docs.filter(d=>d.data().solved).map(d=>d.data().puzzleId));
-        const unsolved=pSnap.docs.filter(d=>!solved.has(d.id)).length;
+        const unsolved=window._puzzleCache.filter(p=>!solved.has(p.id)).length;
         const el=document.getElementById('chessBadge');
         if(el){el.textContent=unsolved>99?'99+':unsolved||'';el.style.display=unsolved?'':'none';}
       }catch(e){}
@@ -13642,4 +13933,884 @@ INITS.sHistory=async function(){
 INITS.sGuitarDojo=async function(){
   await GuitarDojo.init();
 };
+
+// ══════════════════════════════════════════════════════════════════════════════
+// REVENUE ENGINE  — v2 (fixed)
+// ══════════════════════════════════════════════════════════════════════════════
+
+const PROFIT_TARGET = 50000;
+const MONTHS_ORDER_REV = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// ── helpers ──────────────────────────────────────────────────────────────────
+
+function revCurrentMonthKey() {
+  return MONTHS_ORDER_REV[new Date().getMonth()];
+}
+function revCurrentMonthPrefix() {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
+}
+
+// Is this admission's student Active?
+function revAdmIsActive(a) {
+  const aName = (a.name||'').trim().toLowerCase();
+  const linked = allStudents.find(s =>
+    ((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase() === aName
+  );
+  if (linked) return (linked.status||'Active') === 'Active';
+  return true;
+}
+
+// ── BATCH COUNT: only batches in BATCH_OPTS that have ≥1 active enrolled student ──
+// Uses admissions.preferableBatch as source of truth (same as aBatchSlots page)
+function revActiveBatchCount(cls) {
+  const activeBatches = new Set();
+  const batchList = BATCH_OPTS[cls] || [];
+
+  batchList.forEach(batchName => {
+    const hasActive = allAdmissions.some(a => {
+      if (a.admission !== cls) return false;
+      if ((a.preferableBatch || '') !== batchName) return false;
+      return revAdmIsActive(a);
+    });
+    if (hasActive) activeBatches.add(batchName);
+  });
+
+  return Math.max(activeBatches.size, 1); // at least 1 to avoid divide-by-zero
+}
+
+// ── TUTOR PAYOUT PER CLASS (for Revenue Engine display — not per-student payout) ──
+// Returns total accrued tutor cost for a class this month
+// This mirrors calcCyclePayout logic but scoped to a single class
+function revTutorCostForClass(cls) {
+  // Zumba: ₹3000 flat per active batch (fixed cost regardless of collection)
+  if (cls === 'Zumba') {
+    const activeBatches = new Set();
+    (BATCH_OPTS['Zumba'] || []).forEach(batchName => {
+      const hasActive = allAdmissions.some(a =>
+        a.admission === 'Zumba' && (a.preferableBatch||'') === batchName && revAdmIsActive(a)
+      );
+      if (hasActive) activeBatches.add(batchName);
+    });
+    return activeBatches.size * 3000;
+  }
+  if (cls === 'Dance' || cls === 'Kids Dance') {
+    return allAdmissions.filter(a => a.admission === cls && revAdmIsActive(a)).length * 500;
+  }
+  // Chess / Guitar / Drawing: % of fee, only on paid students
+  const mKey = revCurrentMonthKey();
+  let total = 0;
+  allAdmissions.forEach(a => {
+    if (a.admission !== cls || !revAdmIsActive(a) || !a.fees) return;
+    const mf = a.fees[mKey];
+    if (!mf || !mf.amt || mf.amt === 'Pending' || mf.amt === '-') return;
+    total += tutorShareOne(cls, a);
+  });
+  return total;
+}
+
+// Tutor cost assuming ALL active students paid (for full-potential ₹/hr calc)
+function revTutorCostFullPotential(cls) {
+  if (cls === 'Zumba') return revTutorCostForClass(cls); // fixed per batch, same
+  if (cls === 'Dance' || cls === 'Kids Dance') return revTutorCostForClass(cls); // per student, same
+  // % classes: apply share to every active student's fee
+  let total = 0;
+  allAdmissions.forEach(a => {
+    if (a.admission !== cls || !revAdmIsActive(a)) return;
+    total += tutorShareOne(cls, a);
+  });
+  return total;
+}
+
+// Total collected this month — admissions (Active only) + portal payments
+function revCollectedThisMonth() {
+  const mKey = revCurrentMonthKey();
+  const mPfx = revCurrentMonthPrefix();
+  let total = 0;
+  allAdmissions.forEach(a => {
+    if (!revAdmIsActive(a) || !a.fees) return;
+    const mf = a.fees[mKey];
+    if (mf && mf.amt && mf.amt !== 'Pending' && mf.amt !== '-') {
+      total += parseFloat(mf.amt) || 0;
+    }
+  });
+  allPayments.forEach(p => {
+    if (p.status !== 'Paid' || p.source === 'admissions') return;
+    const d = p.date || p.createdAt;
+    if (!d) return;
+    const ds = typeof d === 'string' ? d : (d.toDate ? d.toDate().toISOString() : new Date(d).toISOString());
+    if (ds.startsWith(mPfx)) total += p.amtNum || parseFloat(p.amount) || 0;
+  });
+  return total;
+}
+
+// Pending = Active admissions with no/pending payment this month
+function revPendingThisMonth() {
+  const mKey = revCurrentMonthKey();
+  let total = 0;
+  allAdmissions.forEach(a => {
+    if (!revAdmIsActive(a)) return;
+    const fee = a.feeAmt ? parseFloat(a.feeAmt) : (CLASS_FEES[a.admission] || 0);
+    if (!a.fees) { total += fee; return; }
+    const mf = a.fees[mKey];
+    if (!mf || !mf.amt || mf.amt === '-' || mf.amt === 'Pending') total += fee;
+  });
+  return total;
+}
+
+// Accrued total tutor payout this month (all tutors, via existing calcCyclePayout)
+function revAccruedTutorPayout() {
+  const m = new Date().getMonth();
+  const yr = new Date().getFullYear();
+  let total = 0;
+  allTutors.forEach(t => {
+    const teaches = t.teaches || [];
+    const cycle = { month: m, year: yr, key: `${yr}-${m}` };
+    const students = studentsInCycle(teaches, cycle, t.id);
+    total += calcCyclePayout(students, teaches, m, t.id);
+  });
+  return total;
+}
+
+// Fixed costs this month
+// Fixed costs = expenses with category 'Rent' or 'Staff' this month
+function revFixedCostsThisMonth() {
+  const mPfx = revCurrentMonthPrefix();
+  return allExpenses
+    .filter(e => (e.date||'').startsWith(mPfx) && (e.category==='Rent'||e.category==='Staff'))
+    .reduce((s,e) => s+(e.amount||0), 0);
+}
+
+// Other expenses = all expenses this month EXCEPT Rent/Staff (to avoid double-count)
+function revOtherExpensesThisMonth() {
+  const mPfx = revCurrentMonthPrefix();
+  return allExpenses
+    .filter(e => (e.date||'').startsWith(mPfx) && e.category!=='Rent' && e.category!=='Staff')
+    .reduce((s,e) => s+(e.amount||0), 0);
+}
+
+// Get fixed cost records for display (Rent + Staff this month)
+function revFixedCostRecords() {
+  const mPfx = revCurrentMonthPrefix();
+  return allExpenses.filter(e => (e.date||'').startsWith(mPfx) && (e.category==='Rent'||e.category==='Staff'));
+}
+
+// Class-wise revenue (Active students only)
+function revClassWiseThisMonth() {
+  const mKey = revCurrentMonthKey();
+  const map = {};
+  allAdmissions.forEach(a => {
+    if (!revAdmIsActive(a)) return;
+    const cls = a.admission || 'Other';
+    if (!map[cls]) map[cls] = { collected: 0, pending: 0, students: 0 };
+    map[cls].students++;
+    if (!a.fees) {
+      map[cls].pending += a.feeAmt ? parseFloat(a.feeAmt) : (CLASS_FEES[cls] || 0);
+      return;
+    }
+    const mf = a.fees[mKey];
+    if (mf && mf.amt && mf.amt !== 'Pending' && mf.amt !== '-') {
+      map[cls].collected += parseFloat(mf.amt) || 0;
+    } else {
+      map[cls].pending += a.feeAmt ? parseFloat(a.feeAmt) : (CLASS_FEES[cls] || 0);
+    }
+  });
+  return map;
+}
+
+// Per-hour metrics per class
+// actual    = based on what's been collected so far
+// potential = assumes every active student pays (full month view)
+function revPerHourPerClass(classWise) {
+  const result = {};
+  Object.entries(classWise).forEach(([cls, data]) => {
+    const spw = CLASS_SESSIONS_PER_WEEK[cls] || 2;
+    const batchCount = revActiveBatchCount(cls);
+    const monthlyHours = spw * 4 * batchCount;
+
+    // Actual (collected so far)
+    const tutorCost = revTutorCostForClass(cls);
+    const revenuePerHour = monthlyHours > 0 ? Math.round(data.collected / monthlyHours) : 0;
+    const tutorCostPerHour = monthlyHours > 0 ? Math.round(tutorCost / monthlyHours) : 0;
+    const netPerHour = revenuePerHour - tutorCostPerHour;
+
+    // Full potential (if all active students paid)
+    const fullRevenue = data.collected + data.pending; // collected + what's still pending
+    const fullTutorCost = revTutorCostFullPotential(cls);
+    const fullRevenuePerHour = monthlyHours > 0 ? Math.round(fullRevenue / monthlyHours) : 0;
+    const fullTutorPerHour = monthlyHours > 0 ? Math.round(fullTutorCost / monthlyHours) : 0;
+    const fullNetPerHour = fullRevenuePerHour - fullTutorPerHour;
+
+    result[cls] = {
+      ...data,
+      batchCount,
+      monthlyHours,
+      tutorCost,
+      revenuePerHour,
+      tutorCostPerHour,
+      netPerHour,
+      fullRevenue,
+      fullTutorCost,
+      fullRevenuePerHour,
+      fullTutorPerHour,
+      fullNetPerHour,
+    };
+  });
+  return result;
+}
+
+// Daily cashflow from admissions fee dates + portal payments (current month, Active only)
+function revDailyCashflow() {
+  const mKey = revCurrentMonthKey();
+  const mPfx = revCurrentMonthPrefix();
+  const daily = {};
+  allAdmissions.forEach(a => {
+    if (!revAdmIsActive(a) || !a.fees) return;
+    const mf = a.fees[mKey];
+    if (mf && mf.date && mf.amt && mf.amt !== 'Pending' && mf.amt !== '-') {
+      const dayKey = (mf.date+'').slice(0, 10);
+      if (dayKey.startsWith(mPfx)) daily[dayKey] = (daily[dayKey]||0) + (parseFloat(mf.amt)||0);
+    }
+  });
+  allPayments.forEach(p => {
+    if (p.status !== 'Paid' || p.source === 'admissions') return;
+    const d = p.date || p.createdAt;
+    if (!d) return;
+    const ds = typeof d === 'string' ? d : (d.toDate ? d.toDate().toISOString() : new Date(d).toISOString());
+    const dayKey = ds.slice(0, 10);
+    if (dayKey.startsWith(mPfx)) daily[dayKey] = (daily[dayKey]||0) + (p.amtNum||parseFloat(p.amount)||0);
+  });
+  return Object.entries(daily).sort((a, b) => a[0].localeCompare(b[0]));
+}
+
+// Weekly summary from daily
+function revWeeklyCashflow(daily) {
+  const weeks = {};
+  daily.forEach(([day, amt]) => {
+    const wk = `Week ${Math.ceil(new Date(day).getDate() / 7)}`;
+    weeks[wk] = (weeks[wk]||0) + amt;
+  });
+  return Object.entries(weeks);
+}
+
+// ── RENDER ───────────────────────────────────────────────────────────────────
+
+function renderRevenueEngine() {
+  const now       = new Date();
+  const mKey      = revCurrentMonthKey();
+  const mPfx      = revCurrentMonthPrefix();
+  const mLabel    = mKey + ' ' + now.getFullYear();
+  const daysInMon = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+  const daysPassed= now.getDate();
+  const daysLeft  = daysInMon - daysPassed;
+  const mPct      = Math.round((daysPassed / daysInMon) * 100);
+
+  const collected  = revCollectedThisMonth();
+  const pending    = revPendingThisMonth();
+  const expected   = collected + pending;
+  const tutorPayout= revAccruedTutorPayout();
+  const fixedCosts = revFixedCostsThisMonth();
+  const otherExp   = revOtherExpensesThisMonth();
+  const totalCost  = tutorPayout + fixedCosts + otherExp;
+  const profit     = collected - totalCost;
+  const fullProfit = expected - (tutorPayout + fixedCosts + otherExp); // if all pay
+  const toTarget   = Math.max(0, PROFIT_TARGET - profit);
+  const pct        = Math.min(100, Math.round((profit / PROFIT_TARGET) * 100));
+
+  // Collection run-rate: are we on track?
+  const dailyRunRate    = daysPassed > 0 ? Math.round(collected / daysPassed) : 0;
+  const projectedEnd    = dailyRunRate * daysInMon;
+  const collectionPct   = expected > 0 ? Math.round((collected / expected) * 100) : 0;
+
+  const classWise = revClassWiseThisMonth();
+  const perHour   = revPerHourPerClass(classWise);
+  const sorted    = Object.entries(perHour).sort((a,b) => b[1].fullRevenue - a[1].fullRevenue);
+  const bestByNet = Object.entries(perHour).sort((a,b) => b[1].fullNetPerHour - a[1].fullNetPerHour)[0];
+  const daily     = revDailyCashflow();
+  const weekly    = revWeeklyCashflow(daily);
+  const monthFCs  = (window._allFixedCosts||[]).filter(c => (c.date||'').startsWith(mPfx));
+
+  // ── HERO: PROFIT TARGET ────────────────────────────────────────────────────
+  const profitEl = document.getElementById('rev-profit-target');
+  if (profitEl) {
+    const isHit    = profit >= PROFIT_TARGET;
+    const barColor = isHit ? 'var(--green)' : profit > 0 ? 'var(--grad)' : 'var(--red)';
+    const borderC  = isHit ? 'rgba(16,185,129,.35)' : profit > 0 ? 'rgba(168,85,247,.3)' : 'rgba(239,68,68,.3)';
+    const bgC      = isHit ? 'rgba(16,185,129,.07)' : profit > 0 ? 'rgba(168,85,247,.06)' : 'rgba(239,68,68,.06)';
+    const textGrad = isHit ? 'linear-gradient(135deg,#10b981,#059669)' : profit > 0 ? 'var(--grad)' : 'linear-gradient(135deg,#ef4444,#dc2626)';
+    const statusMsg= isHit ? '🏆 TARGET HIT!' : toTarget > 0 ? `₹${toTarget.toLocaleString()} to go` : '⚠️ Review costs';
+    profitEl.innerHTML = `
+<div style="background:${bgC};border:1px solid ${borderC};border-radius:18px;padding:24px;margin-bottom:20px">
+
+  <!-- Top row: profit number + target % -->
+  <div style="display:flex;align-items:flex-start;justify-content:space-between;flex-wrap:wrap;gap:12px;margin-bottom:18px">
+    <div>
+      <div style="font-size:10px;font-weight:700;letter-spacing:2.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:7px">🎯 NET PROFIT · ${mLabel}</div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:52px;line-height:1;background:${textGrad};-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text">₹${profit.toLocaleString()}</div>
+      <div style="font-size:12px;color:var(--muted2);margin-top:5px">${statusMsg} &nbsp;·&nbsp; Target ₹${PROFIT_TARGET.toLocaleString()}</div>
+    </div>
+    <div style="text-align:right">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:40px;line-height:1;color:${isHit ? 'var(--green)' : profit > 0 ? 'var(--purple)' : 'var(--red)'}">${pct}%</div>
+      <div style="font-size:11px;color:var(--muted2)">achieved</div>
+      <div style="margin-top:8px;font-size:11px;color:var(--cyan)">Full potential: <strong>₹${fullProfit.toLocaleString()}</strong></div>
+    </div>
+  </div>
+
+  <!-- Progress bar: profit toward target -->
+  <div style="margin-bottom:6px;display:flex;justify-content:space-between;font-size:10px;color:var(--muted2)">
+    <span>₹0</span><span>Target ₹${(PROFIT_TARGET/1000).toFixed(0)}K</span>
+  </div>
+  <div style="background:var(--card2);border-radius:8px;height:10px;overflow:hidden;margin-bottom:16px">
+    <div style="height:100%;width:${pct}%;background:${barColor};border-radius:8px;transition:width .8s cubic-bezier(.16,1,.3,1)"></div>
+  </div>
+
+  <!-- Month progress bar -->
+  <div style="margin-bottom:6px;display:flex;justify-content:space-between;align-items:center">
+    <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2)">📅 Month Progress</div>
+    <div style="font-size:11px;color:var(--muted2)">Day ${daysPassed} of ${daysInMon} · <span style="color:${daysLeft<=5?'var(--amber)':'var(--muted2)'}">${daysLeft} day${daysLeft!==1?'s':''} left</span></div>
+  </div>
+  <div style="background:var(--card2);border-radius:6px;height:6px;overflow:hidden;margin-bottom:20px">
+    <div style="height:100%;width:${mPct}%;background:linear-gradient(90deg,var(--cyan),var(--purple));border-radius:6px"></div>
+  </div>
+
+  <!-- 5 key numbers -->
+  <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px">
+    <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:12px;padding:12px;text-align:center">
+      <div style="font-size:10px;color:var(--muted2);margin-bottom:3px">💰 Collected</div>
+      <div style="font-weight:700;color:var(--green);font-size:15px">₹${collected.toLocaleString()}</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:2px">${collectionPct}% of expected</div>
+    </div>
+    <div style="background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:12px;padding:12px;text-align:center">
+      <div style="font-size:10px;color:var(--muted2);margin-bottom:3px">⏳ Pending</div>
+      <div style="font-weight:700;color:var(--amber);font-size:15px">₹${pending.toLocaleString()}</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:2px">till ${daysInMon} ${mKey}</div>
+    </div>
+    <div style="background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:12px;padding:12px;text-align:center">
+      <div style="font-size:10px;color:var(--muted2);margin-bottom:3px">📊 Expected</div>
+      <div style="font-weight:700;color:var(--cyan);font-size:15px">₹${expected.toLocaleString()}</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:2px">if all pay</div>
+    </div>
+    <div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.18);border-radius:12px;padding:12px;text-align:center">
+      <div style="font-size:10px;color:var(--muted2);margin-bottom:3px">💸 Total Cost</div>
+      <div style="font-weight:700;color:var(--red);font-size:15px">₹${totalCost.toLocaleString()}</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:2px">tutor+fixed+exp</div>
+    </div>
+    <div style="background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.2);border-radius:12px;padding:12px;text-align:center">
+      <div style="font-size:10px;color:var(--muted2);margin-bottom:3px">📈 Run Rate</div>
+      <div style="font-weight:700;color:var(--purple);font-size:15px">₹${dailyRunRate.toLocaleString()}/day</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:2px">proj: ₹${projectedEnd.toLocaleString()}</div>
+    </div>
+  </div>
+
+  <!-- Cost breakdown footer -->
+  <div style="margin-top:14px;padding-top:14px;border-top:1px solid var(--border);display:flex;gap:16px;flex-wrap:wrap">
+    <span style="font-size:12px;color:var(--muted2)">🎓 Tutor: <strong style="color:var(--amber)">₹${tutorPayout.toLocaleString()}</strong></span>
+    ${fixedCosts > 0 ? `<span style="font-size:12px;color:var(--muted2)">🏢 Fixed: <strong style="color:var(--red)">₹${fixedCosts.toLocaleString()}</strong></span>` : '<span style="font-size:12px;color:var(--muted2)">🏢 Fixed: <strong style="color:var(--muted2)">₹0</strong> <a href="#" onclick="openAddFixedCostModal();return false" style="color:var(--cyan);text-decoration:none;font-size:11px">+ Add rent/salary</a></span>'}
+    ${otherExp > 0 ? `<span style="font-size:12px;color:var(--muted2)">📦 Other Exp: <strong style="color:var(--red)">₹${otherExp.toLocaleString()}</strong></span>` : ''}
+    <span style="font-size:12px;color:var(--muted2)">🟢 Full potential profit: <strong style="color:var(--cyan)">₹${fullProfit.toLocaleString()}</strong></span>
+  </div>
+</div>`;
+  }
+
+  // ── CLASS-WISE REVENUE ─────────────────────────────────────────────────────
+  const classEl = document.getElementById('rev-class-section');
+  if (classEl) {
+    const maxFull = sorted[0]?.[1]?.fullRevenue || 1;
+    classEl.innerHTML = `
+<div class="tc" style="margin-bottom:20px">
+  <div class="th">
+    <div class="tt">📚 Class Revenue Intelligence <span style="font-size:11px;color:var(--muted2);font-weight:400;margin-left:6px">${mLabel} · active students</span></div>
+    <div style="display:flex;gap:10px;font-size:10px;flex-wrap:wrap">
+      <span style="color:var(--cyan)">💰 rev/hr</span>
+      <span style="color:var(--amber)">💸 tutor/hr</span>
+      <span style="color:var(--green)">⚡ net/hr</span>
+    </div>
+  </div>
+  <div style="padding:4px 0">
+  ${sorted.length ? sorted.map(([cls, d], idx) => {
+    const isBest   = cls === bestByNet?.[0];
+    const spw      = CLASS_SESSIONS_PER_WEEK[cls] || 2;
+    const hrBreak  = `${spw}×4wks×${d.batchCount}batch${d.batchCount!==1?'es':''}=${d.monthlyHours}hrs`;
+    let tutorLabel = '';
+    if(cls==='Zumba') tutorLabel = `₹3,000×${d.batchCount} batches (fixed)`;
+    else if(cls==='Dance'||cls==='Kids Dance') tutorLabel = `₹500×${d.students} students`;
+    else if(cls==='Drawing - Hobby') tutorLabel = '50% of fee (paid only)';
+    else if(cls==='Drawing - Elementary'||cls==='Drawing - Intermediate') tutorLabel = '60% of fee (paid only)';
+    else if(cls==='Guitar'||cls==='Chess') tutorLabel = '50% of fee (paid only)';
+    else tutorLabel = 'rate TBD';
+    const fullBarPct = Math.round((d.fullRevenue / maxFull) * 100);
+    const collBarPct = d.fullRevenue > 0 ? Math.round((d.collected / d.fullRevenue) * 100) : 0;
+    const medal = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'';
+
+    return `<div style="padding:14px 16px;border-bottom:1px solid var(--border);${isBest?'background:rgba(16,185,129,.04)':''}">
+
+      <!-- Class name + totals -->
+      <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:700;color:${isBest?'var(--green)':'var(--text)'}">
+            ${medal} ${cls}${isBest?' <span style="font-size:10px;background:rgba(16,185,129,.15);color:var(--green);border-radius:4px;padding:1px 7px;font-weight:700;margin-left:4px">BEST NET/HR</span>':''}
+          </div>
+          <div style="font-size:10px;color:var(--muted2);margin-top:2px">⏱ ${hrBreak} &nbsp;·&nbsp; 👥 ${d.students} students &nbsp;·&nbsp; ${d.batchCount} batch${d.batchCount!==1?'es':''}</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-size:15px;font-weight:700;color:var(--text)">₹${d.collected.toLocaleString()} <span style="font-size:11px;color:var(--muted2)">collected</span></div>
+          <div style="font-size:12px;color:var(--cyan)">₹${d.fullRevenue.toLocaleString()} <span style="color:var(--muted2)">potential</span></div>
+          <div style="font-size:11px;color:var(--amber);margin-top:1px">💸 tutor: ₹${d.tutorCost.toLocaleString()} <span style="color:var(--muted2);font-size:10px">(${tutorLabel})</span></div>
+        </div>
+      </div>
+
+      <!-- Dual bar: potential (background) + collected (foreground) -->
+      <div style="position:relative;background:rgba(99,102,241,.12);border-radius:5px;height:7px;overflow:hidden;margin-bottom:10px">
+        <div style="position:absolute;height:100%;width:${fullBarPct}%;background:rgba(99,102,241,.25);border-radius:5px"></div>
+        <div style="position:absolute;height:100%;width:${Math.round(fullBarPct*collBarPct/100)}%;background:${isBest?'var(--green)':'var(--grad)'};border-radius:5px"></div>
+      </div>
+      <div style="font-size:10px;color:var(--muted2);margin-bottom:9px;display:flex;gap:10px">
+        <span>■ <span style="color:var(--grad)">Collected ${collBarPct}%</span></span>
+        ${d.pending>0?`<span style="color:var(--amber)">⏳ ₹${d.pending.toLocaleString()} still pending</span>`:'<span style="color:var(--green)">✅ Fully collected</span>'}
+      </div>
+
+      <!-- 6-cell metrics grid: actual vs potential -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:0;border:1px solid var(--border);border-radius:10px;overflow:hidden;font-size:10px">
+        <div style="padding:8px 6px;text-align:center;border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:rgba(0,0,0,.15)">
+          <div style="color:var(--muted2);margin-bottom:2px">💰 Rev/hr</div>
+          <div style="color:var(--cyan);font-weight:700;font-size:12px">₹${d.revenuePerHour.toLocaleString()}</div>
+          <div style="color:var(--muted2);font-size:9px">actual</div>
+        </div>
+        <div style="padding:8px 6px;text-align:center;border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:rgba(0,0,0,.15)">
+          <div style="color:var(--muted2);margin-bottom:2px">💸 Tutor/hr</div>
+          <div style="color:var(--amber);font-weight:700;font-size:12px">₹${d.tutorCostPerHour.toLocaleString()}</div>
+          <div style="color:var(--muted2);font-size:9px">actual</div>
+        </div>
+        <div style="padding:8px 6px;text-align:center;border-bottom:1px solid var(--border);background:rgba(0,0,0,.15)">
+          <div style="color:var(--muted2);margin-bottom:2px">⚡ Net/hr</div>
+          <div style="color:${d.netPerHour>=0?'var(--green)':'var(--red)'};font-weight:700;font-size:12px">₹${d.netPerHour.toLocaleString()}</div>
+          <div style="color:var(--muted2);font-size:9px">actual</div>
+        </div>
+        <div style="padding:8px 6px;text-align:center;border-right:1px solid var(--border)">
+          <div style="color:var(--muted2);margin-bottom:2px">💰 Rev/hr</div>
+          <div style="color:var(--cyan);font-weight:700;font-size:12px">₹${d.fullRevenuePerHour.toLocaleString()}</div>
+          <div style="color:var(--muted2);font-size:9px">if all pay</div>
+        </div>
+        <div style="padding:8px 6px;text-align:center;border-right:1px solid var(--border)">
+          <div style="color:var(--muted2);margin-bottom:2px">💸 Tutor/hr</div>
+          <div style="color:var(--amber);font-weight:700;font-size:12px">₹${d.fullTutorPerHour.toLocaleString()}</div>
+          <div style="color:var(--muted2);font-size:9px">if all pay</div>
+        </div>
+        <div style="padding:8px 6px;text-align:center;">
+          <div style="color:var(--muted2);margin-bottom:2px">⚡ Net/hr</div>
+          <div style="color:${d.fullNetPerHour>=0?'var(--green)':'var(--red)'};font-weight:700;font-size:12px">₹${d.fullNetPerHour.toLocaleString()}</div>
+          <div style="color:var(--muted2);font-size:9px">if all pay</div>
+        </div>
+      </div>
+    </div>`;
+  }).join('') : `<div class="empty-state"><div class="ei">📊</div><p>No admissions data for this month yet.</p></div>`}
+  </div>
+  <!-- Summary footer -->
+  ${bestByNet ? `<div style="padding:12px 16px;background:rgba(16,185,129,.04);border-top:1px solid var(--border)">
+    <span style="font-size:12px;color:var(--muted2)">⚡ Most profitable class per hour: </span>
+    <strong style="color:var(--green)">${bestByNet[0]}</strong>
+    <span style="font-size:12px;color:var(--muted2)"> — </span>
+    <strong style="color:var(--green)">₹${bestByNet[1].fullNetPerHour.toLocaleString()}/hr</strong>
+    <span style="font-size:11px;color:var(--muted2)"> net (full potential)</span>
+  </div>` : ''}
+</div>`;
+  }
+
+  // ── DAILY + WEEKLY CASHFLOW ────────────────────────────────────────────────
+  const cfEl = document.getElementById('rev-cashflow-section');
+  if (cfEl) {
+    const maxDay = daily.length ? Math.max(...daily.map(d => d[1])) : 1;
+    const totalCf = daily.reduce((s, d) => s + d[1], 0);
+    cfEl.innerHTML = `
+<div class="tc" style="margin-bottom:20px">
+  <div class="th">
+    <div class="tt">💹 Daily Cashflow · ${mLabel}</div>
+    <div style="font-size:12px;color:var(--muted2)">${daily.length} days · ₹${totalCf.toLocaleString()} total</div>
+  </div>
+  ${daily.length ? `
+  <div style="padding:6px 0">
+    ${daily.map(([day, amt]) => {
+      const pct3  = Math.round((amt / maxDay) * 100);
+      const label = new Date(day).toLocaleDateString('en-IN', {day:'numeric',month:'short',weekday:'short'});
+      return `<div style="display:flex;align-items:center;gap:10px;padding:7px 16px;border-bottom:1px solid rgba(255,255,255,.04)">
+        <div style="width:78px;font-size:11px;color:var(--muted2);flex-shrink:0">${label}</div>
+        <div style="flex:1;background:var(--card2);border-radius:4px;height:8px;overflow:hidden">
+          <div style="height:100%;width:${pct3}%;background:linear-gradient(90deg,var(--cyan),var(--purple));border-radius:4px"></div>
+        </div>
+        <div style="width:82px;text-align:right;font-size:13px;font-weight:700;color:var(--text)">₹${amt.toLocaleString()}</div>
+      </div>`;
+    }).join('')}
+  </div>
+  <div style="padding:12px 16px;border-top:1px solid var(--border)">
+    <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">Weekly Totals</div>
+    <div style="display:flex;gap:10px;flex-wrap:wrap">
+      ${weekly.map(([wk,amt]) => `<div style="background:var(--card2);border:1px solid var(--border);border-radius:10px;padding:8px 14px;text-align:center">
+        <div style="font-size:10px;color:var(--muted2)">${wk}</div>
+        <div style="font-weight:700;color:var(--cyan);font-size:14px">₹${amt.toLocaleString()}</div>
+      </div>`).join('')}
+    </div>
+  </div>
+  ` : `<div style="padding:24px;text-align:center;color:var(--muted2);font-size:13px">No cashflow for ${mLabel} yet. Fee entries need a <em>date</em> field to appear here.</div>`}
+</div>`;
+  }
+
+  // ── FIXED COSTS ────────────────────────────────────────────────────────────
+  const fcEl = document.getElementById('rev-fixed-costs-section');
+  if (fcEl) {
+    const fcRecs = revFixedCostRecords();
+    fcEl.innerHTML = `
+<div class="tc" style="margin-bottom:20px">
+  <div class="th">
+    <div class="tt">🏢 Fixed Costs · ${mLabel}</div>
+    <div style="display:flex;align-items:center;gap:8px">
+      ${fixedCosts > 0 ? `<strong style="color:var(--red)">₹${fixedCosts.toLocaleString()}</strong>` : ''}
+      <button class="bsm ba2" onclick="openAddFixedCostModal()">+ Add</button>
+    </div>
+  </div>
+  ${fcRecs.length ? `<div class="tbl-wrap"><table>
+    <thead><tr><th>Date</th><th>Type</th><th>Description</th><th>Amount</th><th></th></tr></thead>
+    <tbody>${fcRecs.map(c => `<tr>
+      <td style="font-size:12px;color:var(--muted2)">${c.date||'—'}</td>
+      <td><span style="background:rgba(168,85,247,.1);color:var(--purple);padding:3px 9px;border-radius:20px;font-size:11px;font-weight:700">${c.category||'Fixed'}</span></td>
+      <td><strong>${c.description||'—'}</strong></td>
+      <td><strong style="color:var(--red)">₹${(c.amount||0).toLocaleString()}</strong></td>
+      <td><button class="bsm bd" style="font-size:9px;padding:2px 6px" onclick="deleteFixedCost('${c.id}')">🗑</button></td>
+    </tr>`).join('')}</tbody>
+  </table></div>` : `<div style="padding:20px;text-align:center;color:var(--muted2);font-size:13px">No fixed costs for ${mLabel}. Add rent or salary (category: Rent / Staff) to accurately calculate net profit.</div>`}
+</div>`;
+  }
+
+  // ── PROFIT SIMULATOR ──────────────────────────────────────────────────────
+  const simEl = document.getElementById('rev-simulator-section');
+  if (simEl) renderSimulator(perHour, tutorPayout, fixedCosts, otherExp, collected, pending);
+}
+
+// ── SIMULATOR ─────────────────────────────────────────────────────────────────
+// State lives in window._sim so sliders persist across re-renders
+function initSimState(perHour, tutorPayout, fixedCosts, otherExp) {
+  if (!window._sim) {
+    window._sim = {
+      target: PROFIT_TARGET,
+      fixedCosts: fixedCosts,
+      students: {},
+    };
+  }
+  // Seed per-class student counts from real data if not already set
+  Object.entries(perHour).forEach(([cls, d]) => {
+    if (window._sim.students[cls] === undefined) {
+      window._sim.students[cls] = d.students;
+    }
+  });
+}
+
+function simCalcRevenue(cls, students) {
+  const fee = CLASS_FEES[cls] || 0;
+  return students * fee;
+}
+
+function simCalcTutorCost(cls, students) {
+  if (cls === 'Zumba') return revActiveBatchCount(cls) * 3000; // fixed per batch
+  if (cls === 'Dance' || cls === 'Kids Dance') return students * 500;
+  // For per-student % classes, use average fee from real enrolled students
+  // to get an accurate per-student tutor cost for simulation
+  const activeAdms = allAdmissions.filter(a => a.admission === cls && revAdmIsActive(a));
+  const avgFee = activeAdms.length > 0
+    ? activeAdms.reduce((s,a) => s + (parseFloat(a.feeAmt) || CLASS_FEES[cls] || 0), 0) / activeAdms.length
+    : (CLASS_FEES[cls] || 0);
+  if (cls === 'Drawing - Hobby') return Math.round(avgFee * 0.5) * students;
+  if (cls === 'Drawing - Elementary' || cls === 'Drawing - Intermediate') return Math.round(avgFee * 0.6) * students;
+  if (cls === 'Guitar' || cls === 'Chess') return Math.round(avgFee * 0.5) * students; // Chess: 50% same as Guitar, age-adjusted via avg
+  return 0;
+}
+
+function renderSimulator(perHour, tutorPayout, fixedCosts, otherExp, collected, pending) {
+  const simEl = document.getElementById('rev-simulator-section');
+  if (!simEl) return;
+  initSimState(perHour, tutorPayout, fixedCosts, otherExp);
+  const sim = window._sim;
+  const classes = Object.keys(perHour);
+
+  // Compute simulated totals
+  let simRevenue = 0, simTutorCost = 0;
+  classes.forEach(cls => {
+    const n = sim.students[cls] !== undefined ? sim.students[cls] : perHour[cls].students;
+    simRevenue   += simCalcRevenue(cls, n);
+    simTutorCost += simCalcTutorCost(cls, n);
+  });
+  const simFixedCosts = sim.fixedCosts;
+  const simTotalCost  = simTutorCost + simFixedCosts + otherExp;
+  const simProfit     = simRevenue - simTotalCost;
+  const simTarget     = sim.target;
+  const simGap        = simTarget - simProfit;
+  const simPct        = Math.min(100, Math.max(0, Math.round((simProfit / simTarget) * 100)));
+  const simColor      = simProfit >= simTarget ? 'var(--green)' : simProfit > 0 ? 'var(--cyan)' : 'var(--red)';
+
+  // How many more students needed across all classes to hit target (distributed by revenue weight)
+  let neededMsg = '';
+  if (simGap > 0) {
+    const avgFee = simRevenue > 0 ? Math.round(simRevenue / classes.reduce((s,c) => s+(sim.students[c]||0), 0)) : 1500;
+    const extraStudents = Math.ceil(simGap / (avgFee * 0.6)); // rough: 60% of fee is net after tutor
+    neededMsg = `Need ~${extraStudents} more students (avg fee basis) to hit ₹${simTarget.toLocaleString()} target`;
+  } else {
+    neededMsg = `🏆 Target ₹${simTarget.toLocaleString()} is achievable with this mix!`;
+  }
+
+  const simHtml = `
+<div class="tc" style="margin-bottom:20px">
+  <div class="th">
+    <div class="tt">🧮 Profit Simulator</div>
+    <div style="font-size:11px;color:var(--muted2)">Adjust students · costs · target → see impact instantly</div>
+  </div>
+  <div style="padding:16px">
+
+    <!-- Target + Fixed costs inputs -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+      <div style="background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">🎯 Profit Target</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px">
+          ${[50000,60000,70000,80000,100000].map(t => `<button onclick="window._sim.target=${t};renderSimulator(window._simPH,window._simTP,window._simFC,window._simOE,0,0)" style="font-size:11px;padding:3px 9px;border-radius:20px;border:1px solid ${sim.target===t?'var(--cyan)':'var(--border)'};background:${sim.target===t?'rgba(0,212,255,.12)':'transparent'};color:${sim.target===t?'var(--cyan)':'var(--muted2)'};cursor:pointer">₹${(t/1000).toFixed(0)}K</button>`).join('')}
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          <input type="number" value="${sim.target}" min="0" step="1000"
+            oninput="window._sim.target=parseInt(this.value)||50000;renderSimulator(window._simPH,window._simTP,window._simFC,window._simOE,0,0)"
+            style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:13px;font-weight:700" />
+        </div>
+      </div>
+      <div style="background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px">
+        <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:8px">🏢 Monthly Fixed Costs</div>
+        <input type="number" value="${sim.fixedCosts}" min="0" step="500"
+          oninput="window._sim.fixedCosts=parseInt(this.value)||0;renderSimulator(window._simPH,window._simTP,window._simFC,window._simOE,0,0)"
+          style="width:100%;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:6px 10px;color:var(--text);font-size:13px;font-weight:700;margin-bottom:6px" />
+        <div style="font-size:10px;color:var(--muted2)">Rent + Salary (actual: ₹${fixedCosts.toLocaleString()})</div>
+      </div>
+    </div>
+
+    <!-- Simulated result banner -->
+    <div style="background:${simProfit>=simTarget?'rgba(16,185,129,.08)':'rgba(99,102,241,.08)'};border:1px solid ${simProfit>=simTarget?'rgba(16,185,129,.3)':'rgba(99,102,241,.25)'};border-radius:14px;padding:14px 16px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+        <div>
+          <div style="font-size:10px;color:var(--muted2);letter-spacing:1px;text-transform:uppercase;font-weight:700">Simulated Net Profit</div>
+          <div style="font-family:'Bebas Neue',sans-serif;font-size:38px;line-height:1;color:${simColor}">₹${simProfit.toLocaleString()}</div>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:22px;font-family:'Bebas Neue',sans-serif;color:${simColor}">${simPct}%</div>
+          <div style="font-size:11px;color:var(--muted2)">of ₹${(simTarget/1000).toFixed(0)}K target</div>
+          <div style="font-size:11px;color:${simGap>0?'var(--amber)':'var(--green)'};margin-top:3px">${simGap>0?'Gap: ₹'+simGap.toLocaleString():'✅ Target hit!'}</div>
+        </div>
+      </div>
+      <div style="background:var(--card2);border-radius:6px;height:8px;overflow:hidden;margin-bottom:10px">
+        <div style="height:100%;width:${simPct}%;background:${simProfit>=simTarget?'var(--green)':'var(--grad)'};border-radius:6px;transition:width .4s ease"></div>
+      </div>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;font-size:11px">
+        <span style="color:var(--muted2)">💰 Revenue: <strong style="color:var(--green)">₹${simRevenue.toLocaleString()}</strong></span>
+        <span style="color:var(--muted2)">🎓 Tutor: <strong style="color:var(--amber)">₹${simTutorCost.toLocaleString()}</strong></span>
+        <span style="color:var(--muted2)">🏢 Fixed: <strong style="color:var(--red)">₹${simFixedCosts.toLocaleString()}</strong></span>
+        <span style="color:var(--muted2)">📋 Total cost: <strong style="color:var(--red)">₹${simTotalCost.toLocaleString()}</strong></span>
+      </div>
+      <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border);font-size:12px;color:${simGap>0?'var(--amber)':'var(--green)'}">
+        💡 ${neededMsg}
+      </div>
+    </div>
+
+    <!-- Per-class student sliders -->
+    <div style="font-size:10px;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted2);margin-bottom:10px">Student Count per Class</div>
+    <div style="display:grid;gap:10px">
+      ${classes.map(cls => {
+        const d   = perHour[cls];
+        const n   = sim.students[cls] !== undefined ? sim.students[cls] : d.students;
+        const spw = CLASS_SESSIONS_PER_WEEK[cls] || 2;
+        const hrs = spw * 4 * d.batchCount;
+        const simRev  = simCalcRevenue(cls, n);
+        const simTut  = simCalcTutorCost(cls, n);
+        const simNet  = simRev - simTut;
+        const simRPH  = hrs > 0 ? Math.round(simRev / hrs) : 0;
+        const simNPH  = hrs > 0 ? Math.round(simNet / hrs) : 0;
+        const realRPH = d.fullRevenuePerHour;
+        const realNPH = d.fullNetPerHour;
+        const diff    = n - d.students;
+        const diffStr = diff === 0 ? '' : diff > 0 ? `<span style="color:var(--green)">+${diff}</span>` : `<span style="color:var(--red)">${diff}</span>`;
+        return `<div style="background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:12px 14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <div style="font-size:13px;font-weight:700;color:var(--text)">${cls}</div>
+            <div style="font-size:12px;color:var(--muted2)">${d.batchCount} batch${d.batchCount!==1?'es':''} · ${hrs}hrs/mo</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px">
+            <button onclick="if(window._sim.students['${cls}']>0){window._sim.students['${cls}']--;renderSimulator(window._simPH,window._simTP,window._simFC,window._simOE,0,0)}" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:16px;cursor:pointer;flex-shrink:0">−</button>
+            <input type="range" min="0" max="${Math.max(60, d.students+20)}" value="${n}"
+              oninput="window._sim.students['${cls}']=parseInt(this.value);renderSimulator(window._simPH,window._simTP,window._simFC,window._simOE,0,0)"
+              style="flex:1;accent-color:var(--cyan)" />
+            <button onclick="window._sim.students['${cls}']++;renderSimulator(window._simPH,window._simTP,window._simFC,window._simOE,0,0)" style="width:28px;height:28px;border-radius:50%;border:1px solid var(--border);background:var(--card);color:var(--text);font-size:16px;cursor:pointer;flex-shrink:0">+</button>
+            <div style="width:52px;text-align:center;font-weight:700;font-size:14px;color:var(--cyan)">${n} ${diffStr}</div>
+          </div>
+          <!-- Real vs Simulated metrics row -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:0;border:1px solid var(--border);border-radius:8px;overflow:hidden;font-size:10px">
+            <div style="padding:6px 8px;text-align:center;border-right:1px solid var(--border);background:rgba(0,0,0,.12)">
+              <div style="color:var(--muted2);margin-bottom:1px">Revenue</div>
+              <div style="color:var(--muted2);font-size:9px">Real</div>
+              <div style="color:var(--cyan);font-weight:700">₹${d.fullRevenue.toLocaleString()}</div>
+            </div>
+            <div style="padding:6px 8px;text-align:center;border-right:1px solid var(--border);background:rgba(0,0,0,.12)">
+              <div style="color:var(--muted2);margin-bottom:1px">Net/hr</div>
+              <div style="color:var(--muted2);font-size:9px">Real</div>
+              <div style="color:${realNPH>=0?'var(--green)':'var(--red)'};font-weight:700">₹${realNPH}</div>
+            </div>
+            <div style="padding:6px 8px;text-align:center;border-right:1px solid var(--border)">
+              <div style="color:var(--muted2);margin-bottom:1px">Revenue</div>
+              <div style="color:var(--muted2);font-size:9px">Sim</div>
+              <div style="color:var(--cyan);font-weight:700">₹${simRev.toLocaleString()}</div>
+            </div>
+            <div style="padding:6px 8px;text-align:center;">
+              <div style="color:var(--muted2);margin-bottom:1px">Net/hr</div>
+              <div style="color:var(--muted2);font-size:9px">Sim</div>
+              <div style="color:${simNPH>=0?'var(--green)':'var(--red)'};font-weight:700">₹${simNPH}</div>
+            </div>
+          </div>
+        </div>`;
+      }).join('')}
+    </div>
+
+    <!-- Reset button -->
+    <div style="margin-top:12px;text-align:center">
+      <button class="bsm bo" onclick="window._sim=null;renderSimulator(window._simPH,window._simTP,window._simFC,window._simOE,0,0)">↺ Reset to real data</button>
+    </div>
+  </div>
+</div>`;
+
+  simEl.innerHTML = simHtml;
+  // Store perHour reference for slider callbacks
+  window._simPH = perHour;
+  window._simTP = tutorPayout;
+  window._simFC = fixedCosts;
+  window._simOE = otherExp;
+}
+
+// ── MODAL: Add Fixed Cost — uses proper overlay system ──────────────────────
+function openAddFixedCostModal() {
+  const today = new Date().toISOString().slice(0, 10);
+  let ov = document.getElementById('ov_fixedcost');
+  if (!ov) {
+    ov = document.createElement('div');
+    ov.id = 'ov_fixedcost';
+    ov.className = 'overlay';
+    ov.onclick = e => { if (e.target === ov) closeOv('ov_fixedcost'); };
+    document.body.appendChild(ov);
+  }
+  ov.innerHTML = `
+<div class="modal">
+  <div class="mh"><div class="mt2">🏢 Add Fixed Cost</div><button class="mc" onclick="closeOv('ov_fixedcost')">✕</button></div>
+  <div style="display:grid;gap:14px;padding:4px 0 8px">
+    <div style="background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:10px;padding:10px 14px;font-size:12px;color:var(--muted2)">
+      💡 Fixed costs (Rent &amp; Salary) are saved as <strong>Expenses</strong> with category <strong>Rent</strong> or <strong>Staff</strong> — they appear in both Expenses and Revenue Engine automatically.
+    </div>
+    <div>
+      <div style="font-size:12px;color:var(--muted2);margin-bottom:6px;font-weight:600">Type</div>
+      <select id="fc_type" class="si-input" style="width:100%">
+        <option value="Rent">🏢 Rent</option>
+        <option value="Staff">👤 Staff / Salary</option>
+      </select>
+    </div>
+    <div>
+      <div style="font-size:12px;color:var(--muted2);margin-bottom:6px;font-weight:600">Description</div>
+      <input id="fc_desc" class="si-input" style="width:100%" placeholder="e.g. Studio rent April, Manager salary..." />
+    </div>
+    <div>
+      <div style="font-size:12px;color:var(--muted2);margin-bottom:6px;font-weight:600">Amount (₹)</div>
+      <input id="fc_amt" type="number" class="si-input" style="width:100%" placeholder="e.g. 15000" />
+    </div>
+    <div>
+      <div style="font-size:12px;color:var(--muted2);margin-bottom:6px;font-weight:600">Date</div>
+      <input id="fc_date" type="date" class="si-input" style="width:100%" value="${today}" />
+    </div>
+    <div id="fc_err" style="color:var(--red);font-size:12px;min-height:16px"></div>
+    <div style="display:flex;gap:10px">
+      <button class="bsm bo" style="flex:1;padding:11px" onclick="closeOv('ov_fixedcost')">Cancel</button>
+      <button class="btn-primary" style="flex:2" onclick="saveFixedCost()">Save Fixed Cost</button>
+    </div>
+  </div>
+</div>`;
+  openOv('ov_fixedcost');
+}
+
+async function saveFixedCost() {
+  const type  = document.getElementById('fc_type')?.value?.trim() || 'Rent';
+  const desc  = (document.getElementById('fc_desc')?.value||'').trim();
+  const amt   = parseFloat(document.getElementById('fc_amt')?.value);
+  const date  = document.getElementById('fc_date')?.value || '';
+  const errEl = document.getElementById('fc_err');
+  if (!desc) { if(errEl) errEl.textContent = 'Please enter a description.'; return; }
+  if (!amt || amt <= 0) { if(errEl) errEl.textContent = 'Please enter a valid amount.'; return; }
+  if (!date) { if(errEl) errEl.textContent = 'Please select a date.'; return; }
+  if (errEl) errEl.textContent = '';
+  // Save into expenses collection with category=type (Rent or Staff)
+  const data = {
+    date, category: type, description: desc, amount: amt,
+    paidBy: CU?.name || CU?.email || 'admin', note: '', receiptNote: '',
+    createdBy: CU?.uid, createdByEmail: CU?.email,
+    updatedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    createdAt: firebase.firestore.FieldValue.serverTimestamp(),
+  };
+  try {
+    const ref = await db.collection('expenses').add(data);
+    allExpenses.unshift({ id: ref.id, ...data });
+    closeOv('ov_fixedcost');
+    showToast('✅ Fixed cost saved!', 'success');
+    renderRevenueEngine();
+  } catch(e) {
+    if(errEl) errEl.textContent = 'Save failed: ' + e.message;
+  }
+}
+
+async function deleteFixedCost(id) {
+  if (!confirm('Delete this fixed cost?')) return;
+  try {
+    await db.collection('expenses').doc(id).delete();
+    allExpenses = allExpenses.filter(c => c.id !== id);
+    showToast('🗑 Deleted.', 'success');
+    renderRevenueEngine();
+  } catch(e) { showToast('Delete failed: ' + e.message, 'error'); }
+}
+
+
+// ── SIMULATOR TOGGLE ─────────────────────────────────────────────────────────
+function toggleSimulatorPanel(btn) {
+  const s = document.getElementById('rev-simulator-section');
+  if (!s) return;
+  const isHidden = s.style.display === 'none' || s.style.display === '';
+  if (isHidden) {
+    s.style.display = 'block';
+    if (btn) btn.textContent = '🧮 Hide Simulator';
+    if (window._simPH) {
+      // Data already loaded — render immediately
+      renderSimulator(window._simPH, window._simTP, window._simFC, window._simOE, 0, 0);
+      setTimeout(() => s.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+    } else {
+      // Data not yet ready — show spinner, kick off load, then render when ready
+      s.innerHTML = '<div style="padding:24px;text-align:center;color:var(--muted2);font-size:13px">⏳ Loading simulator…</div>';
+      if (btn) btn.disabled = true;
+      if (!window._revLoading && INITS && INITS.aRevenue) INITS.aRevenue();
+      const poll = setInterval(() => {
+        if (window._simPH) {
+          clearInterval(poll);
+          renderSimulator(window._simPH, window._simTP, window._simFC, window._simOE, 0, 0);
+          if (btn) btn.disabled = false;
+          setTimeout(() => s.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
+        }
+      }, 200);
+      // Safety timeout after 10s
+      setTimeout(() => {
+        clearInterval(poll);
+        if (!window._simPH) {
+          s.innerHTML = '<div style="padding:24px;text-align:center;color:var(--red);font-size:13px">⚠️ Could not load revenue data. Try the ↺ Refresh button.</div>';
+          if (btn) { btn.disabled = false; btn.textContent = '🧮 Simulator'; }
+          s.style.display = 'none';
+        }
+      }, 10000);
+    }
+  } else {
+    s.style.display = 'none';
+    if (btn) { btn.textContent = '🧮 Simulator'; btn.disabled = false; }
+  }
+}
+
+// ── END REVENUE ENGINE ────────────────────────────────────────────────────────
 </script></body></html>
