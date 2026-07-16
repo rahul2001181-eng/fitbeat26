@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Ladies Gym vs Zumba for Weight Loss — Which Is Right for You? | Fitbeat Mumbai</title>
-<meta name="description" content="Ladies gym vs Zumba for weight loss in Mumbai — a detailed comparison of results, cost, fun factor and which works better for women in Bhandup, Nahur & Mulund. Free Zumba demo available at Fitbeat Studio."/>
+<title>Zumba Beats the Gym for Weight Loss | Fitbeat Mumbai</title>
+<meta name="description" content="Verdict: Zumba beats the gym for weight loss & consistency for most women. Compare cost, results and fun factor, then try a free demo at Fitbeat Bhandup."/>
 <meta name="keywords" content="ladies gym vs zumba, zumba weight loss mumbai, ladies gym bhandup, women fitness classes nahur, zumba or gym for weight loss, best workout women mumbai 2026, zumba vs gym for fat loss, ladies fitness classes kanjurmarg"/>
 <meta name="robots" content="index, follow, max-image-preview:large"/>
 <meta name="author" content="Fitbeat Studio"/>
@@ -13,8 +13,8 @@
 <!-- Open Graph -->
 <meta property="og:type" content="article"/>
 <meta property="og:url" content="https://fitbeat26.com/ladies-gym-vs-zumba-weight-loss.html"/>
-<meta property="og:title" content="Ladies Gym vs Zumba for Weight Loss — Which Is Right for You? | Fitbeat Mumbai"/>
-<meta property="og:description" content="A detailed comparison of results, cost, fun factor and which works better for women in Bhandup, Nahur & Mulund. Free Zumba demo available at Fitbeat Studio."/>
+<meta property="og:title" content="Zumba Beats the Gym for Weight Loss | Fitbeat Mumbai"/>
+<meta property="og:description" content="Verdict: Zumba beats the gym for weight loss & consistency for most women. Compare cost, results and fun factor, then try a free demo at Fitbeat Bhandup."/>
 <meta property="og:image" content="https://fitbeat26.com/ladiesgymvszumba.png"/>
 <meta property="og:locale" content="en_IN"/>
 <meta property="og:site_name" content="Fitbeat Studio"/>
@@ -141,9 +141,86 @@
   .btn-wa{background:#25d366;color:#fff;font-weight:700;font-size:14px;padding:12px 24px;border-radius:100px;display:inline-flex;align-items:center;gap:8px;transition:transform .2s}
   .btn-wa:hover{transform:translateY(-2px);text-decoration:none}
   footer{border-top:1px solid var(--border);padding:32px 24px;text-align:center;font-size:13px;color:var(--muted)}
+
+  /* Reading progress bar */
+  .progress-bar{position:fixed;top:0;left:0;height:3px;background:linear-gradient(90deg,var(--cyan),var(--pink));width:0%;z-index:200;transition:width .1s linear}
+
+  /* TOC */
+  .toc{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px 24px;margin:0 0 36px}
+  .toc-title{font-size:11px;font-weight:700;letter-spacing:2px;text-transform:uppercase;color:var(--muted);margin-bottom:12px}
+  .toc-list{list-style:none;padding:0;margin:0;display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .toc-list li a{font-size:14px;color:var(--text);display:flex;align-items:center;gap:8px}
+  .toc-list li a:hover{color:var(--cyan);text-decoration:none}
+  .toc-num{color:var(--cyan);font-family:'Bebas Neue',sans-serif;font-size:15px;min-width:20px}
+  @media(max-width:560px){.toc-list{grid-template-columns:1fr}}
+
+  /* Stat strip */
+  .stat-strip{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:32px 0}
+  .stat-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:20px 12px;text-align:center}
+  .stat-num{font-family:'Bebas Neue',sans-serif;font-size:clamp(24px,5vw,34px);background:linear-gradient(135deg,var(--cyan),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;line-height:1}
+  .stat-label{font-size:11px;color:var(--muted);margin-top:6px;letter-spacing:.3px}
+  @media(max-width:560px){.stat-strip{grid-template-columns:1fr}}
+
+  /* Section images */
+  .section-img{width:100%;border-radius:16px;border:1px solid var(--border);margin:18px 0;display:block;object-fit:cover;max-height:320px}
+  .img-caption{font-size:12px;color:var(--muted);text-align:center;margin-top:-10px;margin-bottom:18px}
+
+  /* Table interactivity */
+  .table-hint{font-size:12px;color:var(--muted);margin-bottom:8px;display:flex;align-items:center;gap:6px}
+  .vs-table td.win{box-shadow:inset 0 0 0 1px currentColor}
+  .vs-table td.win:nth-child(2){color:var(--pink)}
+  .vs-table td.win:nth-child(3){color:var(--cyan)}
+  .vs-table td{cursor:pointer;transition:filter .15s}
+  .table-scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+
+  /* Quiz */
+  .quiz-box{background:var(--card);border:1px solid var(--border);border-radius:20px;padding:32px 24px;margin:40px 0}
+  .quiz-box h3{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:1.5px;margin-bottom:6px;color:#fff}
+  .quiz-sub{font-size:13px;color:var(--muted);margin-bottom:22px}
+  .quiz-step{display:none}
+  .quiz-step.active{display:block;animation:fadeIn .3s ease}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+  .quiz-q{font-size:15px;font-weight:700;color:#fff;margin-bottom:14px}
+  .quiz-opts{display:flex;flex-direction:column;gap:10px}
+  .quiz-opt{background:rgba(255,255,255,.03);border:1px solid var(--border);border-radius:12px;padding:14px 16px;font-size:14px;color:var(--text);text-align:left;cursor:pointer;transition:.15s}
+  .quiz-opt:hover{border-color:var(--cyan);background:rgba(0,212,255,.06)}
+  .quiz-progress{display:flex;gap:6px;margin-bottom:18px}
+  .quiz-dot{height:4px;flex:1;background:var(--border);border-radius:2px;overflow:hidden}
+  .quiz-dot.done{background:linear-gradient(90deg,var(--cyan),var(--pink))}
+  .quiz-result{text-align:center}
+  .quiz-result-badge{font-family:'Bebas Neue',sans-serif;font-size:34px;letter-spacing:1.5px;background:linear-gradient(135deg,var(--cyan),var(--pink));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;margin-bottom:10px}
+  .quiz-result p{color:#b0b0c0;margin-bottom:20px}
+  .quiz-restart{font-size:12px;color:var(--muted);text-decoration:underline;cursor:pointer;background:none;border:none;margin-top:14px}
+
+  /* Accordion FAQ */
+  .faq-item{border-bottom:1px solid var(--border)}
+  .faq-q{width:100%;text-align:left;background:none;border:none;padding:18px 0;font-size:16px;font-weight:700;color:#fff;display:flex;justify-content:space-between;align-items:center;cursor:pointer;font-family:'DM Sans',sans-serif}
+  .faq-icon{font-size:18px;color:var(--cyan);transition:transform .25s;flex-shrink:0;margin-left:12px}
+  .faq-item.open .faq-icon{transform:rotate(45deg)}
+  .faq-a{max-height:0;overflow:hidden;transition:max-height .3s ease}
+  .faq-item.open .faq-a{max-height:200px}
+  .faq-a p{padding-bottom:18px;margin:0}
+
+  /* Testimonial cards */
+  .testimonial-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+  .testimonial-card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:22px}
+  .testimonial-card.win-pink{border-top:3px solid var(--pink)}
+  .testimonial-card.win-cyan{border-top:3px solid var(--cyan)}
+  .testimonial-stars{color:var(--gold);font-size:13px;margin-bottom:10px}
+  .testimonial-card p{color:var(--text);font-size:14px;font-style:italic;margin-bottom:12px}
+  .testimonial-name{font-size:12px;color:var(--muted);font-style:normal}
+  @media(max-width:560px){.testimonial-grid{grid-template-columns:1fr}}
+
+  /* Floating sticky CTA */
+  .float-cta{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(120%);z-index:150;background:var(--card);border:1px solid rgba(0,212,255,.3);border-radius:100px;padding:10px 10px 10px 18px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 30px rgba(0,0,0,.5);transition:transform .35s ease}
+  .float-cta.show{transform:translateX(-50%) translateY(0)}
+  .float-cta span{font-size:13px;color:var(--text);white-space:nowrap}
+  .float-cta a{background:linear-gradient(135deg,var(--pink),#cc0055);color:#fff;font-weight:700;font-size:13px;padding:9px 18px;border-radius:100px;white-space:nowrap}
+  @media(max-width:480px){.float-cta span{display:none}}
 </style>
 </head>
 <body>
+<div class="progress-bar" id="progressBar"></div>
 <nav>
   <a href="/" class="nav-logo">FITBEAT</a>
   <a href="/" class="nav-back">← Back to Fitbeat Studio</a>
@@ -154,14 +231,34 @@
   <div class="blog-meta-row">
     <span>📅 June 2026</span><span>·</span><span>5 min read</span><span>·</span><span>Fitbeat Studio, Bhandup</span>
   </div>
-  <img class="blog-hero-img" src="ladiesgymvszumba.png" alt="Ladies Gym vs Zumba for Weight Loss Mumbai 2026 — Which is better?"/>
+  <img class="blog-hero-img" src="zumba-vs-gym-hero.png" alt="Zumba class women dancing vs gym workout with dumbbells — which is better for weight loss?"/>
 </div>
 <div class="blog-content">
   <p>One of the most common questions women in Mumbai ask when starting their fitness journey: <strong>"Should I join a ladies gym, or is Zumba better for weight loss?"</strong> Both work. But they work differently — and the best choice depends entirely on your goals, lifestyle, and what you'll actually stick to.</p>
   <p>Here's a complete, honest comparison based on real results from women in Bhandup, Nahur and Mulund who have tried both.</p>
 
-  <h2>The Head-to-Head Comparison</h2>
-  <table class="vs-table">
+  <div class="toc">
+    <div class="toc-title">Jump to a section</div>
+    <ul class="toc-list">
+      <li><span class="toc-num">01</span><a href="#compare">The Comparison</a></li>
+      <li><span class="toc-num">02</span><a href="#gym-wins">When Gym Wins</a></li>
+      <li><span class="toc-num">03</span><a href="#zumba-wins">When Zumba Wins</a></li>
+      <li><span class="toc-num">04</span><a href="#quiz">Take the Quiz</a></li>
+      <li><span class="toc-num">05</span><a href="#results">Real Results</a></li>
+      <li><span class="toc-num">06</span><a href="#faq">FAQs</a></li>
+    </ul>
+  </div>
+
+  <div class="stat-strip">
+    <div class="stat-card"><div class="stat-num">60%</div><div class="stat-label">Quit gyms within 3 months</div></div>
+    <div class="stat-card"><div class="stat-num">400–600</div><div class="stat-label">Cal burned per Zumba class</div></div>
+    <div class="stat-card"><div class="stat-num">₹1999</div><div class="stat-label">Zumba/month at Fitbeat</div></div>
+  </div>
+
+  <h2 id="compare">The Head-to-Head Comparison</h2>
+  <p class="table-hint">👆 Tap any row to see which one wins that round</p>
+  <div class="table-scroll">
+  <table class="vs-table" id="vsTable">
     <thead>
       <tr>
         <th>Factor</th>
@@ -182,8 +279,11 @@
       <tr><td><strong>Typical Monthly Fee</strong></td><td>₹1500–₹4000</td><td>₹1999 at Fitbeat</td></tr>
     </tbody>
   </table>
+  </div>
 
-  <h2>When the Ladies Gym Wins</h2>
+  <h2 id="gym-wins">When the Ladies Gym Wins</h2>
+  <img class="section-img" src="https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?w=900&q=80" alt="Woman doing strength training with dumbbells at a ladies gym"/>
+  <p class="img-caption">Strength training builds the muscle definition Zumba alone won't.</p>
   <p>A traditional gym is better if your primary goal is <strong>body shaping and strength building</strong> — not just weight loss. If you want to build defined arms, improve bone density, or target specific muscle groups, resistance training with weights is irreplaceable.</p>
   <ul>
     <li>You want to build visible muscle definition</li>
@@ -195,7 +295,9 @@
     <p>⚠️ <strong>The gym dropout problem:</strong> Studies show over 60% of gym members stop attending within the first 3 months. If you've joined a gym before and quit, it's not your fault — it's just not the most sustainable format for many people.</p>
   </div>
 
-  <h2>When Zumba Wins</h2>
+  <h2 id="zumba-wins">When Zumba Wins</h2>
+  <img class="section-img" src="https://images.unsplash.com/photo-1518611012118-696072aa579a?w=900&q=80" alt="Group of women dancing in a Zumba fitness class"/>
+  <p class="img-caption">Group energy is why women actually show up week after week.</p>
   <p>Zumba consistently outperforms the gym on one critical metric: <strong>how long women actually keep doing it</strong>. This matters more than any single session's calorie count, because weight loss is the result of months of consistency — not one great workout.</p>
   <ul>
     <li>You want to lose weight and enjoy the process</li>
@@ -213,12 +315,66 @@
   <p>The ideal combination for women who want both fat loss and toning: <strong>Zumba 3 days a week + strength training 2 days a week</strong>. This gives you the calorie-burning consistency of Zumba while building the muscle that keeps your metabolism elevated.</p>
   <p>At Fitbeat Studio in Bhandup, you can start with Zumba and build a routine before adding resistance work — a gradual approach that's sustainable and enjoyable.</p>
 
-  <h2>Real Women, Real Results</h2>
-  <div class="highlight-box">
-    <p>"I spent 2 years at ladies gyms in Mulund and always quit. Joined Fitbeat Zumba in January, still going in June. Down 8 kg and I actually look forward to mornings now."</p>
+  <div class="quiz-box" id="quiz">
+    <h3>Which One's Right For You?</h3>
+    <p class="quiz-sub">Answer 3 quick questions and we'll tell you.</p>
+    <div class="quiz-progress">
+      <div class="quiz-dot" data-dot="1"></div>
+      <div class="quiz-dot" data-dot="2"></div>
+      <div class="quiz-dot" data-dot="3"></div>
+    </div>
+
+    <div class="quiz-step active" data-step="1">
+      <div class="quiz-q">1. What matters most to you right now?</div>
+      <div class="quiz-opts">
+        <button class="quiz-opt" data-val="zumba">Losing weight and staying consistent</button>
+        <button class="quiz-opt" data-val="gym">Toning muscle and building strength</button>
+        <button class="quiz-opt" data-val="both">Both, equally</button>
+      </div>
+    </div>
+
+    <div class="quiz-step" data-step="2">
+      <div class="quiz-q">2. Have you tried a gym before?</div>
+      <div class="quiz-opts">
+        <button class="quiz-opt" data-val="zumba">Yes, and I quit within a few months</button>
+        <button class="quiz-opt" data-val="gym">Yes, and I loved it</button>
+        <button class="quiz-opt" data-val="zumba">No, never — feels intimidating</button>
+      </div>
+    </div>
+
+    <div class="quiz-step" data-step="3">
+      <div class="quiz-q">3. What sounds more like "you"?</div>
+      <div class="quiz-opts">
+        <button class="quiz-opt" data-val="zumba">Music, dancing, group energy</button>
+        <button class="quiz-opt" data-val="gym">Quiet focus, working at my own pace</button>
+        <button class="quiz-opt" data-val="both">A bit of both, depending on the day</button>
+      </div>
+    </div>
+
+    <div class="quiz-step" data-step="result">
+      <div class="quiz-result">
+        <div class="quiz-result-badge" id="quizBadge">—</div>
+        <p id="quizText"></p>
+        <div class="btn-row">
+          <a href="https://wa.me/917666835466?text=Hi%20Fitbeat!%20I%20took%20the%20quiz%20and%20want%20to%20book%20a%20free%20Zumba%20demo." target="_blank" class="btn-wa">Book Free Demo on WhatsApp</a>
+        </div>
+        <button class="quiz-restart" onclick="restartQuiz()">Retake quiz</button>
+      </div>
+    </div>
   </div>
-  <div class="highlight-box pink">
-    <p>"I do both — gym 2 days, Zumba 3 days. The Zumba keeps me consistent and happy. The gym sessions shape my arms and core. Best combo ever."</p>
+
+  <h2 id="results">Real Women, Real Results</h2>
+  <div class="testimonial-grid">
+    <div class="testimonial-card win-cyan">
+      <div class="testimonial-stars">★★★★★</div>
+      <p>"I spent 2 years at ladies gyms in Mulund and always quit. Joined Fitbeat Zumba in January, still going in June. Down 8 kg and I actually look forward to mornings now."</p>
+      <div class="testimonial-name">— Zumba member, Bhandup</div>
+    </div>
+    <div class="testimonial-card win-pink">
+      <div class="testimonial-stars">★★★★★</div>
+      <p>"I do both — gym 2 days, Zumba 3 days. The Zumba keeps me consistent and happy. The gym sessions shape my arms and core. Best combo ever."</p>
+      <div class="testimonial-name">— Gym + Zumba member, Mulund</div>
+    </div>
   </div>
 
   <h2>The Verdict</h2>
@@ -237,21 +393,27 @@
     <li>📞 <strong>7977506715</strong> · WhatsApp <strong>7666835466</strong></li>
   </ul>
 
-  <h2>Frequently Asked Questions</h2>
+  <h2 id="faq">Frequently Asked Questions</h2>
 
-  <h3>Which burns more calories — ladies gym or Zumba?</h3>
-  <p>A ladies gym session burns roughly 300–500 calories depending on intensity, while Zumba burns roughly 400–600 calories through consistent cardio.</p>
+  <div class="faq-list">
+    <div class="faq-item open">
+      <button class="faq-q" onclick="toggleFaq(this)">Which burns more calories — ladies gym or Zumba?<span class="faq-icon">+</span></button>
+      <div class="faq-a"><p>A ladies gym session burns roughly 300–500 calories depending on intensity, while Zumba burns roughly 400–600 calories through consistent cardio.</p></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">Is Zumba better than the gym for weight loss?<span class="faq-icon">+</span></button>
+      <div class="faq-a"><p>For most women, Zumba leads to better long-term weight loss results because of higher consistency and retention, while a gym is better suited for muscle toning and strength building.</p></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">Can I do both gym and Zumba?<span class="faq-icon">+</span></button>
+      <div class="faq-a"><p>Yes — a popular combination is Zumba 3 days a week for cardio and consistency, plus strength training 2 days a week for toning and metabolism.</p></div>
+    </div>
+    <div class="faq-item">
+      <button class="faq-q" onclick="toggleFaq(this)">How much does Zumba cost at Fitbeat Studio?<span class="faq-icon">+</span></button>
+      <div class="faq-a"><p>₹1999 per month for 3 sessions per week, with a free demo class available.</p></div>
+    </div>
+  </div>
 
-  <h3>Is Zumba better than the gym for weight loss?</h3>
-  <p>For most women, Zumba leads to better long-term weight loss results because of higher consistency and retention, while a gym is better suited for muscle toning and strength building.</p>
-
-  <h3>Can I do both gym and Zumba?</h3>
-  <p>Yes — a popular combination is Zumba 3 days a week for cardio and consistency, plus strength training 2 days a week for toning and metabolism.</p>
-
-  <h3>How much does Zumba cost at Fitbeat Studio?</h3>
-  <p>₹1999 per month for 3 sessions per week, with a free demo class available.</p>
-
-  <p>Want the full picture on Zumba alone? Read our <a href="/zumba-weight-loss-mumbai.html">Zumba for Women's Weight Loss — 2026 Complete Guide</a>.</p>
 
   <div class="cta-box">
     <h3>Try a Free Zumba Demo Class</h3>
@@ -268,5 +430,92 @@
 <footer>
   <p>© 2026 <a href="/">Fitbeat Studio</a> · Bhandup Nahur East, Mumbai · <a href="tel:7977506715">7977506715</a> · <a href="https://wa.me/917666835466">WhatsApp 7666835466</a></p>
 </footer>
+
+<div class="float-cta" id="floatCta">
+  <span>Free Zumba demo, no commitment</span>
+  <a href="https://wa.me/917666835466?text=Hi%20Fitbeat!%20I%27d%20like%20to%20book%20a%20free%20Zumba%20demo%20class." target="_blank">Book Free Demo</a>
+</div>
+
+<script>
+  // Reading progress bar
+  const progressBar = document.getElementById('progressBar');
+  const floatCta = document.getElementById('floatCta');
+  window.addEventListener('scroll', () => {
+    const h = document.documentElement;
+    const scrolled = (h.scrollTop) / (h.scrollHeight - h.clientHeight) * 100;
+    progressBar.style.width = scrolled + '%';
+    if (h.scrollTop > 500) floatCta.classList.add('show');
+    else floatCta.classList.remove('show');
+  }, { passive: true });
+
+  // Comparison table tap-to-highlight
+  document.querySelectorAll('#vsTable tbody tr').forEach(row => {
+    row.addEventListener('click', () => {
+      const cells = row.querySelectorAll('td');
+      const gymCell = cells[1], zumbaCell = cells[2];
+      const isOn = gymCell.classList.contains('win') || zumbaCell.classList.contains('win');
+      document.querySelectorAll('#vsTable td.win').forEach(td => td.classList.remove('win'));
+      if (!isOn) {
+        // naive heuristic: whichever cell's text implies the stronger claim; default to zumba
+        const gymText = gymCell.textContent.toLowerCase();
+        const zumbaText = zumbaCell.textContent.toLowerCase();
+        const strongWords = ['excellent','high','strong','zero','just comfortable'];
+        const gymScore = strongWords.filter(w => gymText.includes(w)).length;
+        const zumbaScore = strongWords.filter(w => zumbaText.includes(w)).length;
+        (zumbaScore >= gymScore ? zumbaCell : gymCell).classList.add('win');
+      }
+    });
+  });
+
+  // FAQ accordion
+  function toggleFaq(btn) {
+    const item = btn.closest('.faq-item');
+    const wasOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+    if (!wasOpen) item.classList.add('open');
+  }
+
+  // Quiz
+  let quizAnswers = [];
+  document.querySelectorAll('.quiz-opt').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const step = btn.closest('.quiz-step');
+      const stepNum = parseInt(step.dataset.step);
+      quizAnswers[stepNum - 1] = btn.dataset.val;
+      document.querySelector(`.quiz-dot[data-dot="${stepNum}"]`).classList.add('done');
+      if (stepNum < 3) {
+        step.classList.remove('active');
+        document.querySelector(`.quiz-step[data-step="${stepNum + 1}"]`).classList.add('active');
+      } else {
+        step.classList.remove('active');
+        showQuizResult();
+      }
+    });
+  });
+
+  function showQuizResult() {
+    const counts = { zumba: 0, gym: 0, both: 0 };
+    quizAnswers.forEach(a => counts[a]++);
+    let winner = 'both';
+    if (counts.zumba > counts.gym && counts.zumba >= counts.both) winner = 'zumba';
+    else if (counts.gym > counts.zumba && counts.gym >= counts.both) winner = 'gym';
+
+    const results = {
+      zumba: { badge: 'Zumba is your fit', text: "Based on your answers, you'll get better long-term results — and actually enjoy the process — with Zumba. Start with a free demo class at Fitbeat Studio." },
+      gym: { badge: 'Ladies Gym is your fit', text: "You're focused on strength and toning, so a ladies gym is the better starting point. Pair it with a Zumba session or two once you want more cardio variety." },
+      both: { badge: 'Do both!', text: "You want fat loss and toning — the classic combo is Zumba 3 days a week plus strength training 2 days a week. Fitbeat can help you build that routine." }
+    };
+    document.getElementById('quizBadge').textContent = results[winner].badge;
+    document.getElementById('quizText').textContent = results[winner].text;
+    document.querySelector('.quiz-step[data-step="result"]').classList.add('active');
+  }
+
+  function restartQuiz() {
+    quizAnswers = [];
+    document.querySelectorAll('.quiz-dot').forEach(d => d.classList.remove('done'));
+    document.querySelectorAll('.quiz-step').forEach(s => s.classList.remove('active'));
+    document.querySelector('.quiz-step[data-step="1"]').classList.add('active');
+  }
+</script>
 </body>
 </html>
