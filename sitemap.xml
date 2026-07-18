@@ -1,27 +1,73 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-
-  <!-- HOMEPAGE -->
-  <url><loc>https://www.fitbeat26.com/</loc><lastmod>2026-06-15</lastmod><changefreq>weekly</changefreq><priority>1.0</priority></url>
-
-  <!-- HIGH PRIORITY — CORE SERVICE PAGES -->
-  <url><loc>https://www.fitbeat26.com/reel-choreography-mumbai.html</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.95</priority></url>
-  <url><loc>https://www.fitbeat26.com/zumba-classes-bhandup-nahur.html</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.92</priority></url>
-  <url><loc>https://www.fitbeat26.com/drawing-classes-bhandup-nahur.html</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.92</priority></url>
-  <url><loc>https://www.fitbeat26.com/dance-classes-kids-bhandup.html</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.90</priority></url>
-  <url><loc>https://www.fitbeat26.com/guitar-classes-bhandup-nahur.html</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.90</priority></url>
-  <url><loc>https://www.fitbeat26.com/wedding-choreographer-mumbai.html</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.90</priority></url>
-
-  <!-- CHESS — BOTH KEPT -->
-  <url><loc>https://www.fitbeat26.com/chess-classes-kids-bhandup.html</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.90</priority></url>
-  <url><loc>https://www.fitbeat26.com/chess-classes-kids-mumbai.html</loc><lastmod>2026-03-17</lastmod><changefreq>monthly</changefreq><priority>0.75</priority></url>
-
-  <!-- BLOG POSTS -->
-  <url><loc>https://www.fitbeat26.com/drawing-classes-bhandup-nahur-blog.html</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.88</priority></url>
-  <url><loc>https://www.fitbeat26.com/zumba-weight-loss-mumbai.html</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://www.fitbeat26.com/ladies-gym-vs-zumba-weight-loss.html</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://www.fitbeat26.com/dance-studio-ghatkopar-vikhroli.html</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.85</priority></url>
-  <url><loc>https://www.fitbeat26.com/dance-studio-rent-bhandup-mulund.html</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.83</priority></url>
-  <url><loc>https://www.fitbeat26.com/summer-activity-classes-kids-mumbai.html</loc><lastmod>2026-06-15</lastmod><changefreq>monthly</changefreq><priority>0.80</priority></url>
-
+  <url>
+    <loc>https://www.fitbeat26.com/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+  <url>
+    <loc>https://www.fitbeat26.com/zumba-instructor-mentorship-program-mumbai.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.9</priority>
+  </url>
+  <url>
+    <loc>https://www.fitbeat26.com/reel-choreography-mumbai.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.fitbeat26.com/zumba-classes-bhandup-nahur.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://www.fitbeat26.com/dance-studio-rent-bhandup-mulund.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.fitbeat26.com/drawing-classes-bhandup-nahur.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.fitbeat26.com/zumba-weight-loss-mumbai.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.fitbeat26.com/ladies-gym-vs-zumba-weight-loss.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.fitbeat26.com/chess-classes-kids-bhandup.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.fitbeat26.com/dance-classes-kids-bhandup.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.fitbeat26.com/wedding-choreographer-mumbai.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.fitbeat26.com/dance-studio-ghatkopar-vikhroli.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.fitbeat26.com/summer-activity-classes-kids-mumbai.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>https://www.fitbeat26.com/guitar-classes-bhandup-nahur.html</loc>
+    <changefreq>monthly</changefreq>
+    <priority>0.7</priority>
+  </url>
 </urlset>
