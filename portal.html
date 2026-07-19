@@ -691,9 +691,13 @@ input,button,select,textarea{font-family:"DM Sans",sans-serif}
 table{width:100%;border-collapse:collapse}
 th{padding:9px 14px;font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--muted2);text-align:left;background:rgba(21,21,31,.98);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:2}
 /* ── FREEZE-HEADER TABLE WRAPPER ── */
-.tbl-wrap{overflow:auto;max-height:70vh;position:relative}
+.tbl-wrap{overflow-x:auto;overflow-y:auto;max-height:70vh;position:relative;scrollbar-gutter:stable}
 .tbl-wrap table{border-collapse:separate;border-spacing:0}
 .tbl-wrap th{position:sticky;top:0;z-index:3;background:rgba(21,21,31,.99);box-shadow:0 1px 0 rgba(255,255,255,.08)}
+.tbl-wrap::-webkit-scrollbar{height:10px;width:10px}
+.tbl-wrap::-webkit-scrollbar-track{background:rgba(255,255,255,.03)}
+.tbl-wrap::-webkit-scrollbar-thumb{background:rgba(0,212,255,.35);border-radius:6px}
+.tbl-wrap::-webkit-scrollbar-thumb:hover{background:rgba(0,212,255,.55)}
 /* Checkbox column */
 td input[type=checkbox],th input[type=checkbox]{width:15px;height:15px;cursor:pointer;accent-color:var(--purple)}
 .bulk-bar{display:none;align-items:center;gap:10px;padding:10px 14px;background:rgba(168,85,247,.1);border-top:1px solid rgba(168,85,247,.2);flex-wrap:wrap}
@@ -1540,6 +1544,7 @@ tr:hover td{background:rgba(255,255,255,.018)}
           <option>Pamphlet</option>
           <option>Sound/Music</option>
           <option>Equipment</option>
+          <option>Electricity</option>
           <option>Utilities</option>
           <option>Maintenance</option>
           <option>Rent</option>
@@ -1602,6 +1607,58 @@ const STUDIO_WA = '917977506715'; // studio WhatsApp number for fallback
 // BATCH / FEE CONFIG
 // ═══════════════════════════════════════════════════
 // Batches: each entry = { label, days (0=Mon…6=Sun), startHour, endHour }
+
+// ═══════════════════════════════════════════════════
+// FEE MONTH-KEY HELPERS (year-safe, backward compatible)
+// ═══════════════════════════════════════════════════
+// Old records use bare month keys ('Jan','Feb'...) with NO year — this breaks
+// once the same month name recurs in a later year. New writes use 'Mon-YYYY'
+// (e.g. 'Jan-2027'). Reads check new format first, fall back to bare month
+// name so existing 2026 data keeps working untouched.
+const MONTH_NAMES_FK = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+function feeMonthKey(date) {
+  const d = date || new Date();
+  return `${MONTH_NAMES_FK[d.getMonth()]}-${d.getFullYear()}`;
+}
+function feeMonthBareName(date) {
+  const d = date || new Date();
+  return MONTH_NAMES_FK[d.getMonth()];
+}
+// Get a fee entry for a given month/year off an admission's fees{} object.
+// Tries new 'Mon-YYYY' key first, then falls back to bare 'Mon' key ONLY
+// when the requested year matches the current year (avoids pulling a wrong-
+// year legacy value once we roll into a new year).
+function getFeeEntry(adm, date) {
+  if (!adm || !adm.fees) return null;
+  const d = date || new Date();
+  const newKey = feeMonthKey(d);
+  if (adm.fees[newKey]) return adm.fees[newKey];
+  const bareKey = feeMonthBareName(d);
+  if (d.getFullYear() === new Date().getFullYear() && adm.fees[bareKey]) return adm.fees[bareKey];
+  return null;
+}
+
+// Fallback parser: derive {days, start, end} straight from a raw batch string like
+// "Wed–Fri 9–10 PM" when it has no exact entry in BATCH_META (e.g. catalog wasn't
+// updated when a new time slot was introduced). Never invents a wrong time — if it
+// can't confidently parse a time range, it returns days-only (or null).
+function parseBatchString(str){
+  if(!str) return null;
+  const dayMap={Mon:0,Tue:1,Wed:2,Thu:3,Fri:4,Sat:5,Sun:6};
+  const days=[];
+  Object.keys(dayMap).forEach(k=>{ if(new RegExp('\\b'+k,'i').test(str)) days.push(dayMap[k]); });
+  const m=str.match(/(\d{1,2}(?:[:.]\d{2})?)\s*[–\-]\s*(\d{1,2}(?:[:.]\d{2})?)\s*(AM|PM)/i);
+  if(!m) return days.length?{days,start:null,end:null}:null;
+  const toHour=(numStr,meridiem)=>{
+    let parts=numStr.split(/[:.]/).map(Number);
+    let h=parts[0], mi=parts[1]||0;
+    if(meridiem.toUpperCase()==='PM'&&h!==12)h+=12;
+    if(meridiem.toUpperCase()==='AM'&&h===12)h=0;
+    return mi?h+mi/60:h;
+  };
+  return {days, start:toHour(m[1],m[3]), end:toHour(m[2],m[3])};
+}
+
 const BATCH_OPTS = {
   'Zumba':[
     'Mon–Wed–Fri Morning 7–8 AM',
@@ -1615,12 +1672,13 @@ const BATCH_OPTS = {
     'Tue–Thu–Sat Evening 6–7 PM',
     'Tue–Thu–Sat Evening 7–8 PM',
     'Tue–Thu–Sat Evening 8–9 PM',
+    'Mon-Wed-Fri 9-10 PM',
   ],
-  'Dance':['Tue–Thu 6–7 PM','Tue–Thu 7–8 PM'],
+  'Dance':['Tue–Thu 6–7 PM','Tue–Thu 7–8 PM','Tue-Thu 8-9 PM','Sat-Sun - 4 PM -5 PM'],
   'Kids Dance':['Tue–Thu Evening 7–8 PM','Sat–Sun 5–6 PM'],
-  'Chess':['Sat–Sun (Sat 7–8 PM / Sun 10–11 AM)'],
-  'Guitar':['Wed–Fri 6–7 PM'],
-  'Drawing - Hobby':['Wed–Fri 4:30–5:30 PM'],
+  'Chess':['Sat–Sun (Sat 7–8 PM / Sun 10–11 AM)','Chess Sat-Sun 7-8PM-10-11AM'],
+  'Guitar':['Wed–Fri 6–7 PM','Wed–Fri 9–10 PM'],
+  'Drawing - Hobby':['Wed–Fri 4:30–5:30 PM','Harmony - 5PM-6PM'],
   'Drawing - Elementary':['Wed–Fri 4:30–5:30 PM'],
   'Drawing - Intermediate':['Wed–Fri 4:30–5:30 PM'],
   'Kathak':['TBD'],
@@ -1636,6 +1694,7 @@ const BATCH_META = {
     'Mon–Wed–Fri Evening 6–7 PM':    {days:[0,2,4],start:18,end:19},
     'Mon–Wed–Fri Evening 7–8 PM':    {days:[0,2,4],start:19,end:20},
     'Mon–Wed–Fri Evening 8–9 PM':    {days:[0,2,4],start:20,end:21},
+    'Mon-Wed-Fri 9-10 PM':           {days:[0,2,4],start:21,end:22},
     'Tue–Thu–Sat Morning 7–8 AM':    {days:[1,3,5],start:7,end:8},
     'Tue–Thu–Sat Morning 8–9 AM':    {days:[1,3,5],start:8,end:9},
     'Tue–Thu–Sat Evening 6–7 PM':    {days:[1,3,5],start:18,end:19},
@@ -1646,6 +1705,8 @@ const BATCH_META = {
   'Dance':{
     'Tue–Thu 6–7 PM':   {days:[1,3],start:18,end:19},
     'Tue–Thu 7–8 PM':   {days:[1,3],start:19,end:20},
+    'Tue-Thu 8-9 PM':   {days:[1,3],start:20,end:21},
+    'Sat-Sun - 4 PM -5 PM': {days:[5,6],start:16,end:17},
   },
   'Kids Dance':{
     'Tue–Thu Evening 7–8 PM': {days:[1,3],start:19,end:20},
@@ -1653,12 +1714,15 @@ const BATCH_META = {
   },
   'Chess':{
     'Sat–Sun (Sat 7–8 PM / Sun 10–11 AM)': {days:[5,6],start:19,end:20,start2:10,end2:11},
+    'Chess Sat-Sun 7-8PM-10-11AM': {days:[5,6],start:19,end:20,start2:10,end2:11},
   },
   'Guitar':{
     'Wed–Fri 6–7 PM': {days:[2,4],start:18,end:19},
+    'Wed–Fri 9–10 PM': {days:[2,4],start:21,end:22},
   },
   'Drawing - Hobby':{
     'Wed–Fri 4:30–5:30 PM': {days:[2,4],start:16.5,end:17.5},
+    'Harmony - 5PM-6PM': {days:[2,4],start:17,end:18}, // off-site batch at Harmony (not Fitbeat studio), same Wed-Fri days
   },
   'Drawing - Elementary':{
     'Wed–Fri 4:30–5:30 PM': {days:[2,4],start:16.5,end:17.5},
@@ -1708,7 +1772,9 @@ function getBatchesForTutor(tutorEmail) {
 }
 // Helper: returns true if a Zumba student with given batch should be visible to tutorEmail
 // Correctly handles both Minakshi (explicit batch) AND Sonil (sees everything else)
-function isZumbaStudentMine(studentBatch, tutorEmail) {
+function isZumbaStudentMine(studentBatch, tutorEmail, studentTutorId, myUid) {
+  // Manual tutorId/tutorUid (set via Edit Tutor) wins over batch-based mapping
+  if (studentTutorId) return studentTutorId === myUid;
   const email = (tutorEmail||'').toLowerCase();
   const assignedEmail = BATCH_TUTOR_MAP[studentBatch||''];
   if (assignedEmail) {
@@ -1738,8 +1804,12 @@ function isMineStudent(s) {
   // Co-admins see all students (no filtering)
   if (CU.role === 'coadmin') return true;
   if (!CU.teaches || !CU.teaches.includes(s.class)) return false;
-  // For Zumba: use BATCH_TUTOR_MAP for per-batch assignment
+  // For Zumba: manual tutorId/tutorUid (set via Edit Tutor) wins over BATCH_TUTOR_MAP
   if (s.class === 'Zumba') {
+    if (s.tutorId || s.tutorUid) {
+      const assignedId = s.tutorId || s.tutorUid;
+      return assignedId === CU.uid;
+    }
     const studentBatch = s.batch || '';
     const assignedEmail = BATCH_TUTOR_MAP[studentBatch]; // who owns this batch?
     if (assignedEmail) {
@@ -1793,6 +1863,16 @@ function tutorShare(cls,count){
 function chessStudentFee(ageCategory){
   const ac=(ageCategory||'').toLowerCase();
   return(ac.includes('under 10')||ac.includes('under10')||ac.includes('u10')||ac==='under 6'||ac.includes('under6'))?1199:1499;
+}
+// Correct listed fee for one admission — respects an explicit per-student override
+// (a.feeAmt), then Chess's age-based tiering (U10 vs standard), then the flat
+// per-class default. Use this instead of CLASS_FEES[cls] directly wherever a real
+// admission record is available, so Chess doesn't silently overcharge U10 students
+// in revenue math.
+function revAdmFee(a){
+  if(a.feeAmt) return parseFloat(a.feeAmt)||0;
+  if(a.admission==='Chess') return chessStudentFee(a.ageCategory);
+  return CLASS_FEES[a.admission]||0;
 }
 // Get tutor share for one Chess/Guitar/Drawing student.
 // FIX: now takes receivedAmt (actual amount paid that month) instead of
@@ -2574,18 +2654,16 @@ caDash: () => {
   // Count expired packages
   const now=new Date();
   function caGetExpiry(a){
-    if(a.fees){
-      const paidEntries=Object.entries(a.fees).filter(([m,v])=>v&&v.date&&v.amt&&v.amt!=='Pending'&&v.amt!=='-'&&v.amt!=='Inactive'&&parseFloat(v.amt)>0);
-      if(paidEntries.length>0){
-        paidEntries.sort((a2,b2)=>new Date(b2[1].date)-new Date(a2[1].date));
-        const latestDate=new Date(paidEntries[0][1].date);
-        if(!isNaN(latestDate)){const e=new Date(latestDate);e.setMonth(e.getMonth()+1);return e;}
-      }
-    }
+    // Same formula as getExpiry() elsewhere: firstSession + paidCount months, via the
+    // shared revPaidCountUpTo(). Previously this used a different latest-paid-date-based
+    // approach, which could disagree with the rest of the app for late/out-of-order payments.
     const d=a.firstClassDate||a.firstSessionDate;
     if(!d)return null;
     const dd=d.toDate?d.toDate():new Date(d);
-    const e=new Date(dd);e.setMonth(e.getMonth()+1);return e;
+    if(isNaN(dd))return null;
+    const paidCount=revPaidCountUpTo(a, now);
+    const e=new Date(dd);e.setMonth(e.getMonth()+paidCount); // paidCount=0 → due immediately
+    return e;
   }
   const expiredAdmissions=allAdmissions.filter(a=>{const exp=caGetExpiry(a);return exp&&exp<now;});
   const expiringSoon=allAdmissions.filter(a=>{const exp=caGetExpiry(a);if(!exp||exp<now)return false;const days=Math.round((exp-now)/864e5);return days<=7;});
@@ -2659,9 +2737,9 @@ aDash: () => {
   const activeStudents=allStudents.filter(s=>s.status==='Active');
   const pendingPay=allStudents.filter(s=>s.status==='Pending');
   const portalRev=allPayments.filter(p=>p.status==='Paid').reduce((s,p)=>s+(p.amtNum||0),0);
-  const MONTHS_S=['Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan'];
-  const admRevS=allAdmissions.reduce((s,a)=>{if(!a.fees)return s;return s+MONTHS_S.reduce((ms,m)=>{const mf=a.fees[m];if(mf&&mf.amt&&mf.amt!=='Pending'&&mf.amt!=='-'){return ms+(parseFloat(mf.amt)||0);}return ms;},0);},0);
-  const sbRevS=allSpecialBatches.reduce((s,sb)=>(sb.paymentStatus==='Paid'||sb.paymentStatus==='Partial')?s+(parseFloat(sb.fee)||0):s,0);
+  // Sum ALL fee entries regardless of key format (bare 'Jan' or year-safe 'Jan-2027') — lifetime total, order doesn't matter
+  const admRevS=allAdmissions.reduce((s,a)=>{if(!a.fees)return s;return s+Object.values(a.fees).reduce((ms,mf)=>{if(mf&&mf.amt&&mf.amt!=='Pending'&&mf.amt!=='-'&&mf.amt!=='Inactive'){return ms+(parseFloat(mf.amt)||0);}return ms;},0);},0);
+  const sbRevS=allSpecialBatches.reduce((s,sb)=>(sb.feeStatus==='Paid'||sb.feeStatus==='Partial')?s+(parseFloat(sb.fee)||0):s,0);
   const totalRev=portalRev+admRevS+sbRevS;
   const pendingPayments=allPayments.filter(p=>p.status==='Pending');
   const unreadMsgs=allMessages.filter(m=>m.unread).length;
@@ -2737,6 +2815,7 @@ aStudents: () => {
   const PAGE_SIZE = 15;
   const renderStudentsPage = (page, filter='') => {
     const statusF = window._stFilter||'';
+    const classF = window._stClassFilter||'';
     const f = filter.toLowerCase();
     const filtered = allStudents.filter(s=>{
       const feeStr = (s.fee||0).toString();
@@ -2750,7 +2829,8 @@ aStudents: () => {
         feeStr.includes(f)||
         ('₹'+feeStr).includes(f));
       const matchStatus = !statusF || (s.status||'Active')===statusF;
-      return matchText && matchStatus;
+      const matchClass = !classF || s.class===classF;
+      return matchText && matchStatus && matchClass;
     });
     const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
     const pg = Math.min(page, totalPages);
@@ -2771,8 +2851,9 @@ aStudents: () => {
           <div style="font-size:11px;color:var(--muted2)">${s.email}</div></td>
         <td>${cb(s.class)}</td>
         <td style="font-size:12px;color:var(--cyan)">${(()=>{
-          // Zumba: use BATCH_TUTOR_MAP; others: use tutorId field on student
+          // Zumba: manual tutorId wins; else BATCH_TUTOR_MAP; else unrestricted tutor
           if(s.class==='Zumba'){
+            if(s.tutorId||s.tutorUid){const tid=s.tutorId||s.tutorUid;const t=allTutors.find(t=>t.id===tid);if(t)return t.firstName||t.fn||t.name||'—';}
             const bt=BATCH_TUTOR_MAP[s.batch||''];
             if(bt){
               // Batch explicitly assigned to a specific tutor
@@ -2852,7 +2933,7 @@ aStudents: () => {
   };
   return `
 <div class="ph">
-  <div><div class="pt">Students</div><div class="ps">${allStudents.length} total · ${allStudents.filter(s=>s.status==='Active').length} active</div></div>
+  <div><div class="pt">Students</div><div class="ps">${allStudents.length} total · ${allStudents.filter(s=>s.status==='Active').length} active${window._stClassFilter?` · ${allStudents.filter(s=>s.class===window._stClassFilter&&s.status==='Active').length} active ${window._stClassFilter}`:''}</div></div>
   <div style="display:flex;gap:8px">
     <button class="bsm bo" onclick="openSMSModal()">💬 WA</button>
     <button class="bsm bam" onclick="prepCash(null)">+ Cash Payment</button>
@@ -2868,9 +2949,13 @@ aStudents: () => {
 <div class="tc">
   <div class="th"><div class="tt">All Students</div>
     <div class="ta">
-      <input id="stSearch" class="si-input" placeholder="Search name, email, class..." oninput="renderStudentsPage(1,this.value)"/>
+      <input id="stSearch" class="si-input" placeholder="Search name, email, phone, batch..." oninput="renderStudentsPage(1,this.value)"/>
+      <select id="stClassSel" class="si-input" style="width:auto" onchange="(()=>{window._stClassFilter=this.value;renderStudentsPage(1,document.getElementById('stSearch')?.value||'')})()">
+        <option value="">All Classes</option>
+        ${Object.keys(BATCH_OPTS).map(c=>`<option value="${c}"${window._stClassFilter===c?' selected':''}>${c}</option>`).join('')}
+      </select>
       <select class="si-input" style="width:auto" onchange="(()=>{const v=this.value;window._stFilter=v;renderStudentsPage(1,document.getElementById('stSearch')?.value||'')})()">
-        <option value="">All Status</option><option value="Active">Active</option><option value="Pending">Pending</option><option value="Inactive">Inactive</option>
+        <option value="">All Status</option><option value="Active"${window._stFilter==='Active'?' selected':''}>Active</option><option value="Pending"${window._stFilter==='Pending'?' selected':''}>Pending</option><option value="Inactive"${window._stFilter==='Inactive'?' selected':''}>Inactive</option>
       </select>
     </div>
   </div>
@@ -2898,13 +2983,12 @@ aPayments: () => {
   const totalPaid=portalPayments.filter(p=>p.status==='Paid').reduce((s,p)=>s+(p.amtNum||0),0);
   const pendingPays=portalPayments.filter(p=>p.status==='Pending');
   // Pull confirmed fees from Admissions & Fees (monthly fee entries)
-  const MONTHS=['Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan'];
   const admFees=[];
   allAdmissions.forEach(a=>{
     if(!a.fees)return;
-    MONTHS.forEach(m=>{
+    Object.keys(a.fees).forEach(m=>{
       const mf=a.fees[m];
-      if(mf&&mf.amt&&mf.amt!=='-'&&mf.amt!=='Pending'){
+      if(mf&&mf.amt&&mf.amt!=='-'&&mf.amt!=='Pending'&&mf.amt!=='Inactive'){
         const amt=parseFloat(mf.amt)||0;
         if(amt>0)admFees.push({
           id:`adm_${a.id}_${m}`,student:a.name||'—',class:a.admission||'—',
@@ -2931,21 +3015,20 @@ aPayments: () => {
   const sbFees=[];
   allSpecialBatches.forEach(sb=>{
     const feeAmt=parseFloat(sb.fee)||0;
-    if(feeAmt>0&&sb.paymentStatus&&sb.paymentStatus!=='Pending'){
+    if(feeAmt>0&&sb.feeStatus&&sb.feeStatus!=='Pending'){
       sbFees.push({
-        id:`sb_${sb.id}`,name:sb.batchName||'—',client:sb.clientName||'—',
+        id:`sb_${sb.id}`,name:sb.name||'—',client:sb.clientName||'—',
         sessions:sb.totalSessions||'—',fee:sb.fee||0,
         start:sb.startDate||'—',end:sb.endDate||'—',
-        status:sb.paymentStatus||'Pending',method:sb.paymentMethod||'Cash'
+        status:sb.feeStatus||'Pending',method:sb.paymentMethod||'Cash'
       });
     }
   });
   const totalSBFees=sbFees.reduce((s,f)=>s+(parseFloat(f.fee)||0),0);
   const totalAdmRev=allAdmissions.reduce((s,a)=>{
     if(!a.fees)return s;
-    return s+MONTHS.reduce((ms,m)=>{
-      const mf=a.fees[m];
-      if(mf&&mf.amt&&mf.amt!=='Pending'&&mf.amt!=='-'){const v=parseFloat(mf.amt)||0;return ms+v;}
+    return s+Object.values(a.fees).reduce((ms,mf)=>{
+      if(mf&&mf.amt&&mf.amt!=='Pending'&&mf.amt!=='-'&&mf.amt!=='Inactive'){const v=parseFloat(mf.amt)||0;return ms+v;}
       return ms;
     },0);
   },0);
@@ -3066,9 +3149,9 @@ ${pendingPays.length?`<div style="background:rgba(245,158,11,.07);border:1px sol
     <thead><tr><th>Batch Name</th><th>Client</th><th>Sessions</th><th>Fee</th><th>Start</th><th>End</th><th>Payment</th><th>Method</th></tr></thead>
     <tbody>${allSpecialBatches.map(sb=>{
       const feeAmt=parseFloat(sb.fee)||0;
-      const paidBadge=sb.paymentStatus==='Paid'?'<span class="badge bg2">✓ Paid</span>':sb.paymentStatus==='Partial'?'<span class="badge bam2">Partial</span>':'<span class="badge br2">Pending</span>';
+      const paidBadge=sb.feeStatus==='Paid'?'<span class="badge bg2">✓ Paid</span>':sb.feeStatus==='Partial'?'<span class="badge bam2">Partial</span>':'<span class="badge br2">Pending</span>';
       return`<tr>
-        <td><strong>${sb.batchName||'—'}</strong></td>
+        <td><strong>${sb.name||'—'}</strong></td>
         <td style="font-size:12px;color:var(--muted2)">${sb.clientName||'—'}</td>
         <td style="font-size:12px;text-align:center">${sb.totalSessions||'—'}</td>
         <td><strong style="color:${feeAmt>0?'var(--green)':'var(--muted2)'}">${feeAmt>0?'₹'+feeAmt.toLocaleString():'₹0'}</strong></td>
@@ -3134,14 +3217,14 @@ aSchedule: () => `
 
 aBatchSlots: () => {
   const DAY_LABELS=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-  const classColors={'Zumba':'var(--cyan)','Dance':'var(--purple)','Kids Dance':'var(--pink)','Chess':'var(--blue)','Guitar':'var(--amber)','Drawing - Hobby':'#f97316','Drawing - Elementary':'#fb923c','Drawing - Intermediate':'#ef4444',Kathak:'#10b981'};
-  const classIcons={'Zumba':'🎵','Dance':'💃','Kids Dance':'👧','Chess':'♟️','Guitar':'🎸','Drawing - Hobby':'🎨','Drawing - Elementary':'🖌️','Drawing - Intermediate':'🖼️',Kathak:'🩰'};
+  const classColors={'Zumba':'var(--cyan)','Dance':'var(--purple)','Kids Dance':'var(--pink)','Chess':'var(--blue)','Guitar':'var(--amber)','Drawing - Hobby':'#f97316','Drawing - Elementary':'#fb923c','Drawing - Intermediate':'#ef4444',Kathak:'#10b981',Other:'#a78bfa'};
+  const classIcons={'Zumba':'🎵','Dance':'💃','Kids Dance':'👧','Chess':'♟️','Guitar':'🎸','Drawing - Hobby':'🎨','Drawing - Elementary':'🖌️','Drawing - Intermediate':'🖼️',Kathak:'🩰',Other:'🎭'};
 
-  // Count ACTIVE enrolled students per batch (exclude Inactive)
+  // Count ACTIVE enrolled students per batch (exclude Inactive + manually-deactivated)
   const batchCounts={};
   allAdmissions.forEach(a=>{
-    const aName=(a.name||'').trim().toLowerCase();
-    const linked=allStudents.find(s=>((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase()===aName);
+    if(a.manualInactive) return; // admin explicitly froze this slot (see deactivateOrphanBatch)
+    const linked=findLinkedStudent(a);
     if(linked&&(linked.status||'Active')==='Inactive') return; // skip inactive
     const key=(a.admission||'')+'|||'+(a.preferableBatch||'');
     batchCounts[key]=(batchCounts[key]||0)+1;
@@ -3153,7 +3236,11 @@ aBatchSlots: () => {
     batches.forEach(batch=>{
       const count=batchCounts[cls+'|||'+batch]||0;
       const meta=(BATCH_META[cls]&&BATCH_META[cls][batch])||null;
-      existingSlots.push({cls,batch,count,meta});
+      // Orphan = a backend-only admission record with no linked student — can't be
+      // marked Inactive the normal way (no student to flip), so it silently occupies
+      // this slot forever unless explicitly frozen.
+      const hasOrphan=allAdmissions.some(a=>a.admission===cls&&(a.preferableBatch||'')===batch&&!a.manualInactive&&!findLinkedStudent(a));
+      existingSlots.push({cls,batch,count,meta,hasOrphan});
     });
   });
 
@@ -3205,8 +3292,8 @@ aBatchSlots: () => {
   ${Object.keys(BATCH_OPTS).map(cls=>{
     const enrolled=allAdmissions.filter(a=>{
       if(a.admission!==cls) return false;
-      const n=(a.name||'').trim().toLowerCase();
-      const linked=allStudents.find(s=>((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase()===n);
+      if(a.manualInactive) return false;
+      const linked=findLinkedStudent(a);
       return !(linked&&(linked.status||'Active')==='Inactive');
     }).length;
     const cap=CLASS_CAPACITY[cls]||10;
@@ -3229,7 +3316,7 @@ aBatchSlots: () => {
 
 <!-- Batch list with capacity bars -->
 <div id="batchSlotsContainer" style="margin-bottom:22px">
-${existingSlots.map(({cls,batch,count,meta})=>{
+${existingSlots.map(({cls,batch,count,meta,hasOrphan})=>{
   const maxS=CLASS_CAPACITY[cls]||10;
   const available=Math.max(0,maxS-count);
   const pct=Math.round((count/maxS)*100);
@@ -3245,7 +3332,7 @@ ${existingSlots.map(({cls,batch,count,meta})=>{
   })() : '—';
   const timeStr = meta ? (() => {
     if(meta.schedule && meta.schedule.length > 1) {
-      const fmt = h => h<12?h+':00 AM':(h===12?'12:00 PM':(h-12)+':00 PM');
+      const fmt = h => (()=>{const hh=Math.floor(h),mi=Math.round((h-hh)*60),p=hh<12?'AM':'PM';let dh=hh%12;if(dh===0)dh=12;return mi?`${dh}:${String(mi).padStart(2,'0')} ${p}`:`${dh}:00 ${p}`;})();
       return meta.schedule.map(s=>`${fmt(s.startTime||s.start)}–${fmt(s.endTime||s.end)}`).join(' / ');
     }
     const fmt = h => h<12?h+'AM':(h===12?'12PM':(h-12)+'PM');
@@ -3273,6 +3360,7 @@ ${existingSlots.map(({cls,batch,count,meta})=>{
         <div style="font-size:10px;color:var(--muted2);text-align:center">${pct}% full</div>
       </div>
       ${available===0?`<span class="badge br2">Full</span>`:`<span class="badge bg2">${available} Open</span>`}
+      ${hasOrphan&&CU.role==='admin'?`<button class="bsm bd" style="font-size:10px;padding:3px 7px;margin-left:2px" onclick="deactivateOrphanBatch('${cls}','${batch.replace(/'/g,"\\'")}')" title="This slot has a backend-only record with no linked student — the app can't tell it's over, so it never frees up on its own. Click to mark it inactive.">🚫 Free Slot</button>`:''}
       ${CU.role==='admin'?`<button class="bsm bam" style="font-size:10px;padding:3px 7px;margin-left:2px" onclick="openAddBatch('${cls}','${batch.replace(/'/g,"\'")}')" >✏️ Edit</button>
       <button class="bsm bd" style="font-size:10px;padding:3px 7px;margin-left:2px" onclick="removeBatch('${cls}','${batch.replace(/'/g,"\'")}')" >🗑</button>`:''}
     </div>
@@ -3544,23 +3632,25 @@ aAdmissions: () => {
   const now = new Date();
   function pd(v){if(!v)return null;if(v&&v.toDate)return v.toDate();if(v instanceof Date)return v;const d=new Date(v);return isNaN(d)?null:d;}
   function getExpiry(a){
-    // CORRECT: expiry = firstSession + (number of paid months). Each payment adds 1 month from first session.
+    // Expiry = firstSession + (count of genuinely-paid fee entries), regardless of
+    // which calendar-month key they're stored under. This matters because fee keys
+    // are really sequential payment slots (1st payment, 2nd payment...) not exact
+    // calendar anchors — a late payer's "April" entry might carry a May date, etc.
+    // Pending/Inactive/blank entries are simply not counted, wherever they sit.
+    // Uses the shared revPaidCountUpTo() so NA-handling and reactivation-reset logic
+    // stay in exactly one place instead of drifting across duplicate implementations.
     const d=pd(a.firstClassDate||a.firstSessionDate);
     if(!d)return null;
     const base=new Date(d);
-    if(a.fees){
-      const paidCount=Object.values(a.fees).filter(v=>v&&v.amt&&v.amt!=='Pending'&&v.amt!=='-').length;
-      if(paidCount>0){
-        const e=new Date(base);e.setMonth(e.getMonth()+paidCount);return e;
-      }
-    }
-    // No payments yet: expiry = firstSession + 1 month (initial package)
-    const e=new Date(base);e.setMonth(e.getMonth()+1);return e;
+    const paidCount=revPaidCountUpTo(a, new Date());
+    const e=new Date(base);
+    e.setMonth(e.getMonth()+paidCount); // paidCount=0 → due immediately (pay-on-first-session policy, no free grace month)
+    return e;
   }
   function expiryBadge(a){
     // If student is Inactive, show that instead of expiry
-    const linked=allStudents.find(s=>((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase()===(a.name||'').trim().toLowerCase());
-    const hasFeeInactive=a.fees&&Object.values(a.fees).some(v=>v&&v.amt==='Inactive');
+    const linked=findLinkedStudent(a);
+    const hasFeeInactive=admIsInactiveAsOf(a, now);
     if((linked&&(linked.status||'Active')==='Inactive')||hasFeeInactive)
       return `<span style="font-size:9px;color:var(--muted2);background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:4px;padding:2px 7px">Inactive</span>`;
     const exp=getExpiry(a);if(!exp)return '<span style="color:var(--muted2);font-size:11px">—</span>';
@@ -3579,7 +3669,20 @@ aAdmissions: () => {
   const totalAdm=allAdmissions.length;
   const byClass={};
   allAdmissions.forEach(a=>{byClass[a.admission||'Other']=(byClass[a.admission||'Other']||0)+1;});
-  const MONTHS=['Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan'];
+  // Fixed start at Jan 2026 (studio's actual start — no blank pre-launch columns),
+  // extending to current month + 4 (so advance payments are visible without scrolling).
+  const MONTHS=(()=>{
+    const arr=[];
+    const start=new Date(2026,0,1); // Jan 2026
+    const now=new Date();
+    const end=new Date(now.getFullYear(),now.getMonth()+4,1); // current + 4 months ahead
+    const cursor=new Date(start);
+    while(cursor<=end){
+      arr.push({label:MONTH_NAMES_FK[cursor.getMonth()],year:cursor.getFullYear(),key:feeMonthKey(cursor)});
+      cursor.setMonth(cursor.getMonth()+1);
+    }
+    return arr;
+  })();
   return `
 <div class="ph">
   <div><div class="pt">Admissions & Fees</div><div class="ps">${totalAdm} enrolled · ${expiringSoon.length} expiring soon</div></div>
@@ -3603,20 +3706,33 @@ ${expiringSoon.length>0?`
     <div class="tt">All Admissions</div>
     <div class="ta">
       <input class="si-input" placeholder="Search name, building..." oninput="ft(this,'admTb')"/>
-      <select class="si-input" style="width:auto" onchange="filterAdmissions(this.value)">
+      <select class="si-input" style="width:auto" onchange="applyAdmFilters()" id="admClassFilter">
         <option value="all">All Classes</option>
         ${Object.keys(BATCH_OPTS).map(c=>`<option value="${c}">${c}</option>`).join('')}
       </select>
+      <select class="si-input" style="width:auto" onchange="applyAdmFilters()" id="admStatusFilter">
+        <option value="all">All Payment Status</option>
+        <option value="Overdue">🔴 Overdue (this month)</option>
+        <option value="Pending">⏳ Not yet paid (not due yet)</option>
+        <option value="Partial">🟡 Partial</option>
+        <option value="Paid">✅ Paid</option>
+        <option value="NA">➖ N/A</option>
+        <option value="Inactive">❌ Inactive</option>
+      </select>
     </div>
   </div>
-  ${allAdmissions.length?`<div class="tbl-wrap"><table>
+  <div id="admScrollProxy" style="overflow-x:auto;overflow-y:hidden;height:14px;margin-bottom:2px" onscroll="document.getElementById('admTblWrap').scrollLeft=this.scrollLeft"><div id="admScrollProxyInner" style="height:1px"></div></div>
+  ${allAdmissions.length?`<style>#admTb tr>td:nth-child(${10+MONTHS.findIndex(m=>m.year===new Date().getFullYear()&&m.label===MONTH_NAMES_FK[new Date().getMonth()])+1}){background:rgba(0,212,255,.06)}</style><div class="tbl-wrap" id="admTblWrap" onscroll="document.getElementById('admScrollProxy').scrollLeft=this.scrollLeft"><table>
     <thead><tr>
       <th style="position:sticky;left:0;z-index:3;background:rgba(21,21,31,.98);min-width:120px">Name</th><th>Building</th><th>Contact</th><th>Class</th><th>Batch</th><th>Occ.</th><th>Age</th>
       <th>Adm.Date</th><th>1st Session</th><th>Expiry</th>
-      ${MONTHS.map(m=>`<th style="font-size:10px;min-width:85px">${m}</th>`).join('')}
+      ${MONTHS.map((m,mi)=>{
+        const isCur=m.year===new Date().getFullYear()&&m.label===MONTH_NAMES_FK[new Date().getMonth()];
+        return `<th data-mi="${mi}" ${isCur?'data-current="1"':''} style="font-size:10px;min-width:85px;${isCur?'background:rgba(0,212,255,.12)':''}">${m.label} '${String(m.year).slice(2)}</th>`;
+      }).join('')}
       <th style="position:sticky;right:0;z-index:3;background:rgba(21,21,31,.98)">Actions</th>
     </tr></thead>
-    <tbody id="admTb">${allAdmissions.map(a=>`<tr data-class="${a.admission||''}">
+    <tbody id="admTb">${allAdmissions.map(a=>`<tr data-class="${a.admission||''}" data-status="${admCurrentMonthStatus(a)}">
       <td style="position:sticky;left:0;background:var(--card);z-index:1"><strong>${a.name||'—'}</strong></td>
       <td style="font-size:11px;color:var(--muted2)">${a.buildingName||'—'}</td>
       <td style="font-family:'JetBrains Mono',monospace;font-size:11px">${a.contact?`<a href="tel:${a.contact}" style="color:var(--cyan);text-decoration:none">${a.contact}</a>`:'—'}</td>
@@ -3628,27 +3744,45 @@ ${expiringSoon.length>0?`
       <td style="font-size:11px;color:var(--cyan)">${formatDate(pd(a.firstClassDate||a.firstSessionDate))}</td>
       <td>${expiryBadge(a)}</td>
       ${MONTHS.map(m=>{
-        const mf=a.fees&&a.fees[m];
-        // Auto-show Pending if package expired and month is unpaid
-        const exp=getExpiry(a);
-        const now2=new Date();
-        const MONTHS_IDX=['Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan'];
-        const mIdx=MONTHS_IDX.indexOf(m);
-        const mYear=mIdx>=1?now2.getFullYear():(now2.getFullYear()); // simplified
-        const isExpiredMonth=exp&&exp<now2&&!mf; // expired and no fee recorded
+        // Check new-format key first, fall back to bare month name (only valid for current year, avoids wrong-year collision)
+        const mf=(a.fees&&a.fees[m.key])||(a.fees&&m.year===new Date().getFullYear()&&a.fees[m.label])||null;
         if(!mf){
           // Check if student is Inactive (via student record OR any fee entry already marked Inactive)
-          const linkedStudent=allStudents.find(s=>{const sn=((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase();return sn===(a.name||'').trim().toLowerCase();});
+          const linkedStudent=findLinkedStudent(a);
           const isInactive=linkedStudent&&(linkedStudent.status||'Active')==='Inactive';
-          const hasFeeInactive=a.fees&&Object.values(a.fees).some(v=>v&&v.amt==='Inactive');
+          const cellDate=new Date(m.year,MONTH_NAMES_FK.indexOf(m.label),1);
+          const hasFeeInactive=admIsInactiveAsOf(a,cellDate);
           if(isInactive||hasFeeInactive)return `<td><span style="font-size:9px;color:var(--muted2);background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:4px;padding:1px 5px">Inactive</span></td>`;
           return '<td style="font-size:10px;color:var(--muted)">—</td>';
         }
         const ds=mf.date?`<div style="font-size:9px;color:var(--muted2)">${mf.date}</div>`:'';
         const amt=mf.amt;
         if(!amt||amt==='-')return `<td>${ds}<span style="font-size:10px;color:var(--muted)">—</span></td>`;
-        if(amt==='Pending')return `<td>${ds}<span class="badge bam2" style="font-size:9px">Pend.</span></td>`;
+        if(amt==='Pending'){
+          // A Pending entry can be stale (auto-marked before actual expiry, e.g. from old buggy runs,
+          // or simply premature because expiry falls mid-month). Compare against the actual DAY the
+          // package expires, not just "is this the current calendar month" — a student expiring Jul 27
+          // should not show Pending anywhere in July until after the 27th.
+          let isGenuinelyDue=true;
+          if(mf.autoMarked&&a.fees){
+            const fcRaw=a.firstClassDate||a.firstSessionDate;
+            const fcDate=pd(fcRaw);
+            if(fcDate){
+              const paidCount=revPaidCountUpTo(a, new Date());
+              const realExpiry=new Date(fcDate);realExpiry.setMonth(realExpiry.getMonth()+paidCount);
+              const today=new Date();today.setHours(0,0,0,0);
+              const cellMonthStart=new Date(m.year,MONTH_NAMES_FK.indexOf(m.label),1);
+              const cellMonthEnd=new Date(m.year,MONTH_NAMES_FK.indexOf(m.label)+1,0);
+              // This cell's month is genuinely due only if TODAY is past the real expiry date
+              // AND this cell falls within/after the expiry month.
+              isGenuinelyDue=(today>=realExpiry)&&(cellMonthEnd>=realExpiry);
+            }
+          }
+          if(!isGenuinelyDue)return '<td style="font-size:10px;color:var(--muted)">—</td>';
+          return `<td>${ds}<span class="badge bam2" style="font-size:9px">Pend.</span></td>`;
+        }
         if(amt==='Inactive')return `<td><span style="font-size:9px;color:var(--muted2);background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.2);border-radius:4px;padding:1px 5px">Inactive</span></td>`;
+        if(amt==='NA')return `<td><span style="font-size:9px;color:var(--muted2);background:rgba(148,163,184,.1);border:1px solid rgba(148,163,184,.25);border-radius:4px;padding:1px 5px">N/A</span></td>`;
         if(amt==='Partial')return `<td>${ds}<span style="font-size:9px;background:rgba(245,158,11,.15);border:1px solid rgba(245,158,11,.3);border-radius:4px;padding:1px 5px;color:var(--amber)">Partial</span></td>`;
         return `<td>${ds}<span class="badge bg2" style="font-size:10px">₹${parseFloat(amt).toLocaleString()}</span></td>`;
       }).join('')}
@@ -3656,6 +3790,7 @@ ${expiringSoon.length>0?`
         <button class="bsm bam" style="font-size:10px;padding:3px 6px" onclick="openEditAdmission('${a.id}')">✏️</button>
         <button class="bsm ba2" style="font-size:10px;padding:3px 6px" onclick="openFeeEntry('${a.id}')">💰</button>
         <button class="bsm bg3" style="font-size:10px;padding:3px 6px" onclick="generateAdmissionReceipt('${a.id}')" title="Generate Receipt">🧾</button>
+        ${revAdmInactiveFromDate(a)?`<button class="bsm bg2" style="font-size:10px;padding:3px 6px" onclick="reactivateAdmission('${a.id}')" title="Student came back — start a fresh cycle from their new join date">↩ Reactivate</button>`:''}
         ${CU.role==='admin'?`<button class="bsm bd" style="font-size:10px;padding:3px 6px" onclick="confirmDeleteAdm('${a.id}')">🗑</button>`:''}
       </div></td>
     </tr>`).join('')}</tbody>
@@ -3721,10 +3856,13 @@ ${expiringSoon.length>0?`
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
     <div class="field"><label>Month</label>
       <select id="fee_month">
-        <option>Feb</option><option>Mar</option><option>Apr</option><option>May</option>
-        <option>Jun</option><option>Jul</option><option>Aug</option><option>Sep</option>
-        <option>Oct</option><option>Nov</option><option>Dec</option><option>Jan</option>
+        <option>Jan</option><option>Feb</option><option>Mar</option><option>Apr</option>
+        <option>May</option><option>Jun</option><option>Jul</option><option>Aug</option>
+        <option>Sep</option><option>Oct</option><option>Nov</option><option>Dec</option>
       </select>
+    </div>
+    <div class="field"><label>Year</label>
+      <select id="fee_year"></select>
     </div>
     <div class="field"><label>Payment Date</label><input id="fee_date" type="date"/></div>
     <div class="field"><label>Amount (₹)</label><input id="fee_amt" type="number" placeholder="1500"/></div>
@@ -3733,6 +3871,7 @@ ${expiringSoon.length>0?`
         <option value="Paid">✅ Paid</option>
         <option value="Pending">⏳ Pending</option>
         <option value="Partial">🟡 Partial</option>
+        <option value="NA">➖ N/A (fee not applicable this month)</option>
         <option value="Inactive">❌ Inactive (student left)</option>
       </select>
     </div>
@@ -3945,12 +4084,13 @@ sDash: () => {
             admFees=admSnap.docs[0].data().fees||{};
           }
 
-          // Walk from firstSessionDate + 1 month onwards, find first unpaid month
+          // Walk from firstSessionDate onwards (pay-on-day-one policy — no free grace month),
+          // find first unpaid month
           let dueMonth=new Date(firstD);
-          dueMonth.setMonth(dueMonth.getMonth()+1);
           for(let i=0;i<24;i++){
-            const mKey=MONTHS_SHORT[dueMonth.getMonth()];
-            const feeEntry=admFees[mKey];
+            const mKeyNew=feeMonthKey(dueMonth); // e.g. "Jan-2027" — unambiguous
+            const mKeyBare=MONTHS_SHORT[dueMonth.getMonth()];
+            const feeEntry=admFees[mKeyNew]||admFees[mKeyBare];
             const isPaid=feeEntry&&feeEntry.amt&&feeEntry.amt!=='-'&&feeEntry.amt!=='Pending'&&parseFloat(feeEntry.amt)>0;
             if(!isPaid) break; // this is the next due month
             dueMonth.setMonth(dueMonth.getMonth()+1);
@@ -3974,8 +4114,8 @@ sDash: () => {
             dueDaysEl.style.color=col;
           }
         }catch(e){
-          // Fallback: firstSessionDate + 1 month
-          const fb=new Date(firstD);fb.setMonth(fb.getMonth()+1);
+          // Fallback: firstSessionDate itself (pay on day one, no grace)
+          const fb=new Date(firstD);
           const dl=Math.ceil((fb-today)/(1000*60*60*24));
           const col=dl<0?'var(--red)':dl<=7?'var(--amber)':'var(--green)';
           const el=document.getElementById('sDashDueDate');
@@ -3984,8 +4124,8 @@ sDash: () => {
           if(el2){el2.textContent=dl<0?`⚠️ ${Math.abs(dl)} days overdue`:dl===0?'Due today':`In ${dl} days`;el2.style.color=col;}
         }
       })();
-      // Immediate render: firstSessionDate + 1 month as starting point
-      const initDue=new Date(firstD);initDue.setMonth(initDue.getMonth()+1);
+      // Immediate render: firstSessionDate as starting point (pay-on-day-one, no grace)
+      const initDue=new Date(firstD);
       nextDueDays=Math.ceil((initDue-today)/(1000*60*60*24));
       nextDueDate=initDue.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
       nextDueDateColor=nextDueDays<0?'var(--red)':nextDueDays<=7?'var(--amber)':'var(--green)';
@@ -4211,7 +4351,7 @@ aExpenses: () => {
       <input class="si-input" placeholder="Search..." oninput="ft(this,'expTb')" style="max-width:160px"/>
       <select class="si-input" style="width:auto" onchange="filterExpenses(this.value)">
         <option value="all">All Categories</option>
-        ${'Marketing,Equipment,Utilities,Maintenance,Staff,Rent,Traveling,Transport,Food,Printing,Banner,Pamphlet,Sound/Music,Decoration,Software,Other'.split(',').map(c=>`<option>${c}</option>`).join('')}
+        ${'Marketing,Equipment,Electricity,Utilities,Maintenance,Staff,Rent,Traveling,Transport,Food,Printing,Banner,Pamphlet,Sound/Music,Decoration,Software,Other'.split(',').map(c=>`<option>${c}</option>`).join('')}
       </select>
     </div>
   </div>
@@ -4236,7 +4376,10 @@ aExpenses: () => {
 aRevenue: () => `
 <div class="ph">
   <div><div class="pt">📈 Revenue Engine</div><div class="ps">Financial intelligence — profit, cashflow & class performance</div></div>
-  <div style="display:flex;gap:8px;flex-wrap:wrap">
+  <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+    <select id="revMonthSelect" onchange="revSetSelectedMonth(this.value)" style="background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:9px;padding:9px 12px;font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">
+      ${revMonthOptions().map(o=>`<option value="${o.val}">${o.label}</option>`).join('')}
+    </select>
     <button class="bsm ba2" onclick="openAddFixedCostModal()">+ Fixed Cost</button>
     <button class="bsm bo" id="simToggleBtn" onclick="toggleSimulatorPanel(this)">🧮 Simulator</button>
     <button class="bsm bo" onclick="window._sim=null;window._revLoading=false;rebuildPage('aRevenue')">↺ Refresh</button>
@@ -4247,6 +4390,9 @@ aRevenue: () => `
 <div id="rev-cashflow-section"></div>
 <div id="rev-fixed-costs-section"></div>
 <div id="rev-simulator-section" style="display:none"></div>
+<div id="ov_revBreakdown" class="overlay"><div class="modal" style="max-width:480px">
+  <div id="revBreakdownContent"></div>
+</div></div>
 `,
 
 aSettings: () => buildSettingsUI(),
@@ -4626,7 +4772,7 @@ ${completed.length?`<div class="tc">
     <div class="field"><label>Client Name</label><input id="sb_client" placeholder="e.g. Priya Mehta"/></div>
     <div class="field"><label>Client Phone</label><input id="sb_phone" type="tel" placeholder="9876543210"/></div>
     <div class="field"><label>Class Type</label>
-      <select id="sb_type"><option>Sangeet Choreography</option><option>Wedding Dance</option><option>Event Performance</option><option>Private Workshop</option><option>Corporate Event</option><option>Other</option></select>
+      <select id="sb_type"><option>Sangeet Choreography</option><option>Wedding Dance</option><option>Event Performance</option><option>Private Workshop</option><option>Corporate Event</option><option>Drawing Crash Course</option><option>Instructor Training Program</option><option>Other</option></select>
     </div>
     <div class="field"><label>Start Date</label><input id="sb_start" type="date"/></div>
     <div class="field"><label>Expected End Date</label><input id="sb_end" type="date"/></div>
@@ -5341,8 +5487,19 @@ async function buildSSchedule(){
       });
     }
   }catch(e){}
-  const metaEntry=BATCH_META[cls]?Object.entries(BATCH_META[cls]).find(([k])=>k===batch||batch.includes(k.split(' ')[0])):null;
-  const batchMeta=metaEntry?metaEntry[1]:null;
+  // Exact match ONLY — the old fallback (matching just the first word, e.g. "Wed–Fri")
+  // would silently pick a DIFFERENT batch's time whenever a student's exact batch string
+  // wasn't in the BATCH_META catalog (this is exactly how a Guitar student on "Wed–Fri
+  // 9–10 PM" ended up seeing "6–7 PM" — it matched the only other Wed–Fri Guitar entry).
+  const metaEntry=BATCH_META[cls]?Object.entries(BATCH_META[cls]).find(([k])=>k===batch):null;
+  let batchMeta=metaEntry?metaEntry[1]:null;
+  if(!batchMeta && batch){
+    // No catalog entry for this exact batch string (e.g. config wasn't updated when a
+    // new time slot was added) — parse the time straight out of the batch text itself
+    // instead of guessing via an unrelated entry. Self-consistent with what's already
+    // shown in the header, and never shows a WRONG time — worst case it shows nothing.
+    batchMeta=parseBatchString(batch);
+  }
   const DAY_NAMES=['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday','Sunday'];
   const spw=CLASS_SESSIONS_PER_WEEK[cls]||2;
   const classIcon=getCourseIcon(cls);
@@ -5407,13 +5564,13 @@ async function buildSSchedule(){
         // New structured format
         const slot=batchMeta.schedule.find(s=>s.day.includes(d));
         if(slot){
-          const fmtT=h=>h<12?h+':00 AM':(h===12?'12:00 PM':(h-12)+':00 PM');
+          const fmtT=h=>(()=>{const hh=Math.floor(h),mi=Math.round((h-hh)*60),p=hh<12?'AM':'PM';let dh=hh%12;if(dh===0)dh=12;return mi?`${dh}:${String(mi).padStart(2,'0')} ${p}`:`${dh}:00 ${p}`;})();
           timeStr=fmtT(slot.startTime||slot.start)+' – '+fmtT(slot.endTime||slot.end);
         }
       } else {
         // Legacy format: Sat uses start/end, Sun uses start2/end2
         const isSun=d===6 && batchMeta.start2!=null;
-        const fmtT=h=>h<12?h+':00 AM':(h===12?'12:00 PM':(h-12)+':00 PM');
+        const fmtT=h=>(()=>{const hh=Math.floor(h),mi=Math.round((h-hh)*60),p=hh<12?'AM':'PM';let dh=hh%12;if(dh===0)dh=12;return mi?`${dh}:${String(mi).padStart(2,'0')} ${p}`:`${dh}:00 ${p}`;})();
         timeStr=isSun?fmtT(batchMeta.start2)+' – '+fmtT(batchMeta.end2):fmtT(batchMeta.start)+' – '+fmtT(batchMeta.end);
       }
       return`<div style="display:flex;align-items:center;gap:14px;padding:9px 0;border-bottom:1px solid var(--border)">
@@ -5449,7 +5606,7 @@ ${batchMeta?`
       const active=batchMeta.days.includes(d);
       let timeStr='';
       if(active){
-        const fmt=h=>h<12?h+':00 AM':(h===12?'12:00 PM':(h-12)+':00 PM');
+        const fmt=h=>(()=>{const hh=Math.floor(h),mi=Math.round((h-hh)*60),p=hh<12?'AM':'PM';let dh=hh%12;if(dh===0)dh=12;return mi?`${dh}:${String(mi).padStart(2,'0')} ${p}`:`${dh}:00 ${p}`;})();
         timeStr=fmt(batchMeta.start)+' – '+fmt(batchMeta.end);
       }
       return`<div style="display:flex;align-items:center;gap:14px;padding:9px 0;border-bottom:1px solid var(--border)">
@@ -5767,33 +5924,53 @@ const INITS = {
   },
   // Auto-mark expired packages as Pending for current month when admin opens Admissions
   aAdmissions: async () => {
+    // Auto-scroll fee grid to current month (so admin lands on "now" instead of Jan 2026)
+    setTimeout(()=>{
+      const wrap=document.getElementById('admTblWrap');
+      const proxy=document.getElementById('admScrollProxy');
+      const proxyInner=document.getElementById('admScrollProxyInner');
+      if(wrap&&proxy&&proxyInner){
+        const table=wrap.querySelector('table');
+        if(table) proxyInner.style.width=table.scrollWidth+'px';
+        const curTh=wrap.querySelector('th[data-current="1"]');
+        if(curTh){
+          const wrapRect=wrap.getBoundingClientRect();
+          const thRect=curTh.getBoundingClientRect();
+          const offset=(thRect.left-wrapRect.left)+wrap.scrollLeft;
+          const target=Math.max(0, offset - 260); // leave ~3 months visible before current
+          wrap.scrollLeft = target;
+          proxy.scrollLeft = target;
+        }
+      }
+    },400);
     if(CU.role!=='admin'&&CU.role!=='coadmin') return;
     try{
       const now=new Date();
-      const MONTHS_ORDER=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
-      const curMonthKey=MONTHS_ORDER[now.getMonth()]; // e.g. "Apr"
+      const curMonthKey=feeMonthKey(now); // e.g. "Jul-2026"
       // Only run once per session per month (track in memory)
-      const sessionKey=`autoP_${curMonthKey}_${now.getFullYear()}`;
+      const sessionKey=`autoP_${curMonthKey}`;
       if(window[sessionKey]) return;
       window[sessionKey]=true;
       let marked=0;
       for(const a of allAdmissions){
-        if(!a.fees) continue;
-        // Check if any paid entry exists and calculate expiry
-        const paidEntries=Object.entries(a.fees).filter(([m,v])=>v&&v.amt&&v.amt!=='Pending'&&v.amt!=='Inactive'&&v.amt!=='-'&&parseFloat(v.amt)>0);
-        if(!paidEntries.length) continue;
-        // Expiry = firstSession + number of paid months
         const fc=a.firstClassDate||a.firstSessionDate;
         if(!fc) continue;
         const fcd=fc.toDate?fc.toDate():(fc instanceof Date?fc:new Date(fc));
         if(isNaN(fcd)) continue;
-        const expiry=new Date(fcd);expiry.setMonth(expiry.getMonth()+paidEntries.length);
-        const isExpired=expiry<now;
+        // Pure paid-count: fee keys are sequential payment slots, not exact calendar
+        // anchors — a late payer's labeled month may carry a later actual date.
+        // Counting genuine payments (regardless of which key they sit under) matches
+        // getExpiry() and avoids false triggers from stray/stale Pending entries.
+        const paidCount=revPaidCountUpTo(a, now);
+        // paidCount===0 (never paid, including brand-new admissions with no fees object
+        // at all) is NOT skipped — pay-on-day-one policy means they're due from fcd itself.
+        const expiry=new Date(fcd);expiry.setMonth(expiry.getMonth()+paidCount);
+        const isExpired=expiry<now; // only mark Pending strictly AFTER expiry date has passed
         if(!isExpired) continue;
-        // Check if current month already has an entry
-        const curEntry=a.fees[curMonthKey];
+        // Check if current month already has an entry (either key format)
+        const curEntry=getFeeEntry(a, now);
         if(curEntry&&curEntry.amt) continue; // already has something
-        // Write Pending for current month
+        // Write Pending for current month using year-safe key
         const update={[`fees.${curMonthKey}`]:{date:'',amt:'Pending',method:'',autoMarked:true}};
         await db.collection('admissions').doc(a.id).update(update).catch(()=>{});
         const idx=allAdmissions.findIndex(x=>x.id===a.id);
@@ -5828,11 +6005,13 @@ const INITS = {
       const pct=total?Math.round(((present+half*0.5)/total)*100):0;
       const pctColor=pct>=80?'var(--green)':pct>=60?'var(--amber)':'var(--red)';
       el.innerHTML=`
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;text-align:center">
+        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:14px;text-align:center">
           <div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:${pctColor}">${pct}%</div><div style="font-size:11px;color:var(--muted2)">Overall</div></div>
           <div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--green)">${present}</div><div style="font-size:11px;color:var(--muted2)">Present</div></div>
           <div><div style="font-family:'Bebas Neue',sans-serif;font-size:28px;color:var(--red)">${absent}</div><div style="font-size:11px;color:var(--muted2)">Absent</div></div>
         </div>
+        <button class="bsm bo" style="width:100%" onclick="const w=document.getElementById('caAttTableWrap');const btn=this;const open=w.style.display!=='none';w.style.display=open?'none':'block';btn.textContent=open?'📋 View Full Attendance (last ${total} days) →':'▲ Hide Details';">📋 View Full Attendance (last ${total} days) →</button>
+        <div id="caAttTableWrap" style="display:none;margin-top:14px">
         <div class="tbl-wrap"><table style="width:100%">
           <thead><tr>
             <th style="text-align:left;font-size:11px;color:var(--muted2);padding:6px 0;border-bottom:1px solid var(--border)">DATE</th>
@@ -5851,7 +6030,8 @@ const INITS = {
               <td style="padding:8px 0;font-size:11px;border-bottom:1px solid var(--border);color:var(--muted2)">${r.notes||'—'}</td>
             </tr>`;
           }).join('')}</tbody>
-        </table></div>`;
+        </table></div>
+        </div>`;
     }catch(e){
       el.innerHTML='<div style="color:var(--muted2);font-size:13px">Could not load attendance records.</div>';
       console.warn('caDash attendance error:',e.message);
@@ -6155,9 +6335,17 @@ const INITS = {
       <div class="dr"><span class="dl">Phone</span><span class="dv">${t.phone||'—'}</span></div>
       <div class="dr"><span class="dl">Active Students</span><span class="dv">${(()=>{
               const base=allStudents.filter(s=>(t.teaches||[]).includes(s.class)&&s.status==='Active');
-              const assigned=getBatchesForTutor(t.email);
-              if(!assigned) return base.length;
-              return base.filter(s=>s.class!=='Zumba'||assigned.includes(s.batch||'')).length;
+              // Uses the same tutorId-first logic as everywhere else in the app (payouts,
+              // etc.) instead of batch-string matching alone — a student's real tutorId/
+              // tutorUid link (set via Edit Tutor) always wins when present. Previously
+              // this only checked batch strings for Zumba and did NO filtering at all for
+              // every other class, so a second tutor added to any non-Zumba class would've
+              // shown the SAME full count on both tutors' cards.
+              return base.filter(s=>{
+                if(s.class==='Zumba') return isZumbaStudentMine(s.batch, t.email, s.tutorId||s.tutorUid, t.id);
+                const linkedId=s.tutorId||s.tutorUid;
+                return linkedId ? linkedId===t.id : true; // no link on record → don't hide them, just show
+              }).length;
             })()}</span></div>
       <div style="display:flex;gap:7px;margin-top:12px">
         <button class="bsm bam" style="flex:1" onclick="openEditTutor('${t.id}')">✏️ Edit</button>
@@ -6213,7 +6401,7 @@ const INITS = {
       // Current cycle — single monthly total (no more A/B halves)
       const curMonth=new Date().getMonth();
       const curCycleStudents=studentsInCycle(teaches,cycles[0],t.id);
-      const curPay=calcCyclePayout(curCycleStudents,teaches,curMonth,t.id);
+      const curPay=calcCyclePayout(curCycleStudents,teaches,curMonth,t.id,new Date().getFullYear());
       // Special batches assigned to this tutor (active this month)
       const curMonthStr=monthShort(curMonth);
       const tutorSBs=allSpecialBatches.filter(sb=>sb.tutorId===t.id&&(sb.status==='Active'||sb.feeStatus==='Paid'||sb.feeStatus==='Partial'));
@@ -6251,7 +6439,7 @@ const INITS = {
         <div style="display:grid;gap:12px">
           ${cycles.map(cyc=>{
             const cycStudents=studentsInCycle(teaches,cyc,t.id);
-            const cycPay=calcCyclePayout(cycStudents,teaches,cyc.month,t.id);
+            const cycPay=calcCyclePayout(cycStudents,teaches,cyc.month,t.id,cyc.year);
             const docId=`${t.id}_${cyc.key}`;
             const pr=payoutRecords[docId];
             const isPaid=!!(pr&&pr.status==='Paid');
@@ -6288,7 +6476,7 @@ const INITS = {
                     const name=(s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'');
                     const adm=getAdmRecord(name.trim(),cls);
                     const isFlatFee=(cls==='Dance'||cls==='Kids Dance');
-                    const receivedAmt=isFlatFee?0:getReceivedAmountInMonth(name.trim(),cls,cyc.month);
+                    const receivedAmt=isFlatFee?0:getReceivedAmountInMonth(name.trim(),cls,cyc.month,cyc.year);
                     const paid=isFlatFee?true:receivedAmt>0;
                     let earnStr=isFlatFee?'₹500':paid?'₹'+tutorShareOne(cls,adm,receivedAmt).toLocaleString():'—unpaid';
                     const isAlwaysPaid=(cls==='Dance'||cls==='Kids Dance');
@@ -6350,8 +6538,7 @@ const INITS = {
     const activeStudentNames=new Set(allStudents.filter(s=>(s.status||'Active')==='Active').map(s=>((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase()));
     allAdmissions.forEach(a=>{
       // Skip if the linked student is Inactive
-      const aName=(a.name||'').trim().toLowerCase();
-      const linkedStudent=allStudents.find(s=>((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase()===aName);
+      const linkedStudent=findLinkedStudent(a);
       if(linkedStudent&&(linkedStudent.status||'Active')==='Inactive') return;
       const key=(a.admission||'')+'|||'+(a.preferableBatch||'');
       if(!batchMap[key]) batchMap[key]={cls:a.admission||'',batch:a.preferableBatch||'',students:[],admissions:[],meta:BATCH_META[a.admission]?.[a.preferableBatch]||null};
@@ -6432,10 +6619,10 @@ const INITS = {
     // FIXED: Monthly cycle. Filter by tutor assignment using isZumbaStudentMine
     function filteredCycleStudents(teaches,cyc){
       const students=studentsInCycle(teaches,cyc,CU.uid);
-      return students.filter(s=>s.class!=='Zumba'||isZumbaStudentMine(s.batch||'',CU.email));
+      return students.filter(s=>s.class!=='Zumba'||isZumbaStudentMine(s.batch||'',CU.email,s.tutorId||s.tutorUid,CU.uid));
     }
     const curCycleStudents=filteredCycleStudents(teaches,cycles[0]);
-    const curPay=calcCyclePayout(curCycleStudents,teaches,curMonth,CU.uid);
+    const curPay=calcCyclePayout(curCycleStudents,teaches,curMonth,CU.uid,new Date().getFullYear());
     const curSBTotal=myBatches.filter(sb=>{
       if(!sb.startDate)return false;
       const sd=new Date(sb.startDate);
@@ -6450,7 +6637,7 @@ const INITS = {
     <div style="display:grid;gap:12px">
     ${cycles.map(cyc=>{
       const cycStudents=filteredCycleStudents(teaches,cyc);
-      const cycPay=calcCyclePayout(cycStudents,teaches,cyc.month,CU.uid);
+      const cycPay=calcCyclePayout(cycStudents,teaches,cyc.month,CU.uid,cyc.year);
       const pr=payoutRecs[cyc.key];
       const isPaid=!!(pr&&pr.status==='Paid');
       const statusBadge=isPaid
@@ -6496,7 +6683,7 @@ const INITS = {
               const name=(s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'');
               const adm=getAdmRecord(name.trim(),cls);
               const isFlatFee=(cls==='Dance'||cls==='Kids Dance');
-              const receivedAmt2=isFlatFee?0:getReceivedAmountInMonth(name.trim(),cls,cyc.month);
+              const receivedAmt2=isFlatFee?0:getReceivedAmountInMonth(name.trim(),cls,cyc.month,cyc.year);
               const paid=isFlatFee?true:receivedAmt2>0;
               const earn=isFlatFee
                 ?'&#8377;500'
@@ -6554,7 +6741,7 @@ const INITS = {
     // If no tutorId set, fall back to class-based (for legacy data)
     const myStudents=allStudents.filter(s=>{
       if(!teaches.includes(s.class)||s.status!=='Active')return false;
-      if(s.class==='Zumba') return isZumbaStudentMine(s.batch||'',CU.email);
+      if(s.class==='Zumba') return isZumbaStudentMine(s.batch||'',CU.email,s.tutorId||s.tutorUid,CU.uid);
       // Non-Zumba: use tutorId/tutorUid if set
       if(s.tutorId||s.tutorUid) return (s.tutorId===CU.uid)||(s.tutorUid===CU.uid);
       return true;
@@ -6649,7 +6836,7 @@ async function writeLog(action, detail, extra={}) {
 // ══════════════════════════════════════════════
 function expCatIcon(cat) {
   const icons = {
-    'Marketing':'📢','Equipment':'🔧','Utilities':'💡','Maintenance':'🛠️',
+    'Marketing':'📢','Equipment':'🔧','Electricity':'⚡','Utilities':'💡','Maintenance':'🛠️',
     'Staff':'👤','Rent':'🏢','Traveling':'🚗','Transport':'🚌',
     'Food':'🍽️','Printing':'🖨️','Banner':'🪟','Pamphlet':'📄',
     'Sound/Music':'🔊','Decoration':'🎨','Software':'💻','Other':'📦'
@@ -7077,7 +7264,7 @@ async function saveAttendance(dateKey) {
   // FIX: Only include students who had joined by this date + batch restriction for Zumba tutors
   const myS = allStudents.filter(s => {
     if(!CU.teaches || !CU.teaches.includes(s.class) || s.status !== 'Active') return false;
-    if(s.class==='Zumba' && !isZumbaStudentMine(s.batch||'',CU.email)) return false;
+    if(s.class==='Zumba' && !isZumbaStudentMine(s.batch||'',CU.email,s.tutorId||s.tutorUid,CU.uid)) return false;
     const joinD = s.firstSession||s.joinDate||s.createdAt?.toDate?.()?.toISOString()?.split('T')[0]||'2020-01-01';
     return dateKey >= joinD;
   });
@@ -7207,7 +7394,7 @@ async function loadAttendanceForDate(dateKey) {
   // FIX: Only include students who had joined by this date + batch restriction
   const myS = allStudents.filter(s => {
     if(!CU.teaches || !CU.teaches.includes(s.class) || s.status !== 'Active') return false;
-    if(s.class==='Zumba' && !isZumbaStudentMine(s.batch||'',CU.email)) return false;
+    if(s.class==='Zumba' && !isZumbaStudentMine(s.batch||'',CU.email,s.tutorId||s.tutorUid,CU.uid)) return false;
     const joinD = s.firstSession||s.joinDate||s.createdAt?.toDate?.()?.toISOString()?.split('T')[0]||'2020-01-01';
     return dateKey >= joinD;
   });
@@ -8100,16 +8287,13 @@ function formatDate(d){
 }
 function isExpiringSoon(a){
   try{
-    // CORRECT: expiry = firstSession + number of paid months
+    // Expiry = firstSession + number of paid months (shared revPaidCountUpTo — same
+    // NA/reactivation handling as everywhere else, so this never drifts out of sync).
     const fd=a.firstClassDate||a.firstSessionDate;
     if(!fd)return false;
     const d=fd.toDate?fd.toDate():(fd instanceof Date?fd:new Date(fd));
     if(isNaN(d))return false;
-    let monthsToAdd=1;
-    if(a.fees){
-      const paidCount=Object.values(a.fees).filter(v=>v&&v.amt&&v.amt!=='Pending'&&v.amt!=='-').length;
-      if(paidCount>0)monthsToAdd=paidCount;
-    }
+    const monthsToAdd=revPaidCountUpTo(a, new Date()); // 0 payments = due from first session itself
     const exp=new Date(d);exp.setMonth(exp.getMonth()+monthsToAdd);
     const days=Math.round((exp-new Date())/(864e5));
     return days>=0&&days<=7;
@@ -8677,10 +8861,45 @@ async function deleteSpecialBatch(batchId){
   }catch(e){showToast('Error: '+e.message,'error');}
 }
 
-function filterAdmissions(cls){
+// Current-month payment status for one admission — drives the Payment Status filter
+// on the Admissions page. Mirrors the same overdue logic used in the fee grid cell
+// and the Revenue Engine, so "Overdue" here means the same thing everywhere else.
+function admCurrentMonthStatus(a){
+  const linkedStudent=findLinkedStudent(a);
+  const isInactive=linkedStudent&&(linkedStudent.status||'Active')==='Inactive';
+  const now=new Date();
+  const hasFeeInactive=admIsInactiveAsOf(a,now);
+  if(isInactive||hasFeeInactive)return 'Inactive';
+  const curKey=feeMonthKey(now);
+  const mf=(a.fees&&a.fees[curKey])||(a.fees&&a.fees[MONTH_NAMES_FK[now.getMonth()]])||null;
+  if(mf&&mf.amt==='NA')return 'NA';
+  if(mf&&mf.amt==='Partial')return 'Partial';
+  if(mf&&mf.amt&&mf.amt!=='Pending'&&mf.amt!=='-'&&parseFloat(mf.amt)>0)return 'Paid';
+  // No entry, or explicitly Pending — figure out if it's genuinely overdue yet
+  const fcRaw=a.firstClassDate||a.firstSessionDate;
+  const fcDate=fcRaw?(fcRaw.toDate?fcRaw.toDate():new Date(fcRaw)):null;
+  if(fcDate&&!isNaN(fcDate)){
+    const paidCount=revPaidCountUpTo(a, now);
+    const realExpiry=new Date(fcDate);realExpiry.setMonth(realExpiry.getMonth()+paidCount);
+    return now>=realExpiry?'Overdue':'Pending';
+  }
+  return 'Overdue';
+}
+
+function applyAdmFilters(){
+  const cls=document.getElementById('admClassFilter')?.value||'all';
+  const status=document.getElementById('admStatusFilter')?.value||'all';
   document.querySelectorAll('#admTb tr[data-class]').forEach(r=>{
-    r.style.display=(cls==='all'||r.dataset.class===cls)?'':'none';
+    const clsMatch=(cls==='all'||r.dataset.class===cls);
+    const statusMatch=(status==='all'||r.dataset.status===status);
+    r.style.display=(clsMatch&&statusMatch)?'':'none';
   });
+}
+function filterAdmissions(cls){
+  // Kept for any old callers — routes through the combined filter now.
+  const sel=document.getElementById('admClassFilter');
+  if(sel)sel.value=cls;
+  applyAdmFilters();
 }
 
 function scrollToExpiring(){
@@ -8769,8 +8988,7 @@ function openDayDetail(dayIdx){
   // Collect all batches running on this day (skip Inactive students)
   const batchMap={};
   allAdmissions.forEach(a=>{
-    const aName=(a.name||'').trim().toLowerCase();
-    const linked=allStudents.find(s=>((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase()===aName);
+    const linked=findLinkedStudent(a);
     if(linked&&(linked.status||'Active')==='Inactive') return;
     const key=(a.admission||'')+'|||'+(a.preferableBatch||'');
     if(!batchMap[key])batchMap[key]={cls:a.admission||'',batch:a.preferableBatch||'',students:[],admissions:[],meta:BATCH_META[a.admission]?.[a.preferableBatch]||null};
@@ -8836,9 +9054,8 @@ function openDayDetail(dayIdx){
       </div>
       <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px">
         ${b.admissions.map(a=>{
-          const months=['Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan'];
-          const curMon=new Date().toLocaleString('en-US',{month:'short'});
-          const mf=a.fees&&a.fees[curMon];
+          const curMon=MONTH_NAMES_FK[new Date().getMonth()];
+          const mf=getFeeEntry(a);
           const paid=mf&&mf.amt&&mf.amt!=='Pending';
           return`<div style="background:var(--card);border:1px solid ${paid?'rgba(16,185,129,.25)':'rgba(239,68,68,.15)'};border-radius:8px;padding:8px 10px">
             <div style="font-size:12px;font-weight:600;color:#fff;margin-bottom:3px">${a.name||'—'}</div>
@@ -8891,9 +9108,19 @@ function getPayoutCycles(){
 // 3. They are assigned to this tutor
 function studentsInCycle(tutorTeaches,cycle,tutorUid){
   const cycleLastDay=new Date(cycle.year,cycle.month+1,0); // last day of month
+  const cycleStart=new Date(cycle.year,cycle.month,1);
   const today=new Date();
   return allStudents.filter(s=>{
-    if(!tutorTeaches.includes(s.class)||s.status!=='Active')return false;
+    if(!tutorTeaches.includes(s.class))return false;
+    if(s.status!=='Active'){
+      // Currently inactive — but were they still active DURING this cycle month?
+      // fees{} is marked 'Inactive' from the month they actually left onward, so a
+      // cycle before that month means they were genuinely active back then and should
+      // still count for that historical payout.
+      const adm=getAdmRecord(((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim(), s.class);
+      const inactiveFrom=adm?revAdmInactiveFromDate(adm):null;
+      if(!inactiveFrom||cycleStart>=inactiveFrom) return false; // truly inactive by this cycle, or no record to prove otherwise
+    }
     // Tutor assignment filter
     if(s.tutorId||s.tutorUid){
       const assignedId=s.tutorId||s.tutorUid;
@@ -8967,24 +9194,42 @@ function studentPaidInMonth(studentName,cls,month){
 // monthly fee tracking), then falls back to summing portal payments in
 // that month. Used so tutor payout is a % of what was actually collected,
 // not the full listed course fee (handles partial/discounted payments).
-function getReceivedAmountInMonth(studentName,cls,month){
+//
+// Checks the year-safe key format ("Jul-2026") FIRST — this is the format
+// getFeeEntry()/the rest of the app actually writes — then falls back to the
+// bare legacy key ("Jul") only for the current year, matching getFeeEntry's
+// own convention exactly. Previously this only ever checked the bare key,
+// so any payment recorded under "Jul-2026" was completely invisible here —
+// a real student could be fully paid and still show "Unpaid" on this screen.
+function getReceivedAmountInMonth(studentName,cls,month,year){
+  const yr=year||new Date().getFullYear();
   const mName=monthShort(month);
-  const adm=allAdmissions.find(a=>a.name&&a.name.trim().toLowerCase()===studentName.trim().toLowerCase()&&a.admission===cls);
+  const yearSafeKey=`${mName}-${yr}`;
+  // Reuses getAdmRecord()'s existing fuzzy name match (handles partial names like
+  // admission="Pavitra" vs student="Pavitra gulmohar") instead of a stricter,
+  // exact-only lookup that would silently miss anyone whose name isn't recorded
+  // identically in both collections.
+  const adm=getAdmRecord(studentName,cls);
   if(adm&&adm.fees){
-    const exactFee=adm.fees[mName];
-    if(exactFee&&exactFee.amt&&exactFee.amt!=='Pending'&&parseFloat(exactFee.amt)>0) return parseFloat(exactFee.amt);
-    const feeEntry=Object.entries(adm.fees).find(([k])=>k.toLowerCase()===mName.toLowerCase());
-    if(feeEntry){const mf=feeEntry[1];if(mf&&mf.amt&&mf.amt!=='Pending'&&parseFloat(mf.amt)>0) return parseFloat(mf.amt);}
+    // 1. Year-safe key exact match — the current/correct format
+    const yearSafeFee=adm.fees[yearSafeKey];
+    if(yearSafeFee&&yearSafeFee.amt&&yearSafeFee.amt!=='Pending'&&yearSafeFee.amt!=='NA'&&parseFloat(yearSafeFee.amt)>0) return parseFloat(yearSafeFee.amt);
+    // 2. Bare key — legacy format, only valid for the current year (same rule as getFeeEntry)
+    if(yr===new Date().getFullYear()){
+      const exactFee=adm.fees[mName];
+      if(exactFee&&exactFee.amt&&exactFee.amt!=='Pending'&&exactFee.amt!=='NA'&&parseFloat(exactFee.amt)>0) return parseFloat(exactFee.amt);
+      const feeEntry=Object.entries(adm.fees).find(([k])=>k.toLowerCase()===mName.toLowerCase());
+      if(feeEntry){const mf=feeEntry[1];if(mf&&mf.amt&&mf.amt!=='Pending'&&mf.amt!=='NA'&&parseFloat(mf.amt)>0) return parseFloat(mf.amt);}
+    }
   }
-  // Fallback: sum portal payments made in that month
+  // Fallback: sum portal payments made in that month/year
   const s=allStudents.find(st=>{
     const sn=((st.fn||st.firstName||'')+' '+(st.ln||st.lastName||'')).trim().toLowerCase();
     return sn===studentName.trim().toLowerCase()&&st.class===cls;
   });
   if(s){
-    const d=new Date();
-    const monthStart=new Date(d.getFullYear(),month,1);
-    const monthEnd=new Date(d.getFullYear(),month+1,0);
+    const monthStart=new Date(yr,month,1);
+    const monthEnd=new Date(yr,month+1,0);
     const total=allPayments.filter(p=>{
       if(p.studentUid!==s.uid&&p.studentUid!==s.id) return false;
       if(p.status!=='Paid') return false;
@@ -9002,7 +9247,8 @@ function getReceivedAmountInMonth(studentName,cls,month){
 // Zumba: ₹3000 per distinct batch the tutor is responsible for (regardless of student count)
 // Dance/Kids: ₹500 per enrolled student
 // Chess/Guitar: 50% of student's fee, only if that student has paid that month in admissions
-function calcCyclePayout(students,teaches,cycleMonth,tutorUid){
+function calcCyclePayout(students,teaches,cycleMonth,tutorUid,cycleYear){
+  const yr=cycleYear||new Date().getFullYear(); // falls back to current year if a caller doesn't pass it yet
   let total=0;
   teaches.forEach(cls=>{
     if(cls==='Zumba'){
@@ -9032,7 +9278,7 @@ function calcCyclePayout(students,teaches,cycleMonth,tutorUid){
     // Chess / Guitar / Drawing: payout is a % of the ACTUAL amount received that month
     students.filter(s=>s.class===cls).forEach(s=>{
       const name=((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim();
-      const receivedAmt=getReceivedAmountInMonth(name,cls,cycleMonth);
+      const receivedAmt=getReceivedAmountInMonth(name,cls,cycleMonth,yr);
       if(!receivedAmt)return; // nothing received this month → no payout
       const adm=getAdmRecord(name,cls);
       total+=tutorShareOne(cls,adm,receivedAmt);
@@ -9055,6 +9301,7 @@ function openTutorDayDetail(dayIdx){
   // Build batchMap from MY students only
   const myStudents=allStudents.filter(s=>{
     if(!teaches.includes(s.class)||s.status!=='Active')return false;
+    if(s.class==='Zumba') return isZumbaStudentMine(s.batch||'',CU.email,s.tutorId||s.tutorUid,CU.uid);
     if(s.tutorId||s.tutorUid) return (s.tutorId===CU.uid)||(s.tutorUid===CU.uid);
     return true;
   });
@@ -9304,9 +9551,14 @@ function openFeeEntry(admId){
   const a=allAdmissions.find(x=>x.id===admId);if(!a)return;
   document.getElementById('fee_admId').value=admId;
   document.getElementById('fee_date').value=new Date().toISOString().split('T')[0];
-  // FIX: declare nowMonth BEFORE using it
-  const months=['Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan'];
-  const nowMonth=new Date().toLocaleString('en-US',{month:'short'});
+  const now=new Date();
+  const nowMonth=MONTH_NAMES_FK[now.getMonth()];
+  const nowYear=now.getFullYear();
+  // Populate year dropdown: current year ± 1 (covers late/early payments near year boundary)
+  const ySel=document.getElementById('fee_year');
+  if(ySel){
+    ySel.innerHTML=[nowYear-1,nowYear,nowYear+1].map(y=>`<option value="${y}"${y===nowYear?' selected':''}>${y}</option>`).join('');
+  }
   // For Chess: use ageCategory to determine fee
   let defaultFee=CLASS_FEES[a.admission]||0;
   if(a.admission==='Chess'){
@@ -9315,13 +9567,12 @@ function openFeeEntry(admId){
   }
   document.getElementById('fee_amt').value=defaultFee;
   document.getElementById('fee_status').value='Paid';
-  // Restore existing fee method if re-opening same month
-  const existingFee=a.fees&&a.fees[nowMonth]||null;
+  // Restore existing fee method if re-opening same month (checks both key formats)
+  const existingFee=getFeeEntry(a, now);
   if(document.getElementById('fee_method'))document.getElementById('fee_method').value=existingFee?.method||'Cash';
   if(document.getElementById('fee_ref'))document.getElementById('fee_ref').value=existingFee?.ref||'';
   const mSel=document.getElementById('fee_month');
-  const matched=months.find(m=>m.toLowerCase()===nowMonth.toLowerCase());
-  if(mSel&&matched)mSel.value=matched;
+  if(mSel)mSel.value=nowMonth;
   const ageLbl=a.admission==='Chess'?` · <span style="color:var(--amber)">${(a.ageCategory||'').includes('nder 10')||a.ageCategory==='Under 10'?'Under 10 — ₹1,199':'Standard — ₹1,499'}</span>`:'';
   document.getElementById('feeStudentInfo').innerHTML=`
     <div style="font-weight:700;color:#fff">${a.name}${ageLbl}</div>
@@ -9333,54 +9584,66 @@ function openFeeEntry(admId){
 async function doSaveFee(){
   const admId=document.getElementById('fee_admId').value;
   const month=document.getElementById('fee_month').value;
+  const year=parseInt(document.getElementById('fee_year')?.value)||new Date().getFullYear();
   const date=document.getElementById('fee_date').value;
   const amt=document.getElementById('fee_amt').value;
   const status=document.getElementById('fee_status').value;
   const method=document.getElementById('fee_method')?.value||'Cash';
   const ref=document.getElementById('fee_ref')?.value?.trim()||'';
   if(!month){setErr('feeErr','Month is required.');return;}
-  if(status!=='Inactive'&&!amt){setErr('feeErr','Amount is required.');return;}
+  if(status!=='Inactive'&&status!=='NA'&&!amt){setErr('feeErr','Amount is required.');return;}
 
   // Determine stored value
   let feeVal;
   if(status==='Pending') feeVal='Pending';
   else if(status==='Inactive') feeVal='Inactive';
+  else if(status==='NA') feeVal='NA';
   else if(status==='Partial') feeVal=parseFloat(amt)||0;
   else feeVal=parseFloat(amt)||0; // Paid
 
   try{
+    const monthKey=`${month}-${year}`; // year-safe key, e.g. "Jan-2027"
     const feeObj={date,amt:feeVal,method};
     if(ref)feeObj.ref=ref;
     if(status==='Inactive')feeObj.status='Inactive';
-    const updates={[`fees.${month}`]:feeObj};
+    if(status==='NA')feeObj.status='NA';
+    const updates={[`fees.${monthKey}`]:feeObj};
 
-    // If Inactive → auto-mark all future months as Inactive too
+    // If a legacy bare-name key exists for this SAME month/year (pre-migration data),
+    // remove it — otherwise both keys represent the same real-world payment and
+    // inflate paid-count calculations (expiry, pending checks) by counting it twice.
+    const admForCleanup=allAdmissions.find(a=>a.id===admId);
+    let bareKeyToDelete=null;
+    if(admForCleanup&&admForCleanup.fees&&admForCleanup.fees[month]!==undefined&&year===new Date().getFullYear()){
+      updates[`fees.${month}`]=firebase.firestore.FieldValue.delete();
+      bareKeyToDelete=month;
+    }
+
+    // If Inactive → auto-mark all future months as Inactive too (real date math, year-safe)
     if(status==='Inactive'){
-      const MONTHS_ORDER=['Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan'];
-      const startIdx=MONTHS_ORDER.indexOf(month);
-      if(startIdx>=0){
-        const adm=allAdmissions.find(a=>a.id===admId);
-        for(let i=startIdx+1;i<MONTHS_ORDER.length;i++){
-          const futM=MONTHS_ORDER[i];
-          const existingFee=adm?.fees?.[futM];
+      const monthIdx=MONTH_NAMES_FK.indexOf(month);
+      const adm=allAdmissions.find(a=>a.id===admId);
+      if(monthIdx>=0){
+        const cursor=new Date(year,monthIdx,1);
+        for(let i=0;i<11;i++){ // cover the next 11 months forward
+          cursor.setMonth(cursor.getMonth()+1);
+          const futKey=feeMonthKey(cursor);
+          const existingFee=adm?.fees?.[futKey]||(cursor.getFullYear()===new Date().getFullYear()?adm?.fees?.[MONTH_NAMES_FK[cursor.getMonth()]]:null);
           // Only auto-mark if not already paid
           if(!existingFee||existingFee.amt==='-'||existingFee.amt==='Pending'||!existingFee.amt){
-            updates[`fees.${futM}`]={date:'',amt:'Inactive',method:'',status:'Inactive'};
+            updates[`fees.${futKey}`]={date:'',amt:'Inactive',method:'',status:'Inactive'};
           }
         }
       }
       // Also mark student as Inactive in students collection if linked
-      const adm=allAdmissions.find(a=>a.id===admId);
       if(adm){
-        const linked=allStudents.find(s=>{
-          const sn=((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase();
-          return sn===(adm.name||'').toLowerCase();
-        });
+        const linked=findLinkedStudent(adm);
         if(linked){
           await db.collection('students').doc(linked.id).update({status:'Inactive'}).catch(()=>{});
           await db.collection('users').doc(linked.id).update({status:'Inactive'}).catch(()=>{});
           const idx=allStudents.findIndex(s=>s.id===linked.id);
           if(idx>=0)allStudents[idx].status='Inactive';
+          _admStudentLinkCache=null; // status changed — invalidate cache
         }
       }
     }
@@ -9390,8 +9653,12 @@ async function doSaveFee(){
     const idx=allAdmissions.findIndex(a=>a.id===admId);
     if(idx>=0){
       if(!allAdmissions[idx].fees)allAdmissions[idx].fees={};
+      allAdmissions[idx].fees[monthKey]=feeObj;
+      if(bareKeyToDelete)delete allAdmissions[idx].fees[bareKeyToDelete];
+      // Apply any other updates (e.g. future-month Inactive auto-marks) verbatim
       Object.entries(updates).forEach(([k,v])=>{
         const mKey=k.replace('fees.','');
+        if(mKey===monthKey||mKey===bareKeyToDelete)return; // already handled above
         allAdmissions[idx].fees[mKey]=v;
       });
     }
@@ -9399,12 +9666,8 @@ async function doSaveFee(){
     if(status==='Paid'&&feeVal>0){
       const adm=allAdmissions.find(a=>a.id===admId);
       if(adm){
-        // Find linked student uid by name match
-        const stuName=(adm.name||'').trim().toLowerCase();
-        const linked=allStudents.find(s=>{
-          const sn=((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase();
-          return sn===stuName;
-        });
+        // Find linked student by name+phone match (avoids collision on shared names)
+        const linked=findLinkedStudent(adm);
         if(linked){
           // Write receipt to admFeeReceipts (student can read this)
           const receiptId=`adm_${admId}_${month}`;
@@ -9436,15 +9699,14 @@ async function doSaveFee(){
     if(status==='Paid'&&feeVal>0){
       const adm2=allAdmissions.find(a=>a.id===admId);
       if(adm2){
-        const adm2name=(adm2.name||'').trim().toLowerCase();
-        const linked2=allStudents.find(s=>((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase()===adm2name);
+        const linked2=findLinkedStudent(adm2);
         if(linked2){
           sendPaymentNotifications(linked2.id,adm2.name||'','₹'+feeVal.toLocaleString(),'adm_'+admId+'_'+month).catch(()=>{});
         }
       }
     }
     closeOv('ov_feeEntry');
-    const statusLabel=status==='Inactive'?'Inactive marked (future months auto-marked)':status==='Partial'?'Partial fee saved':'Fee saved';
+    const statusLabel=status==='Inactive'?'Inactive marked (future months auto-marked)':status==='NA'?'Marked N/A':status==='Partial'?'Partial fee saved':'Fee saved';
     writeLog('MARK_FEE','Marked '+month+' fee as '+statusLabel+' for '+(allAdmissions.find(a=>a.id===admId)||{}).name,{month,status:statusLabel});
     showToast(`✅ ${statusLabel} for ${month}!`,'success');
     rebuildPage('aAdmissions');
@@ -9457,7 +9719,7 @@ async function doSaveFee(){
 function onFeeStatusChange(val){
   const amtField=document.getElementById('fee_amt');
   const methodRow=document.getElementById('fee_method')?.closest('.field');
-  if(val==='Inactive'){
+  if(val==='Inactive'||val==='NA'){
     if(amtField){amtField.value='0';amtField.disabled=true;}
     if(methodRow)methodRow.style.opacity='0.4';
   }else{
@@ -9658,6 +9920,86 @@ async function removeBatch(cls, batchName){
   rebuildPage('aBatchSlots');
 }
 
+// Some admission records are added straight to the backend for scheduling purposes
+// only (e.g. a one-off special-batch slot) and have no linked student record. Every
+// "is this active?" check in the app works by checking the LINKED STUDENT's status —
+// with no student to check, they default to "active" forever, so the slot never frees
+// up on its own even after the real-world event is long over. This gives admins a
+// direct way to freeze exactly those orphan records without touching real students.
+// A student who left and came back needs a FRESH cycle, not a continuation of the old
+// one — otherwise their old paid-months history bleeds into the new join date's expiry
+// math (making them look paid-ahead when they're not) or the old Inactive marker keeps
+// them flagged inactive forever. This resets the cycle start without touching the old
+// fees{} history — it stays on record, just excluded from new-cycle calculations
+// (see revPaidCountUpTo / revAdmInactiveFromDate).
+async function reactivateAdmission(admId){
+  const a=allAdmissions.find(x=>x.id===admId);if(!a)return;
+  const suggested=new Date().toISOString().split('T')[0];
+  const input=prompt(`Reactivating ${a.name||'this student'}. Enter their NEW first-class date for this fresh cycle (YYYY-MM-DD):`,suggested);
+  if(!input)return;
+  const newDate=new Date(input);
+  if(isNaN(newDate)){showToast('Invalid date — use YYYY-MM-DD','error');return;}
+  const reactivatedFrom=feeMonthKey(newDate);
+  const reactivatedFromDate=new Date(newDate.getFullYear(),newDate.getMonth(),1);
+  try{
+    const updates={firstClassDate:input,reactivatedFrom,manualInactive:firebase.firestore.FieldValue.delete()};
+    // Marking Inactive auto-propagates that marker forward across future months (so a
+    // one-time "he left" action doesn't need re-marking every month). If the new cycle
+    // start falls inside that forward-marked range, those months are now factually
+    // wrong — he's back — so clear just those, while leaving the genuine leave-period
+    // (before the new cycle) as accurate history.
+    if(a.fees){
+      Object.entries(a.fees).forEach(([k,v])=>{
+        if(!v||v.amt!=='Inactive')return;
+        const parsed=parseFeeMonthKey(k);
+        if(!parsed)return;
+        const d=new Date(parsed.yr,parsed.mon,1);
+        if(d>=reactivatedFromDate) updates[`fees.${k}`]=firebase.firestore.FieldValue.delete();
+      });
+    }
+    await db.collection('admissions').doc(admId).update(updates);
+    const idx=allAdmissions.findIndex(x=>x.id===admId);
+    if(idx>=0){
+      allAdmissions[idx].firstClassDate=input;
+      allAdmissions[idx].reactivatedFrom=reactivatedFrom;
+      delete allAdmissions[idx].manualInactive;
+      if(allAdmissions[idx].fees){
+        Object.keys(allAdmissions[idx].fees).forEach(k=>{
+          if(`fees.${k}` in updates) delete allAdmissions[idx].fees[k];
+        });
+      }
+    }
+    const linked=findLinkedStudent(a);
+    if(linked){
+      await db.collection('students').doc(linked.id).update({status:'Active'}).catch(()=>{});
+      await db.collection('users').doc(linked.id).update({status:'Active'}).catch(()=>{});
+      const sidx=allStudents.findIndex(s=>s.id===linked.id);
+      if(sidx>=0)allStudents[sidx].status='Active';
+    }
+    _admStudentLinkCache=null;
+    writeLog('REACTIVATE_ADM','Reactivated '+(a.name||'')+' — new cycle from '+input,{admId,newDate:input});
+    showToast(`✅ Reactivated — new cycle starts ${input}`,'success');
+    rebuildPage('aAdmissions');
+  }catch(e){showToast('Error: '+e.message,'error');}
+}
+
+async function deactivateOrphanBatch(cls,batch){
+  if(CU.role!=='admin'){showToast('⛔ Co-admins cannot modify batch slots','error');return;}
+  const matches=allAdmissions.filter(a=>a.admission===cls&&(a.preferableBatch||'')===batch&&!a.manualInactive&&!findLinkedStudent(a));
+  if(!matches.length){showToast('Nothing to free here — this slot is only held by real enrolled students.','error');return;}
+  if(!confirm(`Mark ${matches.length} backend-only record(s) for "${batch}" (${cls}) as inactive? This frees up the slot. The record itself is kept, not deleted.`))return;
+  try{
+    for(const a of matches){
+      await db.collection('admissions').doc(a.id).update({manualInactive:true,updatedAt:firebase.firestore.FieldValue.serverTimestamp()});
+      const idx=allAdmissions.findIndex(x=>x.id===a.id);
+      if(idx>=0)allAdmissions[idx].manualInactive=true;
+    }
+    _admStudentLinkCache=null;
+    rebuildPage('aBatchSlots');
+    showToast('✅ Slot freed up','success');
+  }catch(e){showToast('Error: '+e.message,'error');}
+}
+
 async function deleteNotification(notifId){
   try{
     await db.collection('notifications').doc(notifId).delete();
@@ -9761,7 +10103,7 @@ function setSkill(studentId, skill, value, safeKey){
 async function saveAllGrades(){
   const myS=allStudents.filter(s=>{
     if(!CU.teaches||!CU.teaches.includes(s.class)||s.status!=='Active') return false;
-    if(s.class==='Zumba'&&!isZumbaStudentMine(s.batch||'',CU.email)) return false;
+    if(s.class==='Zumba'&&!isZumbaStudentMine(s.batch||'',CU.email,s.tutorId||s.tutorUid,CU.uid)) return false;
     return true;
   });
   if(!myS.length){showToast('No students to grade','error');return;}
@@ -9942,8 +10284,7 @@ function getMonthlyRevenue(){
     const d=new Date(now.getFullYear(),now.getMonth()-i,1);
     months.push({label:d.toLocaleString('en-IN',{month:'short'}),year:d.getFullYear(),month:d.getMonth()});
   }
-  // Month index names for admissions fees matching
-  const MONTH_NAMES=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  // (uses global MONTH_NAMES_FK for month index names)
   return months.map(m=>{
     // Portal payments
     const portalRev=allPayments.filter(p=>{
@@ -9951,13 +10292,19 @@ function getMonthlyRevenue(){
       const d=p.createdAt.toDate?p.createdAt.toDate():new Date(p.createdAt);
       return d.getFullYear()===m.year&&d.getMonth()===m.month;
     }).reduce((s,p)=>s+(p.amtNum||0),0);
-    // Admissions fees — match by fee date
-    const admMonthName=MONTH_NAMES[m.month];
+    // Admissions fees — match by year-safe key first, fall back to bare name + date check
+    const admMonthName=MONTH_NAMES_FK[m.month];
+    const admMonthKey=`${admMonthName}-${m.year}`;
     const admRev=allAdmissions.reduce((s,a)=>{
       if(!a.fees)return s;
-      // Check if this admission has a fee for this month-year
+      // Prefer year-safe key (unambiguous — no date cross-check needed)
+      const mfNew=a.fees[admMonthKey];
+      if(mfNew&&mfNew.amt&&mfNew.amt!=='Pending'&&mfNew.amt!=='-'&&mfNew.amt!=='Inactive'){
+        return s+(parseFloat(mfNew.amt)||0);
+      }
+      // Fall back to bare-name key (legacy data), disambiguated by fee date
       const mf=a.fees[admMonthName]||a.fees[admMonthName.toLowerCase()]||null;
-      if(mf&&mf.amt&&mf.amt!=='Pending'&&mf.amt!=='-'){
+      if(mf&&mf.amt&&mf.amt!=='Pending'&&mf.amt!=='-'&&mf.amt!=='Inactive'){
         const feeDate=mf.date?new Date(mf.date):null;
         if(!feeDate||isNaN(feeDate)||(feeDate.getFullYear()===m.year&&feeDate.getMonth()===m.month)){
           return s+(parseFloat(mf.amt)||0);
@@ -9967,7 +10314,7 @@ function getMonthlyRevenue(){
     },0);
     // Special batches — by start date month
     const sbRev=allSpecialBatches.reduce((s,sb)=>{
-      if((sb.paymentStatus==='Paid'||sb.paymentStatus==='Partial')&&sb.startDate){
+      if((sb.feeStatus==='Paid'||sb.feeStatus==='Partial')&&sb.startDate){
         const d=new Date(sb.startDate);
         if(d.getFullYear()===m.year&&d.getMonth()===m.month)return s+(parseFloat(sb.fee)||0);
       }
@@ -10020,21 +10367,20 @@ PAGES.aDash = function(){
   const now=new Date();
   const activeStudents=allStudents.filter(s=>s.status==='Active');
   const portalRev=allPayments.filter(p=>p.status==='Paid').reduce((s,p)=>s+(p.amtNum||0),0);
-  const MONTHS_D=['Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec','Jan'];
   const admRev=allAdmissions.reduce((s,a)=>{
     if(!a.fees)return s;
-    return s+MONTHS_D.reduce((ms,m)=>{const mf=a.fees[m];if(mf&&mf.amt&&mf.amt!=='Pending'&&mf.amt!=='-'){const v=parseFloat(mf.amt)||0;return ms+v;}return ms;},0);
+    return s+Object.values(a.fees).reduce((ms,mf)=>{if(mf&&mf.amt&&mf.amt!=='Pending'&&mf.amt!=='-'&&mf.amt!=='Inactive'){const v=parseFloat(mf.amt)||0;return ms+v;}return ms;},0);
   },0);
   const sbRev=allSpecialBatches.reduce((s,sb)=>{
-    if(sb.paymentStatus==='Paid'||sb.paymentStatus==='Partial'){return s+(parseFloat(sb.fee)||0);}
+    if(sb.feeStatus==='Paid'||sb.feeStatus==='Partial'){return s+(parseFloat(sb.fee)||0);}
     return s;
   },0);
   const totalRev=portalRev+admRev+sbRev;
   const pendingPayments=allPayments.filter(p=>p.status==='Pending');
   const unreadMsgs=allMessages.filter(m=>m.unread&&(CU.role==='admin'||(m.recipientUid===CU.uid))).length;
   const enqNeedFollowUp=allEnquiries.filter(e=>!e.followUpNote&&(e.admissionStatus==='Pending'||!e.admissionStatus)).length;
-  const classColors={Zumba:'var(--cyan)',Dance:'var(--purple)','Kids Dance':'var(--pink)',Chess:'var(--blue)',Guitar:'var(--amber)',Other:'var(--green)'};
-  const classIcons={Zumba:'🎵',Dance:'💃','Kids Dance':'👧',Chess:'♟️',Guitar:'🎸',Other:'🎯'};
+  const classColors={Zumba:'var(--cyan)',Dance:'var(--purple)','Kids Dance':'var(--pink)',Chess:'var(--blue)',Guitar:'var(--amber)','Drawing - Hobby':'#f97316','Drawing - Elementary':'#fb923c','Drawing - Intermediate':'#ef4444',Kathak:'#10b981',Other:'var(--green)'};
+  const classIcons={Zumba:'🎵',Dance:'💃','Kids Dance':'👧',Chess:'♟️',Guitar:'🎸','Drawing - Hobby':'🎨','Drawing - Elementary':'🖌️','Drawing - Intermediate':'🖼️',Kathak:'🩰',Other:'🎯'};
   const byClass={};
   activeStudents.forEach(s=>{byClass[s.class]=(byClass[s.class]||0)+1;});
   const atRisk=allStudents.filter(s=>(s.consecutiveAbsences||0)>=2);
@@ -13943,22 +14289,250 @@ const MONTHS_ORDER_REV = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep',
 
 // ── helpers ──────────────────────────────────────────────────────────────────
 
+// ── MONTH SELECTOR: window._revSelMonth = {y, m} (m is 0-indexed) or null = current month ──
+function revSelDate() {
+  if (window._revSelMonth) return new Date(window._revSelMonth.y, window._revSelMonth.m, 1);
+  return new Date();
+}
+function revIsCurrentMonth() {
+  const d = revSelDate(), n = new Date();
+  return d.getFullYear() === n.getFullYear() && d.getMonth() === n.getMonth();
+}
+// Reference "today" for overdue/pending math: real today for the current month,
+// last day of the selected month for past months (so nothing reads as "mid-cycle").
+function revRefDate() {
+  if (revIsCurrentMonth()) return new Date();
+  const d = revSelDate();
+  return new Date(d.getFullYear(), d.getMonth() + 1, 0);
+}
+function revShowBreakdown(metric) {
+  const data = window._revBreakdownData;
+  if (!data) return;
+  const { mLabel, sorted, tutorPayout, fixedCosts, otherExp, daily, arrearsTotal } = data;
+  let title = '', rows = '', footerTotal = '';
+
+  if (metric === 'collected') {
+    title = `💰 Collected — ${mLabel}`;
+    const total = sorted.reduce((s,[,d])=>s+d.collected,0);
+    rows = sorted.map(([cls,d]) => revBreakdownRow(cls, d.collected, total, 'var(--green)')).join('');
+    footerTotal = total;
+  } else if (metric === 'pending') {
+    title = `⏳ Pending (overdue) — ${mLabel}`;
+    const total = sorted.reduce((s,[,d])=>s+d.overdue,0);
+    rows = sorted.filter(([,d])=>d.overdue>0).map(([cls,d]) => revBreakdownRow(cls, d.overdue, total, 'var(--amber)')).join('')
+      || `<div style="padding:14px;text-align:center;color:var(--green);font-size:13px">✅ Nothing overdue</div>`;
+    footerTotal = total;
+  } else if (metric === 'expected') {
+    title = `📊 Expected (if all pay) — ${mLabel}`;
+    const total = sorted.reduce((s,[,d])=>s+d.fullRevenue,0);
+    rows = sorted.map(([cls,d]) => revBreakdownRow(cls, d.fullRevenue, total, 'var(--cyan)')).join('');
+    footerTotal = total;
+  } else if (metric === 'cost') {
+    title = `💸 Total Cost — ${mLabel}`;
+    const tutorTotal = sorted.reduce((s,[,d])=>s+d.tutorCost,0) || tutorPayout;
+    rows = sorted.filter(([,d])=>d.tutorCost>0).map(([cls,d]) => revBreakdownRow(cls, d.tutorCost, tutorTotal, 'var(--amber)')).join('');
+    rows += `<div style="padding:10px 16px;border-top:1px solid var(--border);font-size:11px;color:var(--muted2);text-transform:uppercase;letter-spacing:1px">Other costs</div>`;
+    rows += revBreakdownRow('🏢 Fixed (Rent + Staff)', fixedCosts, fixedCosts+otherExp+0.0001, 'var(--red)');
+    if (otherExp>0) rows += revBreakdownRow('📦 Other Expenses', otherExp, fixedCosts+otherExp+0.0001, 'var(--red)');
+    footerTotal = tutorPayout + fixedCosts + otherExp;
+  } else if (metric === 'arrears') {
+    title = `🗂️ Old Dues (before ${mLabel}) — not in this month's Expected`;
+    const total = sorted.reduce((s,[,d])=>s+(d.arrears||0),0);
+    rows = sorted.filter(([,d])=>(d.arrears||0)>0).map(([cls,d]) => revBreakdownRow(cls, d.arrears, total, 'var(--amber)')).join('')
+      || `<div style="padding:14px;text-align:center;color:var(--green);font-size:13px">✅ No backlog</div>`;
+    footerTotal = total;
+  } else if (metric === 'runrate') {
+    title = `📈 Daily Cashflow — ${mLabel}`;
+    const total = daily.reduce((s,d)=>s+d[1],0);
+    rows = daily.length ? daily.map(([day,amt]) => {
+      const label = new Date(day).toLocaleDateString('en-IN', {day:'numeric',month:'short',weekday:'short'});
+      return revBreakdownRow(label, amt, total, 'var(--purple)');
+    }).join('') : `<div style="padding:14px;text-align:center;color:var(--muted2);font-size:13px">No payments recorded yet</div>`;
+    footerTotal = total;
+  }
+
+  document.getElementById('revBreakdownContent').innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div style="font-size:15px;font-weight:700">${title}</div>
+      <button onclick="closeOv('ov_revBreakdown')" style="background:none;border:none;color:var(--muted2);font-size:20px;cursor:pointer;line-height:1;padding:4px">×</button>
+    </div>
+    <div style="max-height:60vh;overflow-y:auto;border:1px solid var(--border);border-radius:10px;margin-top:10px">
+      ${rows}
+    </div>
+    <div style="display:flex;justify-content:space-between;padding:12px 4px 2px;font-size:13px">
+      <span style="color:var(--muted2)">Total</span>
+      <strong>₹${Math.round(footerTotal).toLocaleString()}</strong>
+    </div>
+  `;
+  openOv('ov_revBreakdown');
+}
+function revBreakdownRow(label, amt, total, color) {
+  const pct = total > 0 ? Math.round((amt/total)*100) : 0;
+  return `<div style="padding:10px 16px;border-bottom:1px solid var(--border)">
+    <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:5px">
+      <span>${label}</span>
+      <strong style="color:${color}">₹${Math.round(amt).toLocaleString()}</strong>
+    </div>
+    <div style="background:var(--card2);border-radius:4px;height:5px;overflow:hidden">
+      <div style="height:100%;width:${pct}%;background:${color};border-radius:4px"></div>
+    </div>
+  </div>`;
+}
+function revSetSelectedMonth(val) {
+  if (val === 'current') window._revSelMonth = null;
+  else { const [y, m] = val.split('-').map(Number); window._revSelMonth = { y, m }; }
+  renderRevenueEngine();
+}
+function revMonthOptions() {
+  const opts = [];
+  const n = new Date();
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(n.getFullYear(), n.getMonth() - i, 1);
+    const val = i === 0 ? 'current' : `${d.getFullYear()}-${d.getMonth()}`;
+    const label = `${MONTHS_ORDER_REV[d.getMonth()]} ${d.getFullYear()}${i===0?' (current)':''}`;
+    opts.push({ val, label });
+  }
+  return opts;
+}
+
 function revCurrentMonthKey() {
-  return MONTHS_ORDER_REV[new Date().getMonth()];
+  // Bare month name — used for DISPLAY LABELS only (e.g. "Jan 2026"). Not for data lookups.
+  return MONTHS_ORDER_REV[revSelDate().getMonth()];
+}
+function revCurrentMonthDataKey() {
+  // Year-safe key for actual fees{} lookups — use with getFeeEntry() or this key directly.
+  return feeMonthKey(revSelDate());
 }
 function revCurrentMonthPrefix() {
-  const d = new Date();
+  const d = revSelDate();
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}`;
 }
 
 // Is this admission's student Active?
-function revAdmIsActive(a) {
+// Match an admission record to its student record. Name-only matching can collide
+// when two students share a name — phone number (last 10 digits) is used as a
+// tiebreaker when both records have one. Falls back to name-only if either side
+// lacks a phone number (legacy data). Cached per render pass for performance.
+let _admStudentLinkCache = null;
+function findLinkedStudent(a) {
+  if (!_admStudentLinkCache) _admStudentLinkCache = new Map();
+  const cacheKey = a.id || a.name;
+  if (_admStudentLinkCache.has(cacheKey)) return _admStudentLinkCache.get(cacheKey);
+
   const aName = (a.name||'').trim().toLowerCase();
-  const linked = allStudents.find(s =>
+  const aPhone = (a.contact||'').replace(/\D/g,'').slice(-10);
+  const candidates = allStudents.filter(s =>
     ((s.fn||s.firstName||'')+' '+(s.ln||s.lastName||'')).trim().toLowerCase() === aName
   );
+  let match = null;
+  if (candidates.length === 1) {
+    match = candidates[0]; // no ambiguity
+  } else if (candidates.length > 1) {
+    // Multiple same-name students — disambiguate by phone
+    if (aPhone) {
+      match = candidates.find(s => (s.phone||'').replace(/\D/g,'').slice(-10) === aPhone) || null;
+    }
+    // If still ambiguous (no phone match), leave unresolved rather than guessing wrong
+  }
+  _admStudentLinkCache.set(cacheKey, match);
+  return match;
+}
+// Parse a fees{} key ("Jan-2027" or legacy bare "Jan") into {mon, yr}.
+function parseFeeMonthKey(k) {
+  const parts = k.split('-');
+  if (parts.length === 2 && MONTH_NAMES_FK.includes(parts[0])) return { mon: MONTH_NAMES_FK.indexOf(parts[0]), yr: parseInt(parts[1]) };
+  if (MONTH_NAMES_FK.includes(k)) return { mon: MONTH_NAMES_FK.indexOf(k), yr: new Date().getFullYear() };
+  return null;
+}
+
+// Count how many months a student had actually paid for, AS OF the end of the given
+// month — excludes payments made in later months so browsing history reflects what was
+// true at the time, not inflated by payments that hadn't happened yet.
+function revPaidCountUpTo(a, selD) {
+  if (!a.fees) return 0;
+  const cutoff = new Date(selD.getFullYear(), selD.getMonth()+1, 0, 23, 59, 59);
+  // If this admission was reactivated (student left and came back), old-cycle payments
+  // from before the return shouldn't count toward the NEW cycle's coverage — otherwise
+  // a student who paid 5 months before leaving would look "5 months ahead" the moment
+  // they rejoin, instead of starting fresh from their new join date.
+  const reactivatedFrom = a.reactivatedFrom ? parseFeeMonthKey(a.reactivatedFrom) : null;
+  const reactivatedFromDate = reactivatedFrom ? new Date(reactivatedFrom.yr, reactivatedFrom.mon, 1) : null;
+  return Object.entries(a.fees).filter(([k, v]) => {
+    if (!v || !v.amt) return false;
+    // NA ("fee not applicable that month") counts the same as paid for cycle-coverage
+    // purposes — it shouldn't push the student into "overdue" the following month.
+    const isPaid = v.amt !== 'Pending' && v.amt !== '-' && v.amt !== 'Inactive' && v.amt !== 'NA' && parseFloat(v.amt) > 0;
+    const isNA = v.amt === 'NA';
+    if (!isPaid && !isNA) return false;
+    const parsed = parseFeeMonthKey(k);
+    if (!parsed) return true; // unrecognized key format — include conservatively rather than drop real data
+    const d = new Date(parsed.yr, parsed.mon, 1);
+    if (reactivatedFromDate && d < reactivatedFromDate) return false; // pre-return history, doesn't count toward the new cycle
+    return d <= cutoff;
+  }).length;
+}
+
+// The fees{} record is marked amt:'Inactive' starting from the month a student left
+// (doSaveFee auto-marks that month + the following months when you mark someone
+// Inactive). That's a real historical signal — find the EARLIEST such month.
+// Returns a Date (1st of that month) or null if no Inactive marker exists.
+function revAdmInactiveFromDate(a) {
+  if (!a.fees) return null;
+  // Ignore Inactive markers from BEFORE a recorded reactivation — those describe the
+  // old cycle that's now over, not the current one, and shouldn't keep flagging a
+  // returned student as inactive.
+  const reactivatedFrom = a.reactivatedFrom ? parseFeeMonthKey(a.reactivatedFrom) : null;
+  const reactivatedFromDate = reactivatedFrom ? new Date(reactivatedFrom.yr, reactivatedFrom.mon, 1) : null;
+  let earliest = null;
+  Object.entries(a.fees).forEach(([k, v]) => {
+    if (!v || v.amt !== 'Inactive') return;
+    const parsed = parseFeeMonthKey(k);
+    if (!parsed) return;
+    const d = new Date(parsed.yr, parsed.mon, 1);
+    if (reactivatedFromDate && d < reactivatedFromDate) return;
+    if (!earliest || d < earliest) earliest = d;
+  });
+  return earliest;
+}
+
+// Whether an admission should read as "Inactive" for a given month, respecting a
+// recorded reactivation. Unlike a raw "does ANY fees{} entry say Inactive" check,
+// this only looks at the earliest GENUINE Inactive marker (i.e. one that isn't
+// pre-reactivation history — see revAdmInactiveFromDate) and treats every month
+// from that point onward as Inactive, even months with no fees{} entry at all
+// (e.g. future months whose auto-marked Inactive record was cleared on reactivation).
+function admIsInactiveAsOf(a, asOfDate) {
+  const earliest = revAdmInactiveFromDate(a);
+  if (!earliest) return false;
+  const asOfMonthStart = new Date(asOfDate.getFullYear(), asOfDate.getMonth(), 1);
+  return asOfMonthStart >= earliest;
+}
+
+function revAdmIsActive(a) {
+  if (a.manualInactive) return false; // explicitly frozen — see deactivateOrphanBatch
+
+  const sel = revSelDate();
+  const monthStart = new Date(sel.getFullYear(), sel.getMonth(), 1);
+  const monthEnd   = new Date(sel.getFullYear(), sel.getMonth()+1, 0, 23, 59, 59);
+
+  // Must have joined on or before the end of the month being viewed — otherwise
+  // they simply weren't a student yet that month (matters when browsing past months).
+  const joinRaw = a.firstClassDate || a.firstSessionDate || a.admissionDate;
+  const joinDate = joinRaw ? (joinRaw.toDate ? joinRaw.toDate() : new Date(joinRaw)) : null;
+  if (joinDate && !isNaN(joinDate) && joinDate > monthEnd) return false;
+
+  // If we know exactly which month they left (fees{} marked Inactive from), use that —
+  // they were genuinely active for any month strictly before it, even though their
+  // LIVE status today is Inactive. This is what makes past-month numbers correct for
+  // students who have since left.
+  const inactiveFrom = revAdmInactiveFromDate(a);
+  if (inactiveFrom) return monthStart < inactiveFrom;
+
+  // No explicit leave-month recorded — fall back to live status. This is also always
+  // correct for the current month, since live status reflects "right now" exactly.
+  const linked = findLinkedStudent(a);
   if (linked) return (linked.status||'Active') === 'Active';
-  return true;
+  return true; // no student record found — assume active (e.g. admission-only entries)
 }
 
 // ── BATCH COUNT: only batches in BATCH_OPTS that have ≥1 active enrolled student ──
@@ -13980,43 +14554,35 @@ function revActiveBatchCount(cls) {
 }
 
 // ── TUTOR PAYOUT PER CLASS (for Revenue Engine display — not per-student payout) ──
-// Returns total accrued tutor cost for a class this month
-// This mirrors calcCyclePayout logic but scoped to a single class
+// Sums calcCyclePayout() across every tutor teaching this class — same function that
+// drives the hero "Total Cost" figure, so the two numbers can never drift apart.
 function revTutorCostForClass(cls) {
-  // Zumba: ₹3000 flat per active batch (fixed cost regardless of collection)
-  if (cls === 'Zumba') {
-    const activeBatches = new Set();
-    (BATCH_OPTS['Zumba'] || []).forEach(batchName => {
-      const hasActive = allAdmissions.some(a =>
-        a.admission === 'Zumba' && (a.preferableBatch||'') === batchName && revAdmIsActive(a)
-      );
-      if (hasActive) activeBatches.add(batchName);
-    });
-    return activeBatches.size * 3000;
-  }
-  if (cls === 'Dance' || cls === 'Kids Dance') {
-    return allAdmissions.filter(a => a.admission === cls && revAdmIsActive(a)).length * 500;
-  }
-  // Chess / Guitar / Drawing: % of fee, only on paid students
-  const mKey = revCurrentMonthKey();
+  const now = revSelDate();
+  const m = now.getMonth();
+  const yr = now.getFullYear();
   let total = 0;
-  allAdmissions.forEach(a => {
-    if (a.admission !== cls || !revAdmIsActive(a) || !a.fees) return;
-    const mf = a.fees[mKey];
-    if (!mf || !mf.amt || mf.amt === 'Pending' || mf.amt === '-') return;
-    total += tutorShareOne(cls, a);
+  allTutors.forEach(t => {
+    const teaches = t.teaches || [];
+    if (!teaches.includes(cls)) return;
+    const cycle = { month: m, year: yr, key: `${yr}-${m}` };
+    const students = studentsInCycle(teaches, cycle, t.id);
+    total += calcCyclePayout(students, [cls], m, t.id, yr); // scope to just this class
   });
   return total;
 }
 
-// Tutor cost assuming ALL active students paid (for full-potential ₹/hr calc)
-function revTutorCostFullPotential(cls) {
+// Tutor cost assuming ALL students *due this month* paid (for full-potential ₹/hr calc).
+// dueAdmIds must be the same student set used for fullRevenue, or actual vs potential
+// net/hr can go inconsistent (e.g. showing a cost for a student who isn't in the revenue).
+function revTutorCostFullPotential(cls, dueAdmIds) {
   if (cls === 'Zumba') return revTutorCostForClass(cls); // fixed per batch, same
   if (cls === 'Dance' || cls === 'Kids Dance') return revTutorCostForClass(cls); // per student, same
-  // % classes: apply share to every active student's fee
+  // % classes: apply share to every student due this month (excludes old arrears/not-yet-due)
+  const idSet = new Set(dueAdmIds || []);
   let total = 0;
   allAdmissions.forEach(a => {
     if (a.admission !== cls || !revAdmIsActive(a)) return;
+    if (!idSet.has(a.id)) return;
     total += tutorShareOne(cls, a);
   });
   return total;
@@ -14024,13 +14590,13 @@ function revTutorCostFullPotential(cls) {
 
 // Total collected this month — admissions (Active only) + portal payments
 function revCollectedThisMonth() {
-  const mKey = revCurrentMonthKey();
   const mPfx = revCurrentMonthPrefix();
+  const selD = revSelDate();
   let total = 0;
   allAdmissions.forEach(a => {
     if (!revAdmIsActive(a) || !a.fees) return;
-    const mf = a.fees[mKey];
-    if (mf && mf.amt && mf.amt !== 'Pending' && mf.amt !== '-') {
+    const mf = getFeeEntry(a, selD);
+    if (mf && mf.amt && mf.amt !== 'Pending' && mf.amt !== '-' && mf.amt !== 'NA') {
       total += parseFloat(mf.amt) || 0;
     }
   });
@@ -14044,30 +14610,38 @@ function revCollectedThisMonth() {
   return total;
 }
 
-// Pending = Active admissions with no/pending payment this month
+// Pending = Active admissions whose real coverage has actually expired (day-precision),
+// with no payment recorded to extend it. Does NOT flag students mid-cycle just because
+// the calendar flipped to a new month — e.g. someone covered until Jul 27 is not
+// "pending" on Jul 1, only from Jul 28 onward.
 function revPendingThisMonth() {
-  const mKey = revCurrentMonthKey();
   let total = 0;
+  const today = revRefDate();
   allAdmissions.forEach(a => {
     if (!revAdmIsActive(a)) return;
-    const fee = a.feeAmt ? parseFloat(a.feeAmt) : (CLASS_FEES[a.admission] || 0);
-    if (!a.fees) { total += fee; return; }
-    const mf = a.fees[mKey];
-    if (!mf || !mf.amt || mf.amt === '-' || mf.amt === 'Pending') total += fee;
+    const fee = revAdmFee(a);
+    const fc = a.firstClassDate || a.firstSessionDate;
+    const fcDate = fc ? (fc.toDate ? fc.toDate() : new Date(fc)) : null;
+    if (!fcDate || isNaN(fcDate)) { total += fee; return; } // no session date — can't compute, assume pending
+    const paidCount = revPaidCountUpTo(a, revSelDate());
+    const realExpiry = new Date(fcDate);
+    realExpiry.setMonth(realExpiry.getMonth() + paidCount);
+    if (today >= realExpiry) total += fee; // genuinely overdue
   });
   return total;
 }
 
 // Accrued total tutor payout this month (all tutors, via existing calcCyclePayout)
 function revAccruedTutorPayout() {
-  const m = new Date().getMonth();
-  const yr = new Date().getFullYear();
+  const selD = revSelDate();
+  const m = selD.getMonth();
+  const yr = selD.getFullYear();
   let total = 0;
   allTutors.forEach(t => {
     const teaches = t.teaches || [];
     const cycle = { month: m, year: yr, key: `${yr}-${m}` };
     const students = studentsInCycle(teaches, cycle, t.id);
-    total += calcCyclePayout(students, teaches, m, t.id);
+    total += calcCyclePayout(students, teaches, m, t.id, yr);
   });
   return total;
 }
@@ -14097,26 +14671,62 @@ function revFixedCostRecords() {
 
 // Class-wise revenue (Active students only)
 function revClassWiseThisMonth() {
-  const mKey = revCurrentMonthKey();
   const map = {};
+  const today = revRefDate();
+  const selD = revSelDate();
+  const monthStart = new Date(selD.getFullYear(), selD.getMonth(), 1);
+  const monthEnd   = new Date(selD.getFullYear(), selD.getMonth() + 1, 0);
   allAdmissions.forEach(a => {
     if (!revAdmIsActive(a)) return;
     const cls = a.admission || 'Other';
-    if (!map[cls]) map[cls] = { collected: 0, pending: 0, students: 0 };
+    if (!map[cls]) map[cls] = { collected: 0, pending: 0, overdue: 0, arrears: 0, students: 0, dueAdmIds: [] };
     map[cls].students++;
-    if (!a.fees) {
-      map[cls].pending += a.feeAmt ? parseFloat(a.feeAmt) : (CLASS_FEES[cls] || 0);
-      return;
-    }
-    const mf = a.fees[mKey];
+    const fee = revAdmFee(a);
+
+    // Collected: actual payment recorded for the selected month (real cash-in-hand by date)
+    const mf = getFeeEntry(a, selD);
+    if (mf && mf.amt === 'NA') return; // fee not applicable this month — not owed, not paid, don't add to pending
     if (mf && mf.amt && mf.amt !== 'Pending' && mf.amt !== '-') {
       map[cls].collected += parseFloat(mf.amt) || 0;
-    } else {
-      map[cls].pending += a.feeAmt ? parseFloat(a.feeAmt) : (CLASS_FEES[cls] || 0);
+      map[cls].dueAdmIds.push(a.id);
+      return; // paid this month — not pending
     }
+
+    // Figure out when this student's fee actually falls due (their real cycle expiry),
+    // so we can tell "due THIS month" apart from "backlog owed from an earlier month."
+    const fc = a.firstClassDate || a.firstSessionDate;
+    const fcDate = fc ? (fc.toDate ? fc.toDate() : new Date(fc)) : null;
+    let realExpiry = null;
+    if (fcDate && !isNaN(fcDate)) {
+      const paidCount = revPaidCountUpTo(a, selD);
+      realExpiry = new Date(fcDate);
+      realExpiry.setMonth(realExpiry.getMonth() + paidCount);
+    }
+
+    if (!realExpiry) {
+      // No session date on record — can't tell which month it belongs to, treat as due this month.
+      map[cls].pending += fee;
+      map[cls].dueAdmIds.push(a.id);
+    } else if (realExpiry >= monthStart && realExpiry <= monthEnd) {
+      // Due date falls inside the selected month — this IS this month's expected revenue.
+      map[cls].pending += fee;
+      map[cls].dueAdmIds.push(a.id);
+    } else if (realExpiry < monthStart) {
+      // Cycle already expired before this month started — old backlog, not this month's revenue.
+      // Kept separate so "Expected/Full Potential Profit" for this month isn't inflated by it,
+      // and NOT added to dueAdmIds — tutor cost math below must use the same student set as revenue.
+      map[cls].arrears += fee;
+    }
+    // else realExpiry > monthEnd: not due yet at all this month — don't count anywhere.
+
+    // Overdue: subset that is genuinely late as of today — used for "money to actually chase"
+    // stats (the Pending card), independent of which month it's attributed to above.
+    if (!realExpiry) { map[cls].overdue += fee; return; }
+    if (today >= realExpiry) map[cls].overdue += fee;
   });
   return map;
 }
+
 
 // Per-hour metrics per class
 // actual    = based on what's been collected so far
@@ -14136,7 +14746,7 @@ function revPerHourPerClass(classWise) {
 
     // Full potential (if all active students paid)
     const fullRevenue = data.collected + data.pending; // collected + what's still pending
-    const fullTutorCost = revTutorCostFullPotential(cls);
+    const fullTutorCost = revTutorCostFullPotential(cls, data.dueAdmIds);
     const fullRevenuePerHour = monthlyHours > 0 ? Math.round(fullRevenue / monthlyHours) : 0;
     const fullTutorPerHour = monthlyHours > 0 ? Math.round(fullTutorCost / monthlyHours) : 0;
     const fullNetPerHour = fullRevenuePerHour - fullTutorPerHour;
@@ -14161,13 +14771,13 @@ function revPerHourPerClass(classWise) {
 
 // Daily cashflow from admissions fee dates + portal payments (current month, Active only)
 function revDailyCashflow() {
-  const mKey = revCurrentMonthKey();
   const mPfx = revCurrentMonthPrefix();
+  const selD = revSelDate();
   const daily = {};
   allAdmissions.forEach(a => {
     if (!revAdmIsActive(a) || !a.fees) return;
-    const mf = a.fees[mKey];
-    if (mf && mf.date && mf.amt && mf.amt !== 'Pending' && mf.amt !== '-') {
+    const mf = getFeeEntry(a, selD);
+    if (mf && mf.date && mf.amt && mf.amt !== 'Pending' && mf.amt !== '-' && mf.amt !== 'NA') {
       const dayKey = (mf.date+'').slice(0, 10);
       if (dayKey.startsWith(mPfx)) daily[dayKey] = (daily[dayKey]||0) + (parseFloat(mf.amt)||0);
     }
@@ -14196,18 +14806,25 @@ function revWeeklyCashflow(daily) {
 // ── RENDER ───────────────────────────────────────────────────────────────────
 
 function renderRevenueEngine() {
-  const now       = new Date();
+  _admStudentLinkCache = null; // fresh data each render — avoid stale student-status matches
+  const now       = revSelDate();
+  const isCurMon  = revIsCurrentMonth();
   const mKey      = revCurrentMonthKey();
   const mPfx      = revCurrentMonthPrefix();
   const mLabel    = mKey + ' ' + now.getFullYear();
   const daysInMon = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
-  const daysPassed= now.getDate();
-  const daysLeft  = daysInMon - daysPassed;
-  const mPct      = Math.round((daysPassed / daysInMon) * 100);
+  const daysPassed= isCurMon ? new Date().getDate() : daysInMon;
+  const daysLeft  = isCurMon ? daysInMon - daysPassed : 0;
+  const mPct      = isCurMon ? Math.round((daysPassed / daysInMon) * 100) : 100;
 
   const collected  = revCollectedThisMonth();
-  const pending    = revPendingThisMonth();
-  const expected   = collected + pending;
+  const pending    = revPendingThisMonth(); // overdue only — used for the "Pending" card, intentionally
+  const classWise  = revClassWiseThisMonth();
+  const perHour    = revPerHourPerClass(classWise);
+  const sorted     = Object.entries(perHour).sort((a,b) => b[1].fullRevenue - a[1].fullRevenue);
+  // Expected = collected + EVERY unpaid active student (not just overdue ones) — must match
+  // the class-wise breakdown modal, which sums fullRevenue = collected + pending per class.
+  const expected   = sorted.reduce((s,[,d]) => s + d.fullRevenue, 0);
   const tutorPayout= revAccruedTutorPayout();
   const fixedCosts = revFixedCostsThisMonth();
   const otherExp   = revOtherExpensesThisMonth();
@@ -14222,13 +14839,14 @@ function renderRevenueEngine() {
   const projectedEnd    = dailyRunRate * daysInMon;
   const collectionPct   = expected > 0 ? Math.round((collected / expected) * 100) : 0;
 
-  const classWise = revClassWiseThisMonth();
-  const perHour   = revPerHourPerClass(classWise);
-  const sorted    = Object.entries(perHour).sort((a,b) => b[1].fullRevenue - a[1].fullRevenue);
+  const arrearsTotal = sorted.reduce((s,[,d]) => s + (d.arrears||0), 0);
   const bestByNet = Object.entries(perHour).sort((a,b) => b[1].fullNetPerHour - a[1].fullNetPerHour)[0];
   const daily     = revDailyCashflow();
   const weekly    = revWeeklyCashflow(daily);
   const monthFCs  = (window._allFixedCosts||[]).filter(c => (c.date||'').startsWith(mPfx));
+
+  // Stash for the click-to-breakdown modal (class-wise view of each hero stat)
+  window._revBreakdownData = { mLabel, sorted, tutorPayout, fixedCosts, otherExp, daily, arrearsTotal };
 
   // ── HERO: PROFIT TARGET ────────────────────────────────────────────────────
   const profitEl = document.getElementById('rev-profit-target');
@@ -14275,30 +14893,30 @@ function renderRevenueEngine() {
 
   <!-- 5 key numbers -->
   <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:10px">
-    <div style="background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:12px;padding:12px;text-align:center">
+    <div onclick="revShowBreakdown('collected')" style="cursor:pointer;background:rgba(16,185,129,.08);border:1px solid rgba(16,185,129,.2);border-radius:12px;padding:12px;text-align:center;transition:transform .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
       <div style="font-size:10px;color:var(--muted2);margin-bottom:3px">💰 Collected</div>
       <div style="font-weight:700;color:var(--green);font-size:15px">₹${collected.toLocaleString()}</div>
-      <div style="font-size:10px;color:var(--muted2);margin-top:2px">${collectionPct}% of expected</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:2px">${collectionPct}% of expected · tap for breakdown</div>
     </div>
-    <div style="background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:12px;padding:12px;text-align:center">
+    <div onclick="revShowBreakdown('pending')" style="cursor:pointer;background:rgba(251,191,36,.06);border:1px solid rgba(251,191,36,.2);border-radius:12px;padding:12px;text-align:center;transition:transform .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
       <div style="font-size:10px;color:var(--muted2);margin-bottom:3px">⏳ Pending</div>
       <div style="font-weight:700;color:var(--amber);font-size:15px">₹${pending.toLocaleString()}</div>
-      <div style="font-size:10px;color:var(--muted2);margin-top:2px">till ${daysInMon} ${mKey}</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:2px">${isCurMon?`till ${daysInMon} ${mKey}`:`${mKey} unpaid`} · tap for breakdown</div>
     </div>
-    <div style="background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:12px;padding:12px;text-align:center">
+    <div onclick="revShowBreakdown('expected')" style="cursor:pointer;background:rgba(99,102,241,.08);border:1px solid rgba(99,102,241,.2);border-radius:12px;padding:12px;text-align:center;transition:transform .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
       <div style="font-size:10px;color:var(--muted2);margin-bottom:3px">📊 Expected</div>
       <div style="font-weight:700;color:var(--cyan);font-size:15px">₹${expected.toLocaleString()}</div>
-      <div style="font-size:10px;color:var(--muted2);margin-top:2px">if all pay</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:2px">if all pay · tap for breakdown</div>
     </div>
-    <div style="background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.18);border-radius:12px;padding:12px;text-align:center">
+    <div onclick="revShowBreakdown('cost')" style="cursor:pointer;background:rgba(239,68,68,.06);border:1px solid rgba(239,68,68,.18);border-radius:12px;padding:12px;text-align:center;transition:transform .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
       <div style="font-size:10px;color:var(--muted2);margin-bottom:3px">💸 Total Cost</div>
       <div style="font-weight:700;color:var(--red);font-size:15px">₹${totalCost.toLocaleString()}</div>
-      <div style="font-size:10px;color:var(--muted2);margin-top:2px">tutor+fixed+exp</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:2px">tutor+fixed+exp · tap for breakdown</div>
     </div>
-    <div style="background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.2);border-radius:12px;padding:12px;text-align:center">
+    <div onclick="revShowBreakdown('runrate')" style="cursor:pointer;background:rgba(168,85,247,.06);border:1px solid rgba(168,85,247,.2);border-radius:12px;padding:12px;text-align:center;transition:transform .15s" onmouseover="this.style.transform='translateY(-2px)'" onmouseout="this.style.transform='none'">
       <div style="font-size:10px;color:var(--muted2);margin-bottom:3px">📈 Run Rate</div>
       <div style="font-weight:700;color:var(--purple);font-size:15px">₹${dailyRunRate.toLocaleString()}/day</div>
-      <div style="font-size:10px;color:var(--muted2);margin-top:2px">proj: ₹${projectedEnd.toLocaleString()}</div>
+      <div style="font-size:10px;color:var(--muted2);margin-top:2px">${isCurMon?`proj: ₹${projectedEnd.toLocaleString()}`:'month complete'} · tap for breakdown</div>
     </div>
   </div>
 
@@ -14307,6 +14925,7 @@ function renderRevenueEngine() {
     <span style="font-size:12px;color:var(--muted2)">🎓 Tutor: <strong style="color:var(--amber)">₹${tutorPayout.toLocaleString()}</strong></span>
     ${fixedCosts > 0 ? `<span style="font-size:12px;color:var(--muted2)">🏢 Fixed: <strong style="color:var(--red)">₹${fixedCosts.toLocaleString()}</strong></span>` : '<span style="font-size:12px;color:var(--muted2)">🏢 Fixed: <strong style="color:var(--muted2)">₹0</strong> <a href="#" onclick="openAddFixedCostModal();return false" style="color:var(--cyan);text-decoration:none;font-size:11px">+ Add rent/salary</a></span>'}
     ${otherExp > 0 ? `<span style="font-size:12px;color:var(--muted2)">📦 Other Exp: <strong style="color:var(--red)">₹${otherExp.toLocaleString()}</strong></span>` : ''}
+    ${arrearsTotal > 0 ? `<span onclick="revShowBreakdown('arrears')" style="cursor:pointer;font-size:12px;color:var(--muted2)" title="Owed from before ${mLabel} — not counted in this month's Expected">🗂️ Old Dues: <strong style="color:var(--amber)">₹${arrearsTotal.toLocaleString()}</strong></span>` : ''}
     <span style="font-size:12px;color:var(--muted2)">🟢 Full potential profit: <strong style="color:var(--cyan)">₹${fullProfit.toLocaleString()}</strong></span>
   </div>
 </div>`;
@@ -14326,7 +14945,7 @@ function renderRevenueEngine() {
       <span style="color:var(--green)">⚡ net/hr</span>
     </div>
   </div>
-  <div style="padding:4px 0">
+  <div style="padding:14px;display:flex;flex-direction:column;gap:14px">
   ${sorted.length ? sorted.map(([cls, d], idx) => {
     const isBest   = cls === bestByNet?.[0];
     const spw      = CLASS_SESSIONS_PER_WEEK[cls] || 2;
@@ -14342,7 +14961,7 @@ function renderRevenueEngine() {
     const collBarPct = d.fullRevenue > 0 ? Math.round((d.collected / d.fullRevenue) * 100) : 0;
     const medal = idx===0?'🥇':idx===1?'🥈':idx===2?'🥉':'';
 
-    return `<div style="padding:14px 16px;border-bottom:1px solid var(--border);${isBest?'background:rgba(16,185,129,.04)':''}">
+    return `<div style="padding:16px 18px;border:1px solid ${isBest?'rgba(16,185,129,.35)':'var(--border)'};border-radius:14px;background:${isBest?'rgba(16,185,129,.05)':'var(--card2)'};box-shadow:0 1px 0 rgba(255,255,255,.02) inset">
 
       <!-- Class name + totals -->
       <div style="display:flex;align-items:flex-start;gap:10px;margin-bottom:10px">
@@ -14515,7 +15134,7 @@ function simCalcTutorCost(cls, students) {
   // to get an accurate per-student tutor cost for simulation
   const activeAdms = allAdmissions.filter(a => a.admission === cls && revAdmIsActive(a));
   const avgFee = activeAdms.length > 0
-    ? activeAdms.reduce((s,a) => s + (parseFloat(a.feeAmt) || CLASS_FEES[cls] || 0), 0) / activeAdms.length
+    ? activeAdms.reduce((s,a) => s + revAdmFee(a), 0) / activeAdms.length
     : (CLASS_FEES[cls] || 0);
   if (cls === 'Drawing - Hobby') return Math.round(avgFee * 0.5) * students;
   if (cls === 'Drawing - Elementary' || cls === 'Drawing - Intermediate') return Math.round(avgFee * 0.6) * students;
