@@ -3,15 +3,15 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0"/>
-<title>Fitbeat Studio — Nirmal Lifestyle, Mulund West | Zumba, Karate, Kathak &amp; Studio on Rent</title>
-<meta name="description" content="Fitbeat Studio's new branch at Nirmal Lifestyle Mall, Moti Nagar, Mulund West — Main LBS Road. Zumba, Guitar, Kathak &amp; Karate classes. 3000+ sq.ft AC studio on rent for events, rehearsals &amp; tournaments. Free demo. Call 7977506715."/>
-<meta name="keywords" content="zumba classes mulund, karate classes mulund west, kathak classes mulund, studio on rent mulund west, banquet hall mulund LBS road, dance studio rent mulund, event space mulund west, fitbeat studio mulund"/>
+<title>Fitbeat Studio — Nirmal Lifestyle, Mulund West | Zumba, Dance, Kids Dance, Guitar, Karate &amp; Studio on Rent</title>
+<meta name="description" content="Fitbeat Studio's new branch at Nirmal Lifestyle Mall, Moti Nagar, Mulund West — Main LBS Road. Zumba, Dance, Kids Dance, Guitar, Kathak &amp; Karate classes. 3000+ sq.ft AC studio on rent for events, rehearsals &amp; tournaments. Free demo. Call 7977506715."/>
+<meta name="keywords" content="zumba classes mulund, dance classes mulund west, kids dance classes mulund west, bollywood dance classes mulund, guitar classes mulund west, karate classes mulund west, kathak classes mulund, studio on rent mulund west, banquet hall mulund LBS road, dance studio rent mulund, event space mulund west, fitbeat studio mulund"/>
 <meta name="robots" content="index,follow"/>
 <link rel="canonical" href="https://www.fitbeat26.com/nirmal-lifestyle-mulund.html"/>
 <link rel="icon" type="image/png" href="https://www.fitbeat26.com/logo.png"/>
 <meta property="og:type" content="website"/>
 <meta property="og:title" content="Fitbeat Studio — Nirmal Lifestyle, Mulund West"/>
-<meta property="og:description" content="3000+ sq.ft AC studio on Main LBS Road, Mulund West. Zumba, Guitar, Kathak, Karate &amp; studio on rent for events, rehearsals &amp; tournaments."/>
+<meta property="og:description" content="3000+ sq.ft AC studio on Main LBS Road, Mulund West. Zumba, Dance, Kids Dance, Guitar, Kathak, Karate &amp; studio on rent for events, rehearsals &amp; tournaments."/>
 <meta property="og:image" content="https://www.fitbeat26.com/images/mulund-fitbeat-nirmal-lifestyle-hero.jpg"/>
 <link rel="preconnect" href="https://fonts.googleapis.com"/>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
@@ -20,7 +20,7 @@
   "@context": "https://schema.org",
   "@type": "DanceSchool",
   "name": "Fitbeat Studio — Nirmal Lifestyle Mulund West",
-  "description": "Dance fitness studio offering Zumba, Guitar, Kathak and Karate classes, plus a 3000+ sq.ft air-conditioned studio on rent for events, rehearsals and tournaments, at Nirmal Lifestyle Mall, Mulund West, Mumbai.",
+  "description": "Dance fitness studio offering Zumba, Dance, Kids Dance, Guitar, Kathak and Karate classes, plus a 3000+ sq.ft air-conditioned studio on rent for events, rehearsals and tournaments, at Nirmal Lifestyle Mall, Mulund West, Mumbai.",
   "url": "https://www.fitbeat26.com/nirmal-lifestyle-mulund.html",
   "telephone": ["+91-7977506715","+91-9769427388"],
   "email": "fitbeat26@gmail.com",
@@ -120,7 +120,10 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .spot-media img{width:100%;height:100%;object-fit:cover;aspect-ratio:4/3;transition:transform .5s}
 .spot-media.flyer{background:#0a0a0a}
 .spot-media.flyer img{object-fit:contain;aspect-ratio:2/3}
-.spot-media:hover img{transform:scale(1.05)}
+.spot-media.duo{display:grid;grid-template-columns:1fr 1fr;gap:10px;border:none;background:none;box-shadow:none;overflow:visible}
+.spot-media.duo img{width:100%;height:100%;aspect-ratio:3/4;object-fit:cover;border-radius:14px;border:1.5px solid var(--border);box-shadow:0 16px 36px rgba(0,0,0,.4);transition:transform .4s}
+.spot-media.duo img:hover{transform:scale(1.04)}
+.spot-media:not(.duo):hover img{transform:scale(1.05)}
 .spot-eyebrow{font-size:12px;font-weight:800;letter-spacing:2px;text-transform:uppercase}
 .spot-title{font-family:'Bebas Neue',sans-serif;font-size:clamp(30px,4vw,46px);letter-spacing:1.5px;color:#fff;margin:8px 0 14px}
 .spot-price{font-size:26px;font-weight:800;margin-bottom:14px}
@@ -158,7 +161,19 @@ nav{position:sticky;top:0;z-index:100;display:flex;align-items:center;justify-co
 .gallery-grid img{width:100%;height:100%;object-fit:cover;border-radius:12px;transition:transform .4s,filter .4s}
 .gallery-grid a{display:block;overflow:hidden;border-radius:12px;position:relative}
 .gallery-grid a:hover img{transform:scale(1.08)}
-@media(max-width:700px){.gallery-grid{grid-template-columns:repeat(2,1fr)}.gallery-grid a:nth-child(1){grid-column:span 2}}
+.gallery-grid button{grid-column:span 1;grid-row:span 1;display:block;overflow:hidden;border-radius:12px;position:relative;border:0;padding:0;background:none;cursor:pointer;width:100%;height:100%}
+.gallery-grid button:first-child{grid-column:span 2;grid-row:span 2}
+.gallery-grid button img{width:100%;height:100%;object-fit:cover;border-radius:12px;transition:transform .4s}
+.gallery-grid button:hover img{transform:scale(1.08)}
+@media(max-width:700px){.gallery-grid{grid-template-columns:repeat(2,1fr)}.gallery-grid a:nth-child(1),.gallery-grid button:first-child{grid-column:span 2}}
+.lightbox{display:none;position:fixed;inset:0;z-index:999;background:rgba(0,0,0,.94);align-items:center;justify-content:center;padding:5vh 5vw}
+.lightbox.open{display:flex}
+.lightbox img{max-width:90vw;max-height:88vh;object-fit:contain;border-radius:8px;box-shadow:0 20px 60px rgba(0,0,0,.6)}
+.lightbox-close{position:absolute;top:18px;right:22px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);color:#fff;width:42px;height:42px;border-radius:50%;font-size:18px;cursor:pointer}
+.lightbox-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.25);color:#fff;width:48px;height:48px;border-radius:50%;font-size:26px;cursor:pointer;line-height:1}
+.lightbox-prev{left:16px}
+.lightbox-next{right:16px}
+@media(max-width:640px){.lightbox-nav{width:40px;height:40px;font-size:20px}.lightbox-close{width:36px;height:36px;top:10px;right:10px}}
 .rent-cta{text-align:center;margin:46px auto 60px;padding:0 5vw}
 .rent-cta-btns{display:flex;gap:14px;justify-content:center;flex-wrap:wrap;margin-top:6px}
 /* LOCATION */
@@ -207,6 +222,7 @@ body{padding-bottom:70px}
   <div class="nav-links">
     <a href="#classes">Classes</a>
     <a href="#dance">Dance</a>
+    <a href="#kids-dance">Kids Dance</a>
     <a href="#karate">Karate</a>
     <a href="#rent">🔥 Studio on Rent</a>
     <a href="#location">Location</a>
@@ -231,7 +247,7 @@ body{padding-bottom:70px}
     <div class="hero-btns">
       <a href="https://wa.me/919769427388?text=Hi%20Fitbeat!%20I%27d%20like%20to%20book%20a%20free%20demo%20at%20the%20Nirmal%20Lifestyle%2C%20Mulund%20West%20branch." target="_blank" class="btn-grad" id="demo">🎯 Book Free Demo</a>
       <a href="#rent" class="btn-rent">🏟️ Rent the Studio — ₹4000/hr</a>
-      <a href="https://maps.app.goo.gl/guaYfhVFAfrqphp49" target="_blank" class="btn-ghost">📍 View on Google Maps</a>
+      <a href="https://www.google.com/maps/place/Fitbeat+Dance+Fitness+Studio/@19.1662838,72.9359484,20z/data=!4m6!3m5!1s0x3be7b99d6e3a7f09:0xd5add4a2c3ec10ea!8m2!3d19.1662838!4d72.9362703!16s%2Fg%2F11zfkjkrrv?entry=ttu&amp;g_ep=EgoyMDI2MDkwOC4wIKXMDSoASAFQAw%3D%3D" target="_blank" class="btn-ghost">📍 View on Google Maps</a>
     </div>
     <div class="hero-stats">
       <div class="stat-card"><div class="stat-num">3000+</div><div class="stat-label">Sq. Ft Space</div></div>
@@ -250,6 +266,7 @@ body{padding-bottom:70px}
   <div class="act-grid">
     <a href="#zumba" class="act-card"><div class="act-icon">🕺</div><div><div class="act-name">Zumba</div><div class="act-price" style="color:var(--cyan)">₹3000/mo</div><div class="act-sub">Free Demo ✓</div></div></a>
     <a href="#dance" class="act-card"><div class="act-icon">💃</div><div><div class="act-name">Dance</div><div class="act-price" style="color:var(--pink)">Contact for pricing</div><div class="act-sub">Free Demo ✓</div></div></a>
+    <a href="#kids-dance" class="act-card"><div class="act-icon">🧒</div><div><div class="act-name">Kids Dance</div><div class="act-price" style="color:var(--cyan)">Contact for pricing</div><div class="act-sub">Free Demo ✓</div></div></a>
     <div class="act-card"><div class="act-icon">♟️</div><div><div class="act-name">Chess</div><div class="act-price" style="color:var(--purple)">Contact for pricing</div><div class="act-sub">Weekend batches</div></div></div>
     <a href="#guitar" class="act-card"><div class="act-icon">🎸</div><div><div class="act-name">Guitar</div><div class="act-price" style="color:var(--gold)">₹3000/mo</div><div class="act-sub">All ages welcome</div></div></a>
     <div class="act-card"><div class="act-icon">🎨</div><div><div class="act-name">Drawing</div><div class="act-price" style="color:#d4a017">Contact for pricing</div><div class="act-sub">JJ School of Art certified</div></div></div>
@@ -283,8 +300,9 @@ body{padding-bottom:70px}
 <!-- DANCE SPOTLIGHT -->
 <section class="section" id="dance">
   <div class="spot rev">
-    <div class="spot-media">
-      <img src="images/mulund-fitbeat-nirmal-lifestyle-hero.jpg" alt="Dance Fitness and Bollywood classes at Fitbeat Nirmal Lifestyle Mulund West"/>
+    <div class="spot-media duo">
+      <img src="images/mulund-dance-from-back.jpg" alt="Dance class in progress at Fitbeat Nirmal Lifestyle Mulund West"/>
+      <img src="images/mulund-dance-pose-group.jpg" alt="Dance students group photo at Fitbeat Nirmal Lifestyle Mulund West"/>
     </div>
     <div>
       <div class="spot-eyebrow" style="color:var(--pink)">💃 Dance</div>
@@ -301,11 +319,33 @@ body{padding-bottom:70px}
   </div>
 </section>
 
+<!-- KIDS DANCE SPOTLIGHT -->
+<section class="section" id="kids-dance" style="background:var(--dark)">
+  <div class="spot">
+    <div class="spot-media">
+      <img src="images/mulund-kids-dance.jpg" alt="Kids dance class group photo at Fitbeat Nirmal Lifestyle Mulund West"/>
+    </div>
+    <div>
+      <div class="spot-eyebrow" style="color:var(--cyan)">🧒 Kids Dance</div>
+      <div class="spot-title">Little Feet,<br>Big Energy</div>
+      <div class="spot-price" style="color:var(--cyan)">Contact for pricing</div>
+      <p class="spot-desc">Age-appropriate choreography taught by patient, experienced instructors who know how to keep kids engaged and having fun — a great way to build confidence, coordination and rhythm from a young age. Free demo class available.</p>
+      <div class="chip-row">
+        <span class="chip" style="border-color:rgba(0,212,255,.3);color:var(--cyan);background:rgba(0,212,255,.08)">Free Demo</span>
+        <span class="chip" style="border-color:rgba(0,212,255,.3);color:var(--cyan);background:rgba(0,212,255,.08)">Patient Instructors</span>
+        <span class="chip" style="border-color:rgba(0,212,255,.3);color:var(--cyan);background:rgba(0,212,255,.08)">Kids Batches</span>
+      </div>
+      <a href="https://wa.me/919769427388?text=Hi%20Fitbeat!%20I%27d%20like%20to%20enquire%20about%20Kids%20Dance%20classes%20at%20Mulund%20West." target="_blank" class="btn-grad">Enquire About Kids Dance →</a>
+    </div>
+  </div>
+</section>
+
 <!-- GUITAR SPOTLIGHT -->
 <section class="section" id="guitar">
   <div class="spot rev">
-    <div class="spot-media">
-      <img src="images/mulund-hall-2.jpg" alt="Spacious hall for Guitar classes at Fitbeat Nirmal Lifestyle Mulund West"/>
+    <div class="spot-media duo">
+      <img src="images/mulund-guitar-class-group.jpg" alt="Guitar class group session at Fitbeat Nirmal Lifestyle Mulund West"/>
+      <img src="images/mulund-guitar-theory-lesson.jpg" alt="Guitar theory lesson at Fitbeat Nirmal Lifestyle Mulund West"/>
     </div>
     <div>
       <div class="spot-eyebrow" style="color:var(--gold)">🎸 Guitar</div>
@@ -393,12 +433,19 @@ body{padding-bottom:70px}
   <div class="rent-gallery">
     <div class="section-label" style="color:var(--amber);margin-bottom:16px">📸 See The Space</div>
     <div class="gallery-grid">
-      <a href="images/mulund-hall-1.jpg" target="_blank"><img src="images/mulund-hall-1.jpg" alt="Fitbeat studio on rent Mulund West — full view of the AC hall"/></a>
-      <a href="images/mulund-hall-2.jpg" target="_blank"><img src="images/mulund-hall-2.jpg" alt="Fitbeat studio on rent Mulund West — hall wide angle"/></a>
-      <a href="images/mulund-mirror.jpg" target="_blank"><img src="images/mulund-mirror.jpg" alt="Mirror wall at Fitbeat studio on rent Mulund West"/></a>
-      <a href="images/mulund-entrance.jpg" target="_blank"><img src="images/mulund-entrance.jpg" alt="Fitbeat Studio entrance Nirmal Lifestyle Mulund West"/></a>
-      <a href="images/mulund-passage.jpg" target="_blank"><img src="images/mulund-passage.jpg" alt="Terrace walkway at Nirmal Lifestyle Mulund West with skyline view"/></a>
+      <button type="button" onclick="openLightbox(0)"><img src="images/mulund-hall-1.jpg" alt="Fitbeat studio on rent Mulund West — full view of the AC hall"/></button>
+      <button type="button" onclick="openLightbox(1)"><img src="images/mulund-hall-2.jpg" alt="Fitbeat studio on rent Mulund West — hall wide angle"/></button>
+      <button type="button" onclick="openLightbox(2)"><img src="images/mulund-mirror.jpg" alt="Mirror wall at Fitbeat studio on rent Mulund West"/></button>
+      <button type="button" onclick="openLightbox(3)"><img src="images/mulund-entrance.jpg" alt="Fitbeat Studio entrance Nirmal Lifestyle Mulund West"/></button>
+      <button type="button" onclick="openLightbox(4)"><img src="images/mulund-passage.jpg" alt="Terrace walkway at Nirmal Lifestyle Mulund West with skyline view"/></button>
     </div>
+  </div>
+
+  <div id="lightbox" class="lightbox" onclick="closeLightbox(event)">
+    <button type="button" class="lightbox-close" onclick="closeLightbox(event)" aria-label="Close">✕</button>
+    <button type="button" class="lightbox-nav lightbox-prev" onclick="stepLightbox(event,-1)" aria-label="Previous photo">‹</button>
+    <img id="lightbox-img" src="" alt=""/>
+    <button type="button" class="lightbox-nav lightbox-next" onclick="stepLightbox(event,1)" aria-label="Next photo">›</button>
   </div>
 
   <div class="rent-cta">
@@ -432,7 +479,7 @@ body{padding-bottom:70px}
       <div class="findlv-row">
         <div class="findlv-icon" style="background:rgba(168,85,247,.15)">⭐</div>
         <div><div class="findlv-label">Google Business Page</div>
-        <a href="https://maps.app.goo.gl/guaYfhVFAfrqphp49" target="_blank" class="findlv-btn findlv-gmb">⭐ View Reviews &amp; Directions</a></div>
+        <a href="https://www.google.com/maps/place/Fitbeat+Dance+Fitness+Studio/@19.1662838,72.9359484,20z/data=!4m6!3m5!1s0x3be7b99d6e3a7f09:0xd5add4a2c3ec10ea!8m2!3d19.1662838!4d72.9362703!16s%2Fg%2F11zfkjkrrv?entry=ttu&amp;g_ep=EgoyMDI2MDkwOC4wIKXMDSoASAFQAw%3D%3D" target="_blank" class="findlv-btn findlv-gmb">⭐ View Reviews &amp; Directions</a></div>
       </div>
       <div class="findlv-row">
         <div class="findlv-icon" style="background:rgba(220,39,67,.15)">✉️</div>
@@ -456,7 +503,7 @@ body{padding-bottom:70px}
     <a href="index.html">🏠 Bhandup Nahur Branch</a>
     <a href="/portal.html">👤 Member Login</a>
     <a href="https://www.instagram.com/fitbeat26" target="_blank">📸 Instagram</a>
-    <a href="https://maps.app.goo.gl/guaYfhVFAfrqphp49" target="_blank">⭐ Google Reviews</a>
+    <a href="https://www.google.com/maps/place/Fitbeat+Dance+Fitness+Studio/@19.1662838,72.9359484,20z/data=!4m6!3m5!1s0x3be7b99d6e3a7f09:0xd5add4a2c3ec10ea!8m2!3d19.1662838!4d72.9362703!16s%2Fg%2F11zfkjkrrv?entry=ttu&amp;g_ep=EgoyMDI2MDkwOC4wIKXMDSoASAFQAw%3D%3D" target="_blank">⭐ Google Reviews</a>
   </div>
   <div class="footer-copy">© 2026 Fitbeat Dance Fitness Studio · Nirmal Lifestyle, Mulund West · All Rights Reserved</div>
 </footer>
@@ -467,5 +514,41 @@ body{padding-bottom:70px}
   <a href="#rent" style="background:var(--grad-rent);color:#fff">🏟️ Rent Studio</a>
 </div>
 
+<script>
+  var lightboxImages = [
+    { src: "images/mulund-hall-1.jpg", alt: "Fitbeat studio on rent Mulund West — full view of the AC hall" },
+    { src: "images/mulund-hall-2.jpg", alt: "Fitbeat studio on rent Mulund West — hall wide angle" },
+    { src: "images/mulund-mirror.jpg", alt: "Mirror wall at Fitbeat studio on rent Mulund West" },
+    { src: "images/mulund-entrance.jpg", alt: "Fitbeat Studio entrance Nirmal Lifestyle Mulund West" },
+    { src: "images/mulund-passage.jpg", alt: "Terrace walkway at Nirmal Lifestyle Mulund West with skyline view" }
+  ];
+  var lightboxIndex = 0;
+  function openLightbox(i) {
+    lightboxIndex = i;
+    var img = document.getElementById('lightbox-img');
+    img.src = lightboxImages[i].src;
+    img.alt = lightboxImages[i].alt;
+    document.getElementById('lightbox').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeLightbox(e) {
+    if (e && e.target && (e.target.id === 'lightbox-img')) return;
+    document.getElementById('lightbox').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  function stepLightbox(e, dir) {
+    e.stopPropagation();
+    lightboxIndex = (lightboxIndex + dir + lightboxImages.length) % lightboxImages.length;
+    var img = document.getElementById('lightbox-img');
+    img.src = lightboxImages[lightboxIndex].src;
+    img.alt = lightboxImages[lightboxIndex].alt;
+  }
+  document.addEventListener('keydown', function(e) {
+    if (!document.getElementById('lightbox').classList.contains('open')) return;
+    if (e.key === 'Escape') closeLightbox();
+    if (e.key === 'ArrowRight') stepLightbox(e, 1);
+    if (e.key === 'ArrowLeft') stepLightbox(e, -1);
+  });
+</script>
 </body>
 </html>
